@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* NBA.com Light Mode */
+    --background: 0 0% 100%; /* white */
+    --foreground: 0 0% 0%; /* black */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 348 79% 45%; /* NBA Red #CE1141 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%; /* light gray */
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 348 79% 45%; /* NBA Red */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 348 79% 45%; /* NBA Red */
+    --radius: 0.5rem;
+    --chart-1: 348 79% 45%; /* NBA Red */
+    --chart-2: 217 71% 33%; /* NBA Blue */
+    --chart-3: 45 93% 57%; /* NBA Gold */
+    --chart-4: 0 0% 50%; /* Gray */
+    --chart-5: 0 0% 30%; /* Dark Gray */
+  }
+
+  .dark {
+    /* NBA.com Dark Mode */
+    --background: 0 0% 0%; /* pure black */
+    --foreground: 0 0% 100%; /* white */
+    --card: 0 0% 7%; /* very dark gray #121212 */
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 348 79% 50%; /* brighter red for dark mode */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 12%; /* #1F1F1F */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 62%;
+    --accent: 348 79% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 348 79% 50%;
+    --chart-1: 348 79% 50%; /* NBA Red */
+    --chart-2: 217 71% 43%; /* NBA Blue */
+    --chart-3: 45 93% 67%; /* NBA Gold */
+    --chart-4: 0 0% 60%; /* Gray */
+    --chart-5: 0 0% 80%; /* Light Gray */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
