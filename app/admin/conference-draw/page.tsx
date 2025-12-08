@@ -5,8 +5,8 @@ import { ConferenceDrawClient } from "@/components/admin/conference-draw-client"
 import { AlertCircle } from "lucide-react";
 
 export const metadata = {
-  title: "조 추첨 - KPL Admin",
-  description: "시즌 컨퍼런스 랜덤 배정",
+  title: "컨퍼런스 배정 - KPL Admin",
+  description: "시즌 컨퍼런스 수동 배정",
 };
 
 export default async function ConferenceDrawPage() {
@@ -23,8 +23,8 @@ export default async function ConferenceDrawPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">조 추첨</h1>
-          <p className="text-muted-foreground">컨퍼런스 랜덤 배정</p>
+          <h1 className="text-3xl font-bold">컨퍼런스 배정</h1>
+          <p className="text-muted-foreground">팀 컨퍼런스 수동 배정</p>
         </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -51,9 +51,9 @@ export default async function ConferenceDrawPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">조 추첨</h1>
+        <h1 className="text-3xl font-bold">컨퍼런스 배정</h1>
         <p className="text-muted-foreground">
-          {activeSeason.name} - 컨퍼런스 랜덤 배정
+          {activeSeason.name} - 팀 컨퍼런스 수동 배정
         </p>
       </div>
 
@@ -145,8 +145,8 @@ export default async function ConferenceDrawPage() {
                   {Math.abs(westTeams.length - eastTeams.length) === 0
                     ? "완벽"
                     : Math.abs(westTeams.length - eastTeams.length) === 1
-                    ? "양호"
-                    : "불균형"}
+                      ? "양호"
+                      : "불균형"}
                 </span>
               </div>
             </div>
