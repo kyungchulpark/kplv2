@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { format, parseISO, isBefore, startOfDay } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Key } from "lucide-react";
 import { MatchDetailDialog } from "./match-detail-dialog";
 
 type Match = {
@@ -15,6 +15,7 @@ type Match = {
   home_score: number | null;
   away_score: number | null;
   match_sequence: string | null;
+  game_password: string | null;
   home_team: {
     id: string;
     name: string;
@@ -202,11 +203,20 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
                             )}
                           </div>
 
-                          {/* Match Sequence (small) */}
                           {match.match_sequence && (
                             <div className="hidden md:block">
                               <code className="text-[10px] bg-muted px-2 py-1 rounded text-muted-foreground">
                                 {match.match_sequence}
+                              </code>
+                            </div>
+                          )}
+
+                          {/* Game Password - 예정된 경기에만 표시 */}
+                          {match.game_password && match.status === "scheduled" && (
+                            <div className="flex items-center space-x-1">
+                              <Key className="h-3 w-3 text-green-600" />
+                              <code className="text-xs font-mono bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-green-700 dark:text-green-400">
+                                {match.game_password}
                               </code>
                             </div>
                           )}

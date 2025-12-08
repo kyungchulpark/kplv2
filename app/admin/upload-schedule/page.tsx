@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Key } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import * as XLSX from "xlsx";
 
@@ -15,8 +15,25 @@ interface ParsedMatch {
   home_team: string;
   away_team: string;
   match_time: string;
-  game_password?: string;
+  game_password: string;
 }
+
+// 랜덤 알파벳 4글자 생성
+const generatePassword = (): string => {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // 혼동되기 쉬운 I, O 제외
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  return result;
+};
+
+// match_sequence 생성 (YYYYMMDD_XXX 형식)
+const generateSequence = (dateStr: string, index: number): string => {
+  const dateOnly = dateStr.replace(/-/g, '');
+  const seq = String(index + 1).padStart(3, '0');
+  return `${dateOnly}_${seq}`;
+};
 
 export default function UploadSchedulePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -83,14 +100,13 @@ export default function UploadSchedulePage() {
       const validationErrors: string[] = [];
       const teamNames = new Set(teams.map((t) => t.name));
 
+      // 날짜별 경기 수를 추적하여 sequence 번호 부여
+      const dateCountMap = new Map<string, number>();
+
       jsonData.forEach((row, index) => {
         const rowNum = index + 2; // Excel row number (1-indexed + header)
 
-        // Check required fields
-        if (!row.match_sequence) {
-          validationErrors.push(`Row ${rowNum}: match_sequence is required`);
-          return;
-        }
+        // Check required fields (match_sequence와 game_password는 더 이상 필수 아님)
         if (!row.match_date) {
           validationErrors.push(`Row ${rowNum}: match_date is required`);
           return;
@@ -136,13 +152,21 @@ export default function UploadSchedulePage() {
           );
         }
 
+        // 날짜별 경기 순번 계산
+        const currentCount = dateCountMap.get(row.match_date) || 0;
+        dateCountMap.set(row.match_date, currentCount + 1);
+
+        // match_sequence와 game_password 자동 생성
+        const autoSequence = generateSequence(row.match_date, currentCount);
+        const autoPassword = generatePassword();
+
         parsed.push({
-          match_sequence: row.match_sequence,
+          match_sequence: autoSequence,
           match_date: row.match_date,
           home_team: row.home_team,
           away_team: row.away_team,
           match_time: row.match_time,
-          game_password: row.game_password || "",
+          game_password: autoPassword,
         });
       });
 
@@ -177,7 +201,7 @@ export default function UploadSchedulePage() {
         match_date: `${match.match_date}T${match.match_time}:00`,
         status: "scheduled",
         match_sequence: match.match_sequence,
-        game_password: match.game_password || null,
+        game_password: match.game_password,
         result_uploaded: false,
       }));
 
@@ -197,87 +221,67 @@ export default function UploadSchedulePage() {
   };
 
   const handleDownloadTemplate = () => {
-    // Create template data
+    // Create template data - match_sequence와 game_password 컬럼 제거
     const template = [
       {
-        match_sequence: "20250417_001",
         match_date: "2025-04-17",
         home_team: "Lakers",
         away_team: "Warriors",
         match_time: "22:40",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_002",
         match_date: "2025-04-17",
         home_team: "Celtics",
         away_team: "Heat",
         match_time: "22:40",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_003",
         match_date: "2025-04-17",
         home_team: "Clippers",
         away_team: "Nets",
         match_time: "22:40",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_004",
         match_date: "2025-04-17",
         home_team: "Suns",
         away_team: "76ers",
         match_time: "22:40",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_005",
         match_date: "2025-04-17",
         home_team: "Mavericks",
         away_team: "Bucks",
         match_time: "22:40",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_006",
         match_date: "2025-04-17",
         home_team: "Warriors",
         away_team: "Lakers",
         match_time: "23:20",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_007",
         match_date: "2025-04-17",
         home_team: "Heat",
         away_team: "Celtics",
         match_time: "23:20",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_008",
         match_date: "2025-04-17",
         home_team: "Nets",
         away_team: "Clippers",
         match_time: "23:20",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_009",
         match_date: "2025-04-17",
         home_team: "76ers",
         away_team: "Suns",
         match_time: "23:20",
-        game_password: "",
       },
       {
-        match_sequence: "20250417_010",
         match_date: "2025-04-17",
         home_team: "Bucks",
         away_team: "Mavericks",
         match_time: "23:20",
-        game_password: "",
       },
     ];
 
@@ -326,53 +330,46 @@ export default function UploadSchedulePage() {
             <table className="w-full text-sm border">
               <thead className="bg-muted">
                 <tr>
-                  <th className="border px-3 py-2 text-left">match_sequence</th>
                   <th className="border px-3 py-2 text-left">match_date</th>
                   <th className="border px-3 py-2 text-left">home_team</th>
                   <th className="border px-3 py-2 text-left">away_team</th>
                   <th className="border px-3 py-2 text-left">match_time</th>
-                  <th className="border px-3 py-2 text-left">game_password</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="border px-3 py-2">20250417_001</td>
                   <td className="border px-3 py-2">2025-04-17</td>
                   <td className="border px-3 py-2">Lakers</td>
                   <td className="border px-3 py-2">Warriors</td>
                   <td className="border px-3 py-2">22:40</td>
-                  <td className="border px-3 py-2"></td>
                 </tr>
                 <tr>
-                  <td className="border px-3 py-2">20250417_002</td>
                   <td className="border px-3 py-2">2025-04-17</td>
                   <td className="border px-3 py-2">Celtics</td>
                   <td className="border px-3 py-2">Heat</td>
                   <td className="border px-3 py-2">22:40</td>
-                  <td className="border px-3 py-2"></td>
                 </tr>
                 <tr>
-                  <td className="border px-3 py-2">...</td>
                   <td className="border px-3 py-2">같은 날짜</td>
                   <td className="border px-3 py-2">...</td>
                   <td className="border px-3 py-2">...</td>
                   <td className="border px-3 py-2">23:20</td>
-                  <td className="border px-3 py-2"></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div className="space-y-2 text-sm">
-            <p className="font-semibold">중요 사항:</p>
+            <p className="font-semibold">📌 입력 사항:</p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>첫 번째 행은 반드시 헤더여야 합니다</li>
-              <li>match_sequence는 고유해야 합니다 (YYYYMMDD_XXX 형식 권장)</li>
-              <li>match_date는 YYYY-MM-DD 형식</li>
-              <li>match_time은 HH:MM 형식 (24시간제)</li>
-              <li>팀 이름은 현재 활성 시즌에 등록된 정확한 이름과 일치해야 합니다</li>
-              <li><strong>한 날짜에 여러 경기를 등록할 수 있습니다</strong> (예: 10팀이면 하루에 5경기 × 2번 = 10경기)</li>
-              <li>game_password는 선택사항입니다</li>
+              <li>match_date: YYYY-MM-DD 형식 (예: 2025-04-17)</li>
+              <li>home_team / away_team: 현재 시즌에 등록된 팀 이름</li>
+              <li>match_time: HH:MM 형식 (예: 22:40 또는 23:20)</li>
+            </ul>
+            <p className="font-semibold mt-3">✨ 자동 생성:</p>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li><strong>match_sequence</strong>: YYYYMMDD_001 형식으로 자동 생성</li>
+              <li><strong>game_password</strong>: 알파벳 4글자 자동 생성 (예: KPLX)</li>
             </ul>
           </div>
 
@@ -475,13 +472,10 @@ export default function UploadSchedulePage() {
                       <td className="py-2 px-2 font-medium">{match.home_team}</td>
                       <td className="py-2 px-2 font-medium">{match.away_team}</td>
                       <td className="py-2 px-2 text-center">
-                        {match.game_password ? (
-                          <Badge variant="outline" className="text-xs">
-                            Set
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                        <Badge variant="outline" className="text-xs font-mono bg-green-50 border-green-300 text-green-700">
+                          <Key className="h-3 w-3 mr-1" />
+                          {match.game_password}
+                        </Badge>
                       </td>
                     </tr>
                   ))}
