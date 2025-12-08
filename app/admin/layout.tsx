@@ -27,42 +27,42 @@ export default async function AdminLayout({
     {
       href: "/admin",
       label: "Dashboard",
-      icon: LayoutDashboard,
+      icon: "dashboard",
     },
     {
       href: "/admin/seasons",
       label: "Seasons",
-      icon: Trophy,
+      icon: "seasons",
     },
     {
       href: "/admin/teams",
       label: "Teams",
-      icon: Users,
+      icon: "teams",
     },
     {
       href: "/admin/team-requests",
       label: "Team Requests",
-      icon: UserCheck,
+      icon: "teamRequests",
     },
     {
       href: "/admin/conference-draw",
       label: "Conference Draw",
-      icon: Shuffle,
+      icon: "conferenceDraw",
     },
     {
       href: "/admin/matches",
       label: "Matches",
-      icon: Calendar,
+      icon: "matches",
     },
     {
       href: "/admin/upload-schedule",
       label: "Upload Schedule",
-      icon: FileSpreadsheet,
+      icon: "uploadSchedule",
     },
     {
       href: "/admin/users",
       label: "Users",
-      icon: UserCog,
+      icon: "users",
     },
   ];
 

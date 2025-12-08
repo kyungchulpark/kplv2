@@ -4,13 +4,34 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Trophy,
+  Users,
+  Calendar,
+  FileSpreadsheet,
+  UserCheck,
+  UserCog,
+  Shuffle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+type IconKey =
+  | "dashboard"
+  | "seasons"
+  | "teams"
+  | "teamRequests"
+  | "conferenceDraw"
+  | "matches"
+  | "uploadSchedule"
+  | "users";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: IconKey;
 };
 
 type AdminLayoutClientProps = {
@@ -26,6 +47,17 @@ export function AdminLayoutClient({
 }: AdminLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+
+  const iconMap: Record<IconKey, React.ComponentType<{ className?: string }>> = {
+    dashboard: LayoutDashboard,
+    seasons: Trophy,
+    teams: Users,
+    teamRequests: UserCheck,
+    conferenceDraw: Shuffle,
+    matches: Calendar,
+    uploadSchedule: FileSpreadsheet,
+    users: UserCog,
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -75,8 +107,9 @@ export function AdminLayoutClient({
 
           <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
             {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href ||
+              const Icon = iconMap[item.icon] || LayoutDashboard;
+              const isActive =
+                pathname === item.href ||
                 (item.href !== "/admin" && pathname.startsWith(item.href));
 
               return (
