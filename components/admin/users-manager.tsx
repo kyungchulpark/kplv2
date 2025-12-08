@@ -70,18 +70,24 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
     if (!selectedUser) return;
 
     setLoading(true);
-    const supabase = createClient();
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      // Call API route instead of direct Supabase update (to bypass RLS)
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           role: editRole,
           psn_id: editPsnId || null,
-        })
-        .eq("id", selectedUser.id);
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "수정 실패");
+      }
 
       // Update local state
       setUsers(users.map(u =>
@@ -94,6 +100,7 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
       setEditDialogOpen(false);
       router.refresh();
     } catch (error: any) {
+      console.error("Save error:", error);
       toast.error(error.message || "수정 실패");
     } finally {
       setLoading(false);
