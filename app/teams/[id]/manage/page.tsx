@@ -242,6 +242,21 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
     const supabase = createClient();
 
     try {
+      // Double-check if player is already in another team (safety check)
+      const { data: existingRoster } = await supabase
+        .from("team_rosters")
+        .select("team:teams(id, name)")
+        .eq("season_id", team.season_id)
+        .eq("player_id", selectedPlayerId)
+        .eq("is_active", true)
+        .single();
+
+      if (existingRoster && (existingRoster as any).team) {
+        toast.error(`이 선수는 이미 다른 팀에 소속되어 있습니다: ${(existingRoster as any).team.name}`);
+        setAddingPlayer(false);
+        return;
+      }
+
       const { error: insertError } = await supabase.from("team_rosters").insert({
         team_id: team.id,
         season_id: team.season_id,

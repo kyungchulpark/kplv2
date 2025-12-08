@@ -117,6 +117,35 @@ export default function CreateTeamPage() {
         return;
       }
 
+      // Check if user is already a captain of a team
+      const { data: captainTeam } = await supabase
+        .from("teams")
+        .select("id, name")
+        .eq("season_id", activeSeason.id)
+        .eq("captain_id", user.id)
+        .single();
+
+      if (captainTeam) {
+        setError(`이미 팀장으로 등록된 팀이 있습니다: ${captainTeam.name}`);
+        setLoading(false);
+        return;
+      }
+
+      // Check if user is already in a team roster
+      const { data: rosterEntry } = await supabase
+        .from("team_rosters")
+        .select("team:teams(id, name)")
+        .eq("season_id", activeSeason.id)
+        .eq("player_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      if (rosterEntry && (rosterEntry as any).team) {
+        setError(`이미 팀에 소속되어 있습니다: ${(rosterEntry as any).team.name}`);
+        setLoading(false);
+        return;
+      }
+
       // Upload logo if exists
       let logoUrl = null;
       if (logoFile) {
