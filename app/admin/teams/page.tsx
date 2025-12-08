@@ -1,43 +1,27 @@
 import { createClient } from "@/utils/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
-import { TeamsManager } from "@/components/admin/teams-manager";
+import { TeamsManagerWithFilter } from "@/components/admin/teams-manager-with-filter";
 
 export default async function TeamsAdminPage() {
   const supabase = await createClient();
 
-  // Get active season
-  const { data: activeSeason } = await supabase
+  // Get all seasons
+  const { data: seasons } = await supabase
     .from("seasons")
     .select("*")
-    .eq("is_active", true)
-    .single();
+    .order("created_at", { ascending: false });
 
-  if (!activeSeason) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Teams</h1>
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">
-              활성화된 시즌이 없습니다. 먼저 시즌을 생성하세요.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // Get all teams with season info
   const { data: teams } = await supabase
     .from("teams")
     .select(
       `
       *,
+      season:seasons(id, name),
       captain:profiles!teams_captain_id_fkey(psn_id),
       _rosters:team_rosters(count)
     `
     )
-    .eq("season_id", (activeSeason as any).id)
-    .order("wins", { ascending: false });
+    .order("name", { ascending: true });
 
   // Transform data for component
   const teamsWithCount = teams?.map((team) => ({
@@ -46,10 +30,9 @@ export default async function TeamsAdminPage() {
   })) || [];
 
   return (
-    <TeamsManager
+    <TeamsManagerWithFilter
       teams={teamsWithCount}
-      seasonId={(activeSeason as any).id}
-      seasonName={(activeSeason as any).name}
+      seasons={seasons || []}
     />
   );
 }

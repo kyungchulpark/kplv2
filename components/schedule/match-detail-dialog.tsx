@@ -17,20 +17,20 @@ import { cn } from "@/lib/utils";
 interface Match {
   id: string;
   match_date: string;
-  status: "scheduled" | "live" | "finished" | "cancelled";
+  status: string;
   home_score: number | null;
   away_score: number | null;
   home_team: {
     id: string;
     name: string;
     logo_url: string | null;
-    conference: string | null;
+    conference?: string | null;
   };
   away_team: {
     id: string;
     name: string;
     logo_url: string | null;
-    conference: string | null;
+    conference?: string | null;
   };
 }
 

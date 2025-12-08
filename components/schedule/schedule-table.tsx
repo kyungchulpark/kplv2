@@ -162,7 +162,11 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
                           <div className="flex items-center space-x-2 min-w-[80px]">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm font-medium">
-                              {format(parseISO(match.match_date), "HH:mm")}
+                              {new Date(match.match_date).toLocaleTimeString("ko-KR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                              })}
                             </span>
                           </div>
 
@@ -234,7 +238,7 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
       {/* Match Detail Dialog */}
       {selectedMatch && (
         <MatchDetailDialog
-          matchId={selectedMatch.id}
+          match={selectedMatch}
           open={!!selectedMatch}
           onOpenChange={(open) => !open && setSelectedMatch(null)}
         />

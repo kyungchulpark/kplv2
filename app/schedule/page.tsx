@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { ScheduleTable } from "@/components/schedule/schedule-table";
+import { ScheduleView } from "@/components/schedule/schedule-view";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function SchedulePage() {
@@ -61,8 +61,8 @@ export default async function SchedulePage() {
           </p>
         </div>
 
-        {/* Schedule Table */}
-        <ScheduleTable matches={matches || []} />
+        {/* Schedule View with Tabs */}
+        <ScheduleView matches={matches || []} />
       </div>
     </div>
   );
