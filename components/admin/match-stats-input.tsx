@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Loader2, Save, AlertCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
 
 interface Player {
   player_id: string;
@@ -73,6 +74,7 @@ interface MatchStatsInputProps {
   match: MatchData;
   homeRoster: Player[];
   awayRoster: Player[];
+  onSuccessRedirect?: string;
 }
 
 const emptyStats: Omit<PlayerStats, "player_id"> = {
@@ -96,6 +98,7 @@ export function MatchStatsInput({
   match,
   homeRoster,
   awayRoster,
+  onSuccessRedirect = "/admin",
 }: MatchStatsInputProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -158,15 +161,22 @@ export function MatchStatsInput({
   const validateStats = (): string[] => {
     const validationErrors: string[] = [];
 
+    if (homeRoster.length < 5) {
+      validationErrors.push("홈 팀 활성 로스터가 5명 이상 등록되어 있어야 합니다.");
+    }
+    if (awayRoster.length < 5) {
+      validationErrors.push("원정 팀 활성 로스터가 5명 이상 등록되어 있어야 합니다.");
+    }
+
     // Check if all players are selected
     const allHomeSelected = homeStats.every((s) => s.player_id !== "");
     const allAwaySelected = awayStats.every((s) => s.player_id !== "");
 
     if (!allHomeSelected) {
-      validationErrors.push("홈팀 5명의 선수를 모두 선택해주세요.");
+      validationErrors.push("홈 팀 5명의 선수를 모두 선택해주세요.");
     }
     if (!allAwaySelected) {
-      validationErrors.push("원정팀 5명의 선수를 모두 선택해주세요.");
+      validationErrors.push("원정 팀 5명의 선수를 모두 선택해주세요.");
     }
 
     // Check for duplicate players
@@ -174,44 +184,69 @@ export function MatchStatsInput({
     const awayPlayerIds = awayStats.map((s) => s.player_id).filter(Boolean);
 
     if (new Set(homePlayerIds).size !== homePlayerIds.length) {
-      validationErrors.push("홈팀에 중복된 선수가 있습니다.");
+      validationErrors.push("홈 팀에 중복된 선수가 있습니다.");
     }
     if (new Set(awayPlayerIds).size !== awayPlayerIds.length) {
-      validationErrors.push("원정팀에 중복된 선수가 있습니다.");
+      validationErrors.push("원정 팀에 중복된 선수가 있습니다.");
     }
+    const allPlayers = [...homePlayerIds, ...awayPlayerIds];
+    if (new Set(allPlayers).size !== allPlayers.length) {
+      validationErrors.push("같은 선수가 양 팀에 중복 배치되었습니다.");
+    }
+
+    const numericLabels: Record<keyof Omit<PlayerStats, "player_id" | "grade">, string> = {
+      pts: "득점",
+      reb: "리바운드",
+      ast: "어시스트",
+      stl: "스틸",
+      blk: "블록",
+      fls: "파울",
+      turnovers: "턴오버",
+      fgm: "야투 성공",
+      fga: "야투 시도",
+      three_pm: "3점 성공",
+      three_pa: "3점 시도",
+      ftm: "자유투 성공",
+      fta: "자유투 시도",
+    };
 
     // Validate stats for each player
     [...homeStats, ...awayStats].forEach((stats, idx) => {
       if (!stats.player_id) return;
 
-      const team = idx < 5 ? "홈팀" : "원정팀";
+      const team = idx < 5 ? "홈 팀" : "원정 팀";
       const playerNum = (idx % 5) + 1;
+      (Object.keys(numericLabels) as Array<keyof Omit<PlayerStats, "player_id" | "grade">>).forEach((field) => {
+        if (stats[field] < 0) {
+          validationErrors.push(`${team} ${playerNum}번 ${numericLabels[field]} 값은 0 이상이어야 합니다.`);
+        }
+      });
 
       if (stats.fgm > stats.fga) {
         validationErrors.push(
-          `${team} ${playerNum}번: 야투 성공(${stats.fgm})이 시도(${stats.fga})보다 많습니다.`
+          `${team} ${playerNum}번 야투 성공(${stats.fgm})이 시도(${stats.fga})보다 많습니다.`
         );
       }
       if (stats.three_pm > stats.three_pa) {
         validationErrors.push(
-          `${team} ${playerNum}번: 3점슛 성공(${stats.three_pm})이 시도(${stats.three_pa})보다 많습니다.`
+          `${team} ${playerNum}번 3점슛 성공(${stats.three_pm})이 시도(${stats.three_pa})보다 많습니다.`
         );
       }
       if (stats.ftm > stats.fta) {
         validationErrors.push(
-          `${team} ${playerNum}번: 자유투 성공(${stats.ftm})이 시도(${stats.fta})보다 많습니다.`
+          `${team} ${playerNum}번 자유투 성공(${stats.ftm})이 시도(${stats.fta})보다 많습니다.`
         );
       }
       if (stats.three_pm > stats.fgm) {
         validationErrors.push(
-          `${team} ${playerNum}번: 3점슛 성공(${stats.three_pm})이 야투 성공(${stats.fgm})보다 많습니다.`
+          `${team} ${playerNum}번 3점슛 성공(${stats.three_pm})이 야투 성공(${stats.fgm})보다 많습니다.`
         );
       }
 
       const calculatedPts = calculatePoints(stats);
       if (stats.pts !== calculatedPts) {
         validationErrors.push(
-          `${team} ${playerNum}번: 득점(${stats.pts})이 계산값(${calculatedPts})과 다릅니다. 자동으로 수정됩니다.`
+          `${team} ${playerNum}번 득점(${stats.pts})이 계산값(${calculatedPts})과 다릅니다. 자동으로 보정됩니다.`
         );
       }
     });
@@ -279,12 +314,13 @@ export function MatchStatsInput({
 
       if (matchError) throw matchError;
 
-      // Redirect to match detail or admin page
-      router.push(`/admin`);
+      toast.success("경기 결과가 저장되었습니다.");
+      router.push(onSuccessRedirect);
       router.refresh();
     } catch (error) {
       console.error("Error saving match stats:", error);
       setErrors(["경기 결과 저장 중 오류가 발생했습니다."]);
+      toast.error("경기 결과 저장 중 오류가 발생했습니다.");
       setIsLoading(false);
     }
   };

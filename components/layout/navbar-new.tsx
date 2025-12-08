@@ -10,7 +10,6 @@ import {
   ExternalLink,
   ChevronDown,
   Shield,
-  Users as UsersIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +45,8 @@ export function Navbar({ user, userTeam }: NavbarProps) {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+  const isOperator = user && ["admin", "staff"].includes((user.profile as any)?.role);
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -76,12 +77,28 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             >
               순위
             </Link>
-            <Link
-              href="/stats"
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              기록실
-            </Link>
+
+            {/* Stats Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground inline-flex items-center gap-1">
+                기록실
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link href="/stats" className="cursor-pointer">
+                    리그 기록
+                  </Link>
+                </DropdownMenuItem>
+                {isOperator && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/stats/upload" className="cursor-pointer">
+                      경기 결과 업로드
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Teams Dropdown */}
             <DropdownMenu>
@@ -152,17 +169,10 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 )}
 
                 {/* Admin/Staff Links */}
-                {user.profile?.role === "admin" && (
+                {isOperator && (
                   <Link href="/admin">
                     <Button variant="outline" size="sm">
-                      관리
-                    </Button>
-                  </Link>
-                )}
-                {user.profile?.role === "staff" && (
-                  <Link href="/staff">
-                    <Button variant="outline" size="sm">
-                      관리
+                      관리자
                     </Button>
                   </Link>
                 )}
@@ -171,7 +181,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 <Link href="/profile">
                   <Button variant="default" size="sm">
                     <User className="mr-2 h-4 w-4" />
-                    {user.profile?.psn_id || "내 정보"}
+                    {user.profile?.psn_id || "내 프로필"}
                   </Button>
                 </Link>
               </div>
@@ -224,13 +234,27 @@ export function Navbar({ user, userTeam }: NavbarProps) {
           >
             순위
           </Link>
-          <Link
-            href="/stats"
-            className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            기록실
-          </Link>
+
+          {/* Stats Submenu */}
+          <div className="space-y-1">
+            <div className="px-3 py-2 text-sm font-semibold text-foreground">기록실</div>
+            <Link
+              href="/stats"
+              className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              리그 기록
+            </Link>
+            {isOperator && (
+              <Link
+                href="/stats/upload"
+                className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                경기 결과 업로드
+              </Link>
+            )}
+          </div>
 
           {/* Team Submenu */}
           <div className="space-y-1">
@@ -305,24 +329,17 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                   </Link>
                 )}
 
-                {user.profile?.role === "admin" && (
+                {isOperator && (
                   <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full">
-                      관리
-                    </Button>
-                  </Link>
-                )}
-                {user.profile?.role === "staff" && (
-                  <Link href="/staff" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full">
-                      관리
+                      관리자
                     </Button>
                   </Link>
                 )}
                 <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="default" size="sm" className="w-full">
                     <User className="mr-2 h-4 w-4" />
-                    {user.profile?.psn_id || "내 정보"}
+                    {user.profile?.psn_id || "내 프로필"}
                   </Button>
                 </Link>
               </>
