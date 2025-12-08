@@ -93,9 +93,9 @@ export default async function ProfilePage() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">가입일:</span>
                 <span className="font-medium">
-                  {new Date(
-                    user.profile?.created_at || ""
-                  ).toLocaleDateString("ko-KR")}
+                  {user.profile?.created_at
+                    ? new Date(user.profile.created_at).toLocaleDateString("ko-KR")
+                    : "정보 없음"}
                 </span>
               </div>
             </div>

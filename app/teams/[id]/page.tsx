@@ -1,9 +1,11 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient, getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Users, TrendingUp, Calendar } from "lucide-react";
+import { Trophy, Users, TrendingUp, Calendar, Settings } from "lucide-react";
 
 interface PageProps {
   params: Promise<{
@@ -14,6 +16,7 @@ interface PageProps {
 export default async function TeamDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
+  const user = await getCurrentUser();
 
   // Get team details
   const { data: team } = await supabase
@@ -79,9 +82,24 @@ export default async function TeamDetailPage({ params }: PageProps) {
   const avgAgainst = gamesPlayed > 0 ? (team.points_against / gamesPlayed).toFixed(1) : "0.0";
   const margin = gamesPlayed > 0 ? ((team.points_for - team.points_against) / gamesPlayed).toFixed(1) : "0.0";
 
+  // Check if current user is captain
+  const isCaptain = user && (team.captain_id === user.id);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
+        {/* Manage Button for Captain */}
+        {isCaptain && (
+          <div className="flex justify-end">
+            <Link href={`/teams/${id}/manage`}>
+              <Button>
+                <Settings className="mr-2 h-4 w-4" />
+                팀 관리
+              </Button>
+            </Link>
+          </div>
+        )}
+
         {/* Team Header */}
         <Card className="border-2">
           <CardContent className="pt-6">
