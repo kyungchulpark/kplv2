@@ -44,6 +44,7 @@ export default function UploadSchedulePage() {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [activeSeason, setActiveSeason] = useState<any>(null);
   const [teams, setTeams] = useState<any[]>([]);
+  const [createdTeams, setCreatedTeams] = useState<string[]>([]); // 새로 생성된 팀 목록
 
   useEffect(() => {
     loadSeasonAndTeams();
@@ -79,6 +80,7 @@ export default function UploadSchedulePage() {
       setParsedData(null);
       setErrors([]);
       setUploadComplete(false);
+      setCreatedTeams([]);
     }
   };
 
@@ -95,18 +97,26 @@ export default function UploadSchedulePage() {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
 
+      if (jsonData.length === 0) {
+        setErrors(["엑셀 파일에 데이터가 없습니다."]);
+        setParsing(false);
+        return;
+      }
+
       // Validate and parse
       const parsed: ParsedMatch[] = [];
       const validationErrors: string[] = [];
-      const teamNames = new Set(teams.map((t) => t.name));
 
       // 날짜별 경기 수를 추적하여 sequence 번호 부여
       const dateCountMap = new Map<string, number>();
 
+      // 엑셀에서 발견된 모든 팀 이름 수집
+      const teamNamesInExcel = new Set<string>();
+
       jsonData.forEach((row, index) => {
         const rowNum = index + 2; // Excel row number (1-indexed + header)
 
-        // Check required fields (match_sequence와 game_password는 더 이상 필수 아님)
+        // Check required fields
         if (!row.match_date) {
           validationErrors.push(`Row ${rowNum}: match_date is required`);
           return;
@@ -124,17 +134,9 @@ export default function UploadSchedulePage() {
           return;
         }
 
-        // Validate team names
-        if (!teamNames.has(row.home_team)) {
-          validationErrors.push(
-            `Row ${rowNum}: Home team "${row.home_team}" not found in active season`
-          );
-        }
-        if (!teamNames.has(row.away_team)) {
-          validationErrors.push(
-            `Row ${rowNum}: Away team "${row.away_team}" not found in active season`
-          );
-        }
+        // 팀 이름 수집 (팀 자동 생성을 위해)
+        teamNamesInExcel.add(row.home_team.trim());
+        teamNamesInExcel.add(row.away_team.trim());
 
         // Validate date format
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -142,6 +144,7 @@ export default function UploadSchedulePage() {
           validationErrors.push(
             `Row ${rowNum}: match_date must be in YYYY-MM-DD format`
           );
+          return;
         }
 
         // Validate time format
@@ -150,6 +153,7 @@ export default function UploadSchedulePage() {
           validationErrors.push(
             `Row ${rowNum}: match_time must be in HH:MM format`
           );
+          return;
         }
 
         // 날짜별 경기 순번 계산
@@ -163,8 +167,8 @@ export default function UploadSchedulePage() {
         parsed.push({
           match_sequence: autoSequence,
           match_date: row.match_date,
-          home_team: row.home_team,
-          away_team: row.away_team,
+          home_team: row.home_team.trim(),
+          away_team: row.away_team.trim(),
           match_time: row.match_time,
           game_password: autoPassword,
         });
@@ -186,16 +190,67 @@ export default function UploadSchedulePage() {
     if (!parsedData || !activeSeason) return;
 
     setUploading(true);
+    setCreatedTeams([]);
 
     try {
       const supabase = createClient();
 
-      // Get team IDs
-      const teamMap = new Map(teams.map((t) => [t.name, t.id]));
+      // 현재 팀 목록
+      let teamMap = new Map(teams.map((t) => [t.name, t.id]));
+
+      // 엑셀에서 발견된 모든 팀 이름 수집
+      const allTeamNames = new Set<string>();
+      parsedData.forEach((match) => {
+        allTeamNames.add(match.home_team);
+        allTeamNames.add(match.away_team);
+      });
+
+      // 없는 팀 찾기
+      const missingTeams: string[] = [];
+      allTeamNames.forEach((teamName) => {
+        if (!teamMap.has(teamName)) {
+          missingTeams.push(teamName);
+        }
+      });
+
+      // 없는 팀 자동 생성
+      if (missingTeams.length > 0) {
+        const newTeams = missingTeams.map((name) => ({
+          season_id: activeSeason.id,
+          name: name,
+          conference: null, // 컨퍼런스는 나중에 설정
+          wins: 0,
+          losses: 0,
+          points_for: 0,
+          points_against: 0,
+        }));
+
+        const { data: insertedTeams, error: teamError } = await supabase
+          .from("teams")
+          .insert(newTeams)
+          .select("id, name");
+
+        if (teamError) {
+          setErrors([`팀 생성 실패: ${teamError.message}`]);
+          setUploading(false);
+          return;
+        }
+
+        // 새로 생성된 팀을 teamMap에 추가
+        insertedTeams?.forEach((team) => {
+          teamMap.set(team.name, team.id);
+        });
+
+        // 생성된 팀 목록 저장
+        setCreatedTeams(missingTeams);
+
+        // 팀 목록 갱신
+        setTeams([...teams, ...(insertedTeams || [])]);
+      }
 
       // Prepare matches for insert
       const matches = parsedData.map((match) => ({
-        season_id: (activeSeason as any).id,
+        season_id: activeSeason.id,
         home_team_id: teamMap.get(match.home_team),
         away_team_id: teamMap.get(match.away_team),
         match_date: `${match.match_date}T${match.match_time}:00`,
@@ -447,6 +502,36 @@ export default function UploadSchedulePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* 새로 생성될 팀 미리 알림 */}
+            {(() => {
+              const existingTeamNames = new Set(teams.map((t) => t.name));
+              const newTeamNames = new Set<string>();
+              parsedData.forEach((match) => {
+                if (!existingTeamNames.has(match.home_team)) newTeamNames.add(match.home_team);
+                if (!existingTeamNames.has(match.away_team)) newTeamNames.add(match.away_team);
+              });
+
+              if (newTeamNames.size > 0) {
+                return (
+                  <Alert className="border-blue-300 bg-blue-50 dark:bg-blue-950/20">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-700 dark:text-blue-400">
+                      <p className="font-semibold">🆕 자동으로 생성될 팀 ({newTeamNames.size}개):</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {Array.from(newTeamNames).map((name) => (
+                          <Badge key={name} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            {name}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs mt-2">업로드 시 위 팀들이 자동으로 생성됩니다.</p>
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+              return null;
+            })()}
+
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-sm">
                 <thead className="border-b sticky top-0 bg-background">
@@ -460,25 +545,43 @@ export default function UploadSchedulePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {parsedData.map((match, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="py-2 px-2">
-                        <code className="text-xs bg-muted px-1 rounded">
-                          {match.match_sequence}
-                        </code>
-                      </td>
-                      <td className="py-2 px-2">{match.match_date}</td>
-                      <td className="py-2 px-2">{match.match_time}</td>
-                      <td className="py-2 px-2 font-medium">{match.home_team}</td>
-                      <td className="py-2 px-2 font-medium">{match.away_team}</td>
-                      <td className="py-2 px-2 text-center">
-                        <Badge variant="outline" className="text-xs font-mono bg-green-50 border-green-300 text-green-700">
-                          <Key className="h-3 w-3 mr-1" />
-                          {match.game_password}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {parsedData.map((match, idx) => {
+                    const existingTeamNames = new Set(teams.map((t) => t.name));
+                    const isNewHomeTeam = !existingTeamNames.has(match.home_team);
+                    const isNewAwayTeam = !existingTeamNames.has(match.away_team);
+
+                    return (
+                      <tr key={idx} className="border-b">
+                        <td className="py-2 px-2">
+                          <code className="text-xs bg-muted px-1 rounded">
+                            {match.match_sequence}
+                          </code>
+                        </td>
+                        <td className="py-2 px-2">{match.match_date}</td>
+                        <td className="py-2 px-2">{match.match_time}</td>
+                        <td className="py-2 px-2 font-medium">
+                          {isNewHomeTeam ? (
+                            <span className="text-blue-600 dark:text-blue-400">🆕 {match.home_team}</span>
+                          ) : (
+                            match.home_team
+                          )}
+                        </td>
+                        <td className="py-2 px-2 font-medium">
+                          {isNewAwayTeam ? (
+                            <span className="text-blue-600 dark:text-blue-400">🆕 {match.away_team}</span>
+                          ) : (
+                            match.away_team
+                          )}
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <Badge variant="outline" className="text-xs font-mono bg-green-50 border-green-300 text-green-700">
+                            <Key className="h-3 w-3 mr-1" />
+                            {match.game_password}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -519,6 +622,23 @@ export default function UploadSchedulePage() {
             <p className="text-sm">
               {parsedData?.length}개의 경기가 성공적으로 등록되었습니다.
             </p>
+            {createdTeams.length > 0 && (
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
+                <p className="font-semibold text-blue-700 dark:text-blue-400">
+                  🆕 자동 생성된 팀 ({createdTeams.length}개):
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {createdTeams.map((teamName) => (
+                    <Badge key={teamName} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {teamName}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  ⚠️ 생성된 팀의 컨퍼런스, 로고, 주장은 Teams 메뉴에서 설정해주세요.
+                </p>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
