@@ -1,22 +1,23 @@
 import { createClient } from "@/utils/supabase/server";
-import { TeamsManagerWithFilter } from "@/components/admin/teams-manager-with-filter";
+import { TeamsManagerSimple } from "@/components/admin/teams-manager-simple";
 
 export default async function TeamsAdminPage() {
   const supabase = await createClient();
 
-  // Get all seasons
-  const { data: seasons } = await supabase
+  // Get active season
+  const { data: activeSeason } = await supabase
     .from("seasons")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("id, name")
+    .eq("is_active", true)
+    .single();
 
-  // Get all teams with season info
-  const { data: teams } = await supabase
+  // Get all unique teams (by name), preferring those in active season
+  const { data: allTeams } = await supabase
     .from("teams")
     .select(
       `
       *,
-      season:seasons(id, name),
+      season:seasons(id, name, is_active),
       captain:profiles!teams_captain_id_fkey(psn_id),
       _rosters:team_rosters(count)
     `
@@ -24,15 +25,16 @@ export default async function TeamsAdminPage() {
     .order("name", { ascending: true });
 
   // Transform data for component
-  const teamsWithCount = teams?.map((team) => ({
+  const teamsWithCount = allTeams?.map((team) => ({
     ...team,
     roster_count: team._rosters?.[0]?.count || 0,
+    is_current_season: team.season_id === activeSeason?.id,
   })) || [];
 
   return (
-    <TeamsManagerWithFilter
+    <TeamsManagerSimple
       teams={teamsWithCount}
-      seasons={seasons || []}
+      activeSeason={activeSeason}
     />
   );
 }
