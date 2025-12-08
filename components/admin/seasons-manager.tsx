@@ -13,7 +13,7 @@ import { toast } from "sonner";
 type Season = {
   id: string;
   name: string;
-  version: string;
+  game_version?: string | null;
   start_date: string;
   end_date: string | null;
   playoff_cutoff: number;
@@ -91,7 +91,7 @@ export function SeasonsManager({ seasons }: SeasonsManagerProps) {
                       <Trophy className="h-5 w-5" />
                       <span>{season.name}</span>
                     </CardTitle>
-                    <CardDescription>{season.version}</CardDescription>
+                    <CardDescription>{season.game_version || "버전 미입력"}</CardDescription>
                   </div>
                   {season.is_active && (
                     <Badge className="bg-nba-red">Active</Badge>

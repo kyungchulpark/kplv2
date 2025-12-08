@@ -20,7 +20,7 @@ import { toast } from "sonner";
 type Season = {
   id: string;
   name: string;
-  version: string;
+  game_version?: string | null;
   start_date: string;
   end_date: string | null;
   playoff_cutoff: number;
@@ -44,7 +44,7 @@ export function SeasonFormDialog({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: season?.name || "",
-    version: season?.version || "",
+    game_version: season?.game_version || "",
     start_date: season?.start_date || "",
     end_date: season?.end_date || "",
     playoff_cutoff: season?.playoff_cutoff || 8,
@@ -60,7 +60,7 @@ export function SeasonFormDialog({
       if (mode === "create") {
         const { error } = await supabase.from("seasons").insert({
           name: formData.name,
-          version: formData.version,
+          game_version: formData.game_version,
           start_date: formData.start_date,
           end_date: formData.end_date || null,
           playoff_cutoff: formData.playoff_cutoff,
@@ -74,7 +74,7 @@ export function SeasonFormDialog({
           .from("seasons")
           .update({
             name: formData.name,
-            version: formData.version,
+            game_version: formData.game_version,
             start_date: formData.start_date,
             end_date: formData.end_date || null,
             playoff_cutoff: formData.playoff_cutoff,
@@ -124,13 +124,13 @@ export function SeasonFormDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="version">버전</Label>
+              <Label htmlFor="game_version">버전</Label>
               <Input
-                id="version"
-                placeholder="예: v1.0"
-                value={formData.version}
+                id="game_version"
+                placeholder="예: 2K26, v1.0"
+                value={formData.game_version}
                 onChange={(e) =>
-                  setFormData({ ...formData, version: e.target.value })
+                  setFormData({ ...formData, game_version: e.target.value })
                 }
               />
             </div>
