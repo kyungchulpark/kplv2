@@ -83,6 +83,13 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
 
       if (error) throw error;
 
+      // Update local state
+      setUsers(users.map(u =>
+        u.id === selectedUser.id
+          ? { ...u, role: editRole, psn_id: editPsnId || null }
+          : u
+      ));
+
       toast.success("사용자 정보가 수정되었습니다");
       setEditDialogOpen(false);
       router.refresh();

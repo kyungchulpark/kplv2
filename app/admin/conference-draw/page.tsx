@@ -35,14 +35,18 @@ export default async function ConferenceDrawPage() {
   }
 
   // Get all teams for active season
-  const { data: teams } = await supabase
+  const { data: allTeams } = await supabase
     .from("teams")
     .select("*")
     .eq("season_id", activeSeason.id)
     .order("name", { ascending: true });
 
-  const westTeams = teams?.filter((t) => t.conference === "West") || [];
-  const eastTeams = teams?.filter((t) => t.conference === "East") || [];
+  // Separate active and inactive teams
+  const activeTeams = allTeams?.filter((t) => t.is_active !== false) || [];
+  const inactiveTeams = allTeams?.filter((t) => t.is_active === false) || [];
+
+  const westTeams = activeTeams.filter((t) => t.conference === "West");
+  const eastTeams = activeTeams.filter((t) => t.conference === "East");
 
   return (
     <div className="space-y-6">
@@ -120,10 +124,14 @@ export default async function ConferenceDrawPage() {
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">전체 팀</span>
-                <span className="text-2xl font-bold">{teams?.length || 0}</span>
+                <span className="text-sm font-medium">리그 참가 팀</span>
+                <span className="text-2xl font-bold">{activeTeams.length}</span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">대기 팀</span>
+                <span className="text-xl font-semibold text-muted-foreground">{inactiveTeams.length}</span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t">
                 <span className="text-sm font-medium">Western</span>
                 <span className="text-xl font-semibold">{westTeams.length}</span>
               </div>
@@ -146,11 +154,12 @@ export default async function ConferenceDrawPage() {
         </Card>
       </div>
 
-      {/* Draw Action */}
+      {/* Team Management & Draw Action */}
       <ConferenceDrawClient
         seasonId={activeSeason.id}
         seasonName={activeSeason.name}
-        teams={teams || []}
+        activeTeams={activeTeams}
+        inactiveTeams={inactiveTeams}
       />
     </div>
   );
