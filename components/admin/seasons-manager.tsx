@@ -46,11 +46,11 @@ export function SeasonsManager({ seasons }: SeasonsManagerProps) {
     try {
       const supabase = createClient();
 
-      // Deactivate all seasons first and wait for completion
+      // Deactivate currently active season first
       const { error: deactivateError } = await supabase
         .from("seasons")
         .update({ is_active: false })
-        .neq("id", "");
+        .eq("is_active", true);
 
       if (deactivateError) throw deactivateError;
 
