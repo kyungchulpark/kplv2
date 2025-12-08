@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, LogIn, User, ExternalLink, Plus } from "lucide-react";
+import { Menu, X, LogIn, User, ExternalLink, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +83,12 @@ export function Navbar({ user }: NavbarProps) {
                   <Button variant="outline" size="sm">
                     <Plus className="mr-2 h-4 w-4" />
                     팀 생성
+                  </Button>
+                </Link>
+                <Link href="/teams/my-requests">
+                  <Button variant="outline" size="sm">
+                    <FileText className="mr-2 h-4 w-4" />
+                    내 신청
                   </Button>
                 </Link>
                 {user.profile?.role === "admin" && (
@@ -179,6 +185,12 @@ export function Navbar({ user }: NavbarProps) {
                   <Button variant="outline" size="sm" className="w-full">
                     <Plus className="mr-2 h-4 w-4" />
                     팀 생성
+                  </Button>
+                </Link>
+                <Link href="/teams/my-requests" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <FileText className="mr-2 h-4 w-4" />
+                    내 신청
                   </Button>
                 </Link>
                 {user.profile?.role === "admin" && (

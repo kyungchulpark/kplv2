@@ -9,6 +9,7 @@ import {
   Calendar,
   FileSpreadsheet,
   UserCheck,
+  UserCog,
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -52,6 +53,11 @@ export default async function AdminLayout({
       href: "/admin/upload-schedule",
       label: "Upload Schedule",
       icon: FileSpreadsheet,
+    },
+    {
+      href: "/admin/users",
+      label: "Users",
+      icon: UserCog,
     },
   ];
 
