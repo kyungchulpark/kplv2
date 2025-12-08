@@ -10,6 +10,7 @@ import {
   FileSpreadsheet,
   UserCheck,
   UserCog,
+  Shuffle,
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -43,6 +44,11 @@ export default async function AdminLayout({
       href: "/admin/team-requests",
       label: "Team Requests",
       icon: UserCheck,
+    },
+    {
+      href: "/admin/conference-draw",
+      label: "Conference Draw",
+      icon: Shuffle,
     },
     {
       href: "/admin/matches",

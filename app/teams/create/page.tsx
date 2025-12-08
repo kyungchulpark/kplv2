@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function CreateTeamPage() {
@@ -20,7 +19,6 @@ export default function CreateTeamPage() {
   const [success, setSuccess] = useState(false);
 
   const [teamName, setTeamName] = useState("");
-  const [conference, setConference] = useState("West");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -170,14 +168,14 @@ export default function CreateTeamPage() {
         logoUrl = publicUrlData.publicUrl;
       }
 
-      // Create team request
+      // Create team request (conference will be assigned by admin draw)
       const { error: insertError } = await supabase
         .from("team_requests")
         .insert({
           season_id: activeSeason.id,
           requester_id: user.id,
           team_name: teamName,
-          conference: conference,
+          conference: "West", // Default value, will be changed by admin conference draw
           logo_url: logoUrl,
           status: "pending",
         });
@@ -276,28 +274,13 @@ export default function CreateTeamPage() {
                 </p>
               </div>
 
-              {/* Conference */}
-              <div className="space-y-2">
-                <Label>컨퍼런스 *</Label>
-                <RadioGroup
-                  value={conference}
-                  onValueChange={setConference}
-                  disabled={loading}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="West" id="west" />
-                    <Label htmlFor="west" className="cursor-pointer">
-                      Western Conference
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="East" id="east" />
-                    <Label htmlFor="east" className="cursor-pointer">
-                      Eastern Conference
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
+              {/* Conference Note */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  컨퍼런스(Western/Eastern)는 시즌 시작 전 관리자의 조 추첨을 통해 자동 배정됩니다.
+                </AlertDescription>
+              </Alert>
 
               {/* Logo Upload */}
               <div className="space-y-2">
