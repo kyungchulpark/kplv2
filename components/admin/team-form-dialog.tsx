@@ -60,11 +60,30 @@ export function TeamFormDialog({
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [formData, setFormData] = useState({
-    name: team?.name || "",
-    conference: team?.conference || "West",
-    logo_url: team?.logo_url || "",
-    captain_id: team?.captain_id || "",
+    name: "",
+    conference: "West",
+    logo_url: "",
+    captain_id: "",
   });
+
+  // team이 변경될 때 formData 리셋
+  useEffect(() => {
+    if (team) {
+      setFormData({
+        name: team.name || "",
+        conference: team.conference || "West",
+        logo_url: team.logo_url || "",
+        captain_id: team.captain_id || "",
+      });
+    } else {
+      setFormData({
+        name: "",
+        conference: "West",
+        logo_url: "",
+        captain_id: "",
+      });
+    }
+  }, [team, open]);
 
   useEffect(() => {
     const loadProfiles = async () => {
