@@ -17,7 +17,7 @@ export default async function AdminDashboardPage() {
   const { count: totalTeams } = await supabase
     .from("teams")
     .select("*", { count: "exact", head: true })
-    .eq("season_id", activeSeason?.id || "");
+    .eq("season_id", (activeSeason as any)?.id || "");
 
   const { count: pendingRequests } = await supabase
     .from("team_requests")
@@ -33,7 +33,7 @@ export default async function AdminDashboardPage() {
       away_team:teams!matches_away_team_id_fkey(name)
     `
     )
-    .eq("season_id", activeSeason?.id || "")
+    .eq("season_id", (activeSeason as any)?.id || "")
     .eq("status", "scheduled")
     .order("match_date", { ascending: true })
     .limit(5);
@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
       away_team:teams!matches_away_team_id_fkey(name)
     `
     )
-    .eq("season_id", activeSeason?.id || "")
+    .eq("season_id", (activeSeason as any)?.id || "")
     .eq("status", "finished")
     .order("match_date", { ascending: false })
     .limit(5);
@@ -69,29 +69,29 @@ export default async function AdminDashboardPage() {
               <Trophy className="h-5 w-5 text-nba-red" />
               <span>Active Season</span>
             </CardTitle>
-            <CardDescription>{activeSeason.name}</CardDescription>
+            <CardDescription>{(activeSeason as any).name}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Game Version:</span>
-                <p className="font-semibold">{activeSeason.game_version}</p>
+                <p className="font-semibold">{(activeSeason as any).game_version}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Start Date:</span>
                 <p className="font-semibold">
-                  {new Date(activeSeason.start_date).toLocaleDateString("ko-KR")}
+                  {new Date((activeSeason as any).start_date).toLocaleDateString("ko-KR")}
                 </p>
               </div>
               <div>
                 <span className="text-muted-foreground">End Date:</span>
                 <p className="font-semibold">
-                  {new Date(activeSeason.end_date).toLocaleDateString("ko-KR")}
+                  {new Date((activeSeason as any).end_date).toLocaleDateString("ko-KR")}
                 </p>
               </div>
               <div>
                 <span className="text-muted-foreground">Playoff Cutoff:</span>
-                <p className="font-semibold">Top {activeSeason.playoff_cutoff}</p>
+                <p className="font-semibold">Top {(activeSeason as any).playoff_cutoff}</p>
               </div>
             </div>
           </CardContent>
@@ -120,7 +120,7 @@ export default async function AdminDashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalTeams || 0}</div>
             <p className="text-xs text-muted-foreground">
-              in {activeSeason?.name || "no season"}
+              in {(activeSeason as any)?.name || "no season"}
             </p>
           </CardContent>
         </Card>

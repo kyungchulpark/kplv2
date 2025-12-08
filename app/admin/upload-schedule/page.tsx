@@ -171,7 +171,7 @@ export default function UploadSchedulePage() {
 
       // Prepare matches for insert
       const matches = parsedData.map((match) => ({
-        season_id: activeSeason.id,
+        season_id: (activeSeason as any).id,
         home_team_id: teamMap.get(match.home_team),
         away_team_id: teamMap.get(match.away_team),
         match_date: `${match.match_date}T${match.match_time}:00`,
@@ -306,7 +306,7 @@ export default function UploadSchedulePage() {
       <div>
         <h1 className="text-3xl font-bold">Upload Schedule</h1>
         <p className="text-muted-foreground">
-          Excel 파일로 경기 일정 일괄 등록 - {activeSeason.name}
+          Excel 파일로 경기 일정 일괄 등록 - {(activeSeason as any).name}
         </p>
       </div>
 

@@ -36,7 +36,7 @@ export default async function TeamsAdminPage() {
       _rosters:team_rosters(count)
     `
     )
-    .eq("season_id", activeSeason.id)
+    .eq("season_id", (activeSeason as any).id)
     .order("wins", { ascending: false });
 
   // Transform data for component
@@ -48,8 +48,8 @@ export default async function TeamsAdminPage() {
   return (
     <TeamsManager
       teams={teamsWithCount}
-      seasonId={activeSeason.id}
-      seasonName={activeSeason.name}
+      seasonId={(activeSeason as any).id}
+      seasonName={(activeSeason as any).name}
     />
   );
 }

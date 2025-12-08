@@ -3,16 +3,17 @@ import { getCurrentUser, createClient } from "@/utils/supabase/server";
 import { MatchStatsInput } from "@/components/admin/match-stats-input";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function MatchInputPage({ params }: PageProps) {
+  const { id } = await params;
   const user = await getCurrentUser();
 
   // Check authentication and authorization
-  if (!user || (user.profile?.role !== "admin" && user.profile?.role !== "staff")) {
+  if (!user || ((user.profile as any)?.role !== "admin" && (user.profile as any)?.role !== "staff")) {
     redirect("/");
   }
 
@@ -42,7 +43,7 @@ export default async function MatchInputPage({ params }: PageProps) {
       )
     `
     )
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (matchError || !match) {
@@ -50,8 +51,8 @@ export default async function MatchInputPage({ params }: PageProps) {
   }
 
   // Check if match is already finished
-  if (match.status === "finished") {
-    redirect(`/admin/matches/${params.id}`);
+  if ((match as any).status === "finished") {
+    redirect(`/admin/matches/${id}`);
   }
 
   // Fetch home team roster
@@ -68,8 +69,8 @@ export default async function MatchInputPage({ params }: PageProps) {
       )
     `
     )
-    .eq("team_id", match.home_team_id)
-    .eq("season_id", match.season_id)
+    .eq("team_id", (match as any).home_team_id)
+    .eq("season_id", (match as any).season_id)
     .eq("is_active", true);
 
   // Fetch away team roster
@@ -86,8 +87,8 @@ export default async function MatchInputPage({ params }: PageProps) {
       )
     `
     )
-    .eq("team_id", match.away_team_id)
-    .eq("season_id", match.season_id)
+    .eq("team_id", (match as any).away_team_id)
+    .eq("season_id", (match as any).season_id)
     .eq("is_active", true);
 
   return (

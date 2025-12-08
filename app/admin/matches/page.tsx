@@ -36,14 +36,14 @@ export default async function MatchesAdminPage() {
       away_team:teams!matches_away_team_id_fkey(name, logo_url)
     `
     )
-    .eq("season_id", activeSeason.id)
+    .eq("season_id", (activeSeason as any).id)
     .order("match_date", { ascending: false });
 
   return (
     <MatchesManager
       matches={matches || []}
-      seasonId={activeSeason.id}
-      seasonName={activeSeason.name}
+      seasonId={(activeSeason as any).id}
+      seasonName={(activeSeason as any).name}
     />
   );
 }

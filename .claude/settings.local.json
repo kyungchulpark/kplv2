@@ -3,7 +3,15 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(del nul)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit - KPL (Korea Proam League) System\n\nNBA 2K eSports 리그 관리 시스템 - 완전한 기능 구현\n\n주요 기능:\n- NBA.com 스타일 테마 (18개 파일 업데이트)\n- 완전한 Admin Dashboard (6개 페이지)\n- 팀 생성 신청 및 승인 시스템\n- Excel 경기 일정 업로드 (하루 10경기 지원)\n- NBA 스타일 Schedule Table\n- 시즌/팀/경기 CRUD 관리\n- Email/Password + Google OAuth 인증\n- Supabase PostgreSQL + Storage\n- 완벽한 문서화 (테스트, 관리자, 사용자 가이드)\n\n기술 스택:\n- Next.js 14 (App Router)\n- TypeScript\n- Tailwind CSS + shadcn/ui\n- Supabase\n- date-fns, xlsx, sonner\n\n완성도: 98% - Production Ready 🚀\n\n🤖 Generated with Claude Code\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git remote add:*)",
+      "Bash(git remote remove:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

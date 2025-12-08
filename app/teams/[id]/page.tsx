@@ -6,12 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Users, TrendingUp, Calendar } from "lucide-react";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function TeamDetailPage({ params }: PageProps) {
+  const { id } = await params;
   const supabase = await createClient();
 
   // Get team details
@@ -32,7 +33,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
       )
     `
     )
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (!team) {
@@ -52,7 +53,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
       )
     `
     )
-    .eq("team_id", params.id)
+    .eq("team_id", id)
     .eq("is_active", true)
     .order("jersey_number", { ascending: true });
 
@@ -67,7 +68,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
     `
     )
     .eq("season_id", team.season_id)
-    .or(`home_team_id.eq.${params.id},away_team_id.eq.${params.id}`)
+    .or(`home_team_id.eq.${id},away_team_id.eq.${id}`)
     .eq("status", "finished")
     .order("match_date", { ascending: false })
     .limit(5);
@@ -257,7 +258,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                 {recentMatches && recentMatches.length > 0 ? (
                   <div className="space-y-2">
                     {recentMatches.map((match) => {
-                      const isHome = match.home_team_id === params.id;
+                      const isHome = match.home_team_id === id;
                       const teamScore = isHome ? match.home_score : match.away_score;
                       const opponentScore = isHome ? match.away_score : match.home_score;
                       const opponent = isHome ? match.away_team : match.home_team;

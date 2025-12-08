@@ -18,7 +18,7 @@ export default async function AdminLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || user.profile?.role !== "admin") {
+  if (!user || (user.profile as any)?.role !== "admin") {
     redirect("/");
   }
 
@@ -93,7 +93,7 @@ export default async function AdminLayout({
 
           <div className="border-t p-4">
             <div className="text-sm text-muted-foreground">
-              <p className="font-medium">{user.profile?.psn_id}</p>
+              <p className="font-medium">{(user.profile as any)?.psn_id}</p>
               <p className="text-xs">{user.email}</p>
             </div>
           </div>
