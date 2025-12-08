@@ -16,9 +16,9 @@
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    ```
 
-3. **tsx 설치** (아직 없다면)
+3. **필요한 패키지 설치** (아직 없다면)
    ```bash
-   npm install --save-dev tsx
+   npm install --save-dev tsx dotenv
    ```
 
 ### 실행 방법

@@ -3,11 +3,15 @@
  *
  * 실행 방법:
  * 1. .env.local 파일에 SUPABASE_SERVICE_ROLE_KEY 추가 필요
- * 2. npm install --save-dev tsx (아직 없다면)
+ * 2. npm install --save-dev tsx dotenv (아직 없다면)
  * 3. npx tsx scripts/create-test-users.ts
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+// .env.local 파일 로드
+config({ path: '.env.local' });
 
 // 환경변수에서 Supabase 정보 가져오기
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
