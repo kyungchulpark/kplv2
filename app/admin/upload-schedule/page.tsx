@@ -92,7 +92,7 @@ export default function UploadSchedulePage() {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
+      const workbook = XLSX.read(data, { cellDates: true });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
@@ -112,6 +112,80 @@ export default function UploadSchedulePage() {
 
       // 엑셀에서 발견된 모든 팀 이름 수집
       const teamNamesInExcel = new Set<string>();
+
+      // 엑셀 날짜를 YYYY-MM-DD 문자열로 변환하는 함수
+      const formatDate = (value: any): string | null => {
+        if (!value) return null;
+
+        // 이미 YYYY-MM-DD 문자열인 경우
+        if (typeof value === 'string') {
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (dateRegex.test(value)) return value;
+
+          // 2025/10/26 형식
+          const slashRegex = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/;
+          const slashMatch = value.match(slashRegex);
+          if (slashMatch) {
+            return `${slashMatch[1]}-${slashMatch[2].padStart(2, '0')}-${slashMatch[3].padStart(2, '0')}`;
+          }
+          return null;
+        }
+
+        // Date 객체인 경우
+        if (value instanceof Date) {
+          const year = value.getFullYear();
+          const month = String(value.getMonth() + 1).padStart(2, '0');
+          const day = String(value.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        // 숫자(Excel serial number)인 경우
+        if (typeof value === 'number') {
+          const date = new Date((value - 25569) * 86400 * 1000);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        return null;
+      };
+
+      // 엑셀 시간을 HH:MM 문자열로 변환하는 함수
+      const formatTime = (value: any): string | null => {
+        if (!value) return null;
+
+        // 이미 HH:MM 문자열인 경우
+        if (typeof value === 'string') {
+          const timeRegex = /^\d{2}:\d{2}$/;
+          if (timeRegex.test(value)) return value;
+
+          // H:MM 형식 (예: 9:30)
+          const shortTimeRegex = /^(\d{1,2}):(\d{2})$/;
+          const shortMatch = value.match(shortTimeRegex);
+          if (shortMatch) {
+            return `${shortMatch[1].padStart(2, '0')}:${shortMatch[2]}`;
+          }
+          return null;
+        }
+
+        // Date 객체인 경우 (시간 정보 포함)
+        if (value instanceof Date) {
+          const hours = String(value.getHours()).padStart(2, '0');
+          const minutes = String(value.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
+        }
+
+        // 숫자인 경우 (Excel time fraction: 0.0 ~ 1.0)
+        if (typeof value === 'number' && value < 1) {
+          const totalMinutes = Math.round(value * 24 * 60);
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+          return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        return null;
+      };
 
       jsonData.forEach((row, index) => {
         const rowNum = index + 2; // Excel row number (1-indexed + header)
@@ -135,41 +209,41 @@ export default function UploadSchedulePage() {
         }
 
         // 팀 이름 수집 (팀 자동 생성을 위해)
-        teamNamesInExcel.add(row.home_team.trim());
-        teamNamesInExcel.add(row.away_team.trim());
+        teamNamesInExcel.add(String(row.home_team).trim());
+        teamNamesInExcel.add(String(row.away_team).trim());
 
-        // Validate date format
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(row.match_date)) {
+        // 날짜 변환
+        const matchDate = formatDate(row.match_date);
+        if (!matchDate) {
           validationErrors.push(
-            `Row ${rowNum}: match_date must be in YYYY-MM-DD format`
+            `Row ${rowNum}: match_date 형식 오류 (YYYY-MM-DD 형식 필요, 현재 값: ${row.match_date})`
           );
           return;
         }
 
-        // Validate time format
-        const timeRegex = /^\d{2}:\d{2}$/;
-        if (!timeRegex.test(row.match_time)) {
+        // 시간 변환
+        const matchTime = formatTime(row.match_time);
+        if (!matchTime) {
           validationErrors.push(
-            `Row ${rowNum}: match_time must be in HH:MM format`
+            `Row ${rowNum}: match_time 형식 오류 (HH:MM 형식 필요, 현재 값: ${row.match_time})`
           );
           return;
         }
 
         // 날짜별 경기 순번 계산
-        const currentCount = dateCountMap.get(row.match_date) || 0;
-        dateCountMap.set(row.match_date, currentCount + 1);
+        const currentCount = dateCountMap.get(matchDate) || 0;
+        dateCountMap.set(matchDate, currentCount + 1);
 
         // match_sequence와 game_password 자동 생성
-        const autoSequence = generateSequence(row.match_date, currentCount);
+        const autoSequence = generateSequence(matchDate, currentCount);
         const autoPassword = generatePassword();
 
         parsed.push({
           match_sequence: autoSequence,
-          match_date: row.match_date,
-          home_team: row.home_team.trim(),
-          away_team: row.away_team.trim(),
-          match_time: row.match_time,
+          match_date: matchDate,
+          home_team: String(row.home_team).trim(),
+          away_team: String(row.away_team).trim(),
+          match_time: matchTime,
           game_password: autoPassword,
         });
       });
