@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function PATCH(
@@ -29,8 +30,9 @@ export async function PATCH(
     const body = await request.json();
     const { role, psn_id } = body;
 
-    // Update user profile using service role
-    const { error } = await supabase
+    // Use admin client to bypass RLS
+    const adminClient = createAdminClient();
+    const { error } = await adminClient
       .from("profiles")
       .update({
         role,
