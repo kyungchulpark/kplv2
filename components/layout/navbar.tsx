@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, LogIn, User, ExternalLink } from "lucide-react";
+import { Menu, X, LogIn, User, ExternalLink, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +79,12 @@ export function Navbar({ user }: NavbarProps) {
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="hidden items-center space-x-2 md:flex">
+                <Link href="/teams/create">
+                  <Button variant="outline" size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    팀 생성
+                  </Button>
+                </Link>
                 {user.profile?.role === "admin" && (
                   <Link href="/admin">
                     <Button variant="outline" size="sm">
@@ -169,6 +175,12 @@ export function Navbar({ user }: NavbarProps) {
           <div className="border-t pt-3">
             {user ? (
               <div className="space-y-2">
+                <Link href="/teams/create" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    팀 생성
+                  </Button>
+                </Link>
                 {user.profile?.role === "admin" && (
                   <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full">
