@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { ScheduleView } from "@/components/schedule/schedule-view";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default async function SchedulePage() {
   const supabase = await createClient();
@@ -17,8 +17,8 @@ export default async function SchedulePage() {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>경기 일정</CardTitle>
-            <CardDescription>진행 중인 시즌이 없습니다.</CardDescription>
+            <CardTitle>Schedule</CardTitle>
+            <CardDescription>No active season.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -53,11 +53,9 @@ export default async function SchedulePage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">
-            경기 일정
-          </h1>
+          <h1 className="text-4xl font-bold">Schedule</h1>
           <p className="text-xl text-muted-foreground">
-            {activeSeason.name} - 매주 화/목/일 22:40, 23:20
+            {activeSeason.name} - Tue/Thu/Sun 22:40, 23:20
           </p>
         </div>
 

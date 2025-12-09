@@ -121,9 +121,10 @@ export function ScheduleTable({ matches, selectedDate, onDateChange }: ScheduleT
 
   // Derived selected date
   const effectiveDate = selectedDate ?? internalDate;
+  const resolvedDate = effectiveDate || sortedDates[0] || "";
 
   // Filter matches for selected date
-  const currentMatches = effectiveDate ? groupedMatches[effectiveDate] || [] : [];
+  const currentMatches = resolvedDate ? groupedMatches[resolvedDate] || [] : [];
 
   const formatKstTime = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -160,7 +161,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange }: ScheduleT
       {/* Date Slider */}
       <DateSlider
         dates={sortedDates}
-        selectedDate={effectiveDate || sortedDates[0] || ""}
+        selectedDate={resolvedDate}
         onDateChange={handleDateChange}
       />
 

@@ -42,11 +42,11 @@ export function ScheduleView({ matches }: ScheduleViewProps) {
                 <TabsList>
                     <TabsTrigger value="list" className="flex items-center gap-2">
                         <List className="h-4 w-4" />
-                        리스??
+                        List
                     </TabsTrigger>
                     <TabsTrigger value="calendar" className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        캘린??
+                        Calendar
                     </TabsTrigger>
                 </TabsList>
             </div>
