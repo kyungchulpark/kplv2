@@ -37,64 +37,59 @@ const SYSTEM_PROMPT = `You are an expert at reading NBA 2K25 Korean game result 
 
 This is a Korean NBA 2K25 post-game stats screen with the title "경기 기록" (Game Record).
 
-SCREEN LAYOUT:
-- Top left: Home team logo and quarter scores (e.g., "20 13 14 14" = 61 total)
-- Top right: Away team logo and quarter scores (e.g., "17 15 13 10" = 55 total)
-- UPPER TABLE: Home team players (first team shown, with their team logo on left)
-- LOWER TABLE: Away team players (second team shown, with their team logo on left)
+CRITICAL SCREEN LAYOUT:
+- **TOP-LEFT score box**: AWAY TEAM (원정팀) logo and quarter scores
+- **BOTTOM-LEFT score box**: HOME TEAM (홈팀) logo and quarter scores
+- **UPPER TABLE**: AWAY TEAM players (5 players on BLACK background)
+- **LOWER TABLE**: HOME TEAM players (5 players on BLACK background)
 
-TABLE STRUCTURE:
-- Header row: 플레이어 (Player) | GRD | PTS | REB | AST | STL | BLK | FLS | TO | FGM/FGA | 3PM/3PA | FTM/FTA
-- GRAY TEXT on the left of each table (before GRD column): This is the TEAM CAPTAIN name - IGNORE THIS
-- BLACK TEXT rows: These are the ACTUAL PLAYER stats - EXTRACT THESE ONLY
+IMPORTANT: The teams are positioned OPPOSITE to what you might expect!
+- Upper table = AWAY team (원정팀)
+- Lower table = HOME team (홈팀)
 
-CRITICAL: The first column shows player names in two different styles:
-1. GRAY/FADED text = Team captain indicator (IGNORE)
-2. BLACK/BOLD text = Actual player PSN ID (EXTRACT THIS)
+TABLE STRUCTURE - VERY IMPORTANT:
+Each table has TWO types of rows:
+1. **GRAY/DIMMED background rows**: BENCH PLAYERS - DO NOT EXTRACT THESE!
+2. **BLACK background rows**: STARTING 5 PLAYERS - ONLY EXTRACT THESE!
+
+The first row in each table shows:
+- GRAY text (team captain name like "PISTON NISHIZAWA" or "ReneGadeSunu") - THIS IS A HEADER, IGNORE IT
+- Column headers: GRD | PTS | REB | AST | STL | BLK | FLS | TO | FGM/FGA | 3PM/3PA | FTM/FTA
 
 EXTRACTION RULES:
-1. Extract ONLY the rows with BLACK text - these are the 5 actual players per team
-2. Player names are PSN IDs (e.g., "AustinR1vers", "ZazaWell", "NotEnoughRaf")
-3. FGM/FGA format: "9/12" means fgm=9, fga=12
-4. 3PM/3PA format: "0/3" means three_pm=0, three_pa=3
-5. FTM/FTA format: "4/4" means ftm=4, fta=4
-6. FLS column = fouls, TO column = turnovers
-7. The "합계" (total) row with yellow background should be IGNORED
-8. Extract players in the EXACT ORDER they appear in the table (top to bottom)
-9. Each table has exactly 5 player rows with black text
+1. **ONLY extract rows with BLACK background** (these are the 5 starters per team)
+2. **SKIP all rows with GRAY/DIMMED background** (these are bench players)
+3. Player names are PSN IDs with symbols (e.g., "AustinR1vers", "ichi_5867", "ZazaWell")
+4. The player name is in the FIRST column, BEFORE the GRD column
+5. FGM/FGA format: "9/12" means fgm=9, fga=12
+6. 3PM/3PA format: "0/3" means three_pm=0, three_pa=3
+7. FTM/FTA format: "4/4" means ftm=4, fta=4
+8. FLS = fouls, TO = turnovers
+9. **IGNORE the "합계" (total) row with yellow background**
+10. Extract players in EXACT ORDER (top to bottom), maintaining row order
 
-IMPORTANT: Read each row carefully from top to bottom. Maintain the exact order.
+PLAYER EXTRACTION PROCESS:
+1. Look at UPPER table → Find 5 rows with BLACK background → Extract as AWAY team
+2. Look at LOWER table → Find 5 rows with BLACK background → Extract as HOME team
+3. Each BLACK row has: PlayerName | Grade | PTS | REB | AST | STL | BLK | FLS | TO | FGM/FGA | 3PM/3PA | FTM/FTA
 
 Return ONLY valid JSON with no markdown formatting.`;
 
 const USER_PROMPT = `Extract all player statistics from this NBA 2K25 Korean game result screenshot.
 
-The upper table shows HOME team players.
-The lower table shows AWAY team players.
+CRITICAL REMINDERS:
+1. **UPPER table** = AWAY team (원정팀) - Extract as "awayTeamPlayers"
+2. **LOWER table** = HOME team (홈팀) - Extract as "homeTeamPlayers"
+3. **ONLY extract rows with BLACK background** (5 players per team)
+4. **SKIP all GRAY/DIMMED background rows** (bench players)
+5. **homeTeamScore** = BOTTOM-LEFT score box total
+6. **awayTeamScore** = TOP-LEFT score box total
 
 Return JSON in this EXACT format:
 {
-  "homeTeamScore": 61,
-  "awayTeamScore": 55,
+  "homeTeamScore": 55,
+  "awayTeamScore": 61,
   "homeTeamPlayers": [
-    {
-      "playerName": "AustinR1vers",
-      "pts": 22,
-      "reb": 1,
-      "ast": 8,
-      "stl": 0,
-      "blk": 0,
-      "fls": 3,
-      "turnovers": 4,
-      "fgm": 9,
-      "fga": 12,
-      "three_pm": 0,
-      "three_pa": 3,
-      "ftm": 4,
-      "fta": 4
-    }
-  ],
-  "awayTeamPlayers": [
     {
       "playerName": "NotEnoughRaf",
       "pts": 8,
@@ -111,10 +106,32 @@ Return JSON in this EXACT format:
       "ftm": 0,
       "fta": 0
     }
+  ],
+  "awayTeamPlayers": [
+    {
+      "playerName": "AustinR1vers",
+      "pts": 22,
+      "reb": 1,
+      "ast": 8,
+      "stl": 0,
+      "blk": 0,
+      "fls": 3,
+      "turnovers": 4,
+      "fgm": 9,
+      "fga": 12,
+      "three_pm": 0,
+      "three_pa": 3,
+      "ftm": 4,
+      "fta": 4
+    }
   ]
 }
 
-Extract ALL 5 players from each team. Do NOT include the 합계 (total) row.`;
+Extract EXACTLY 5 players from each team (BLACK background rows only).
+Do NOT include:
+- GRAY background rows (bench players)
+- "합계" (total) row with yellow background
+- Header row with "GRD", "PTS", etc.`;
 
 /**
  * Convert File to base64 data URL
