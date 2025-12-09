@@ -16,7 +16,7 @@ export default async function Home() {
   if (!activeSeason) {
     return (
       <div className="container mx-auto px-4 py-16">
-        <HeroSection />
+        <HeroSection seasonName="KPL" teamsCount={0} finishedMatches={0} scheduleDays="Tue/Thu/Sun" />
         <div className="mt-12 text-center">
           <p className="text-xl text-muted-foreground">
             진행 중인 시즌이 없습니다.
@@ -115,9 +115,26 @@ export default async function Home() {
     .order("rpg", { ascending: false })
     .limit(5);
 
+  // Counts for hero stats
+  const { count: teamsCount } = await supabase
+    .from("teams")
+    .select("id", { count: "exact", head: true })
+    .eq("season_id", activeSeason.id);
+
+  const { count: finishedMatches } = await supabase
+    .from("matches")
+    .select("id", { count: "exact", head: true })
+    .eq("season_id", activeSeason.id)
+    .eq("status", "finished");
+
   return (
     <div className="min-h-screen">
-      <HeroSection />
+      <HeroSection
+        seasonName={activeSeason.name}
+        teamsCount={teamsCount || 0}
+        finishedMatches={finishedMatches || 0}
+        scheduleDays="Tue/Thu/Sun"
+      />
 
       <div className="container mx-auto px-4 py-12 space-y-12">
         {/* Today's Matches */}

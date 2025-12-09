@@ -2,7 +2,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Trophy, Calendar, BarChart3, Users } from "lucide-react";
 
-export function HeroSection() {
+interface HeroSectionProps {
+  seasonName: string;
+  teamsCount: number;
+  finishedMatches: number;
+  scheduleDays: string;
+}
+
+export function HeroSection({ seasonName, teamsCount, finishedMatches, scheduleDays }: HeroSectionProps) {
   return (
     <section className="relative overflow-hidden bg-black">
       {/* Background Pattern */}
@@ -19,7 +26,7 @@ export function HeroSection() {
           {/* Title */}
           <div className="space-y-4">
             <h1 className="text-5xl font-bold tracking-tight text-white md:text-7xl">
-              Korea Proam League
+              {seasonName}
             </h1>
             <p className="text-xl text-gray-300 md:text-2xl">
               NBA 2K Online eSports League
@@ -28,9 +35,7 @@ export function HeroSection() {
 
           {/* Description */}
           <p className="max-w-2xl text-lg text-gray-400">
-            최고의 실력을 가진 선수들이 펼치는 치열한 경쟁.
-            <br />
-            리그 순위, 선수 기록, 경기 일정을 실시간으로 확인하세요.
+            Real-time schedule, standings, and player stats for KPL. Data stays in sync with the latest match results.
           </p>
 
           {/* CTA Buttons */}
@@ -38,13 +43,13 @@ export function HeroSection() {
             <Link href="/standings">
               <Button size="lg" className="min-w-[200px]">
                 <Trophy className="mr-2 h-5 w-5" />
-                순위표 보기
+                Standings
               </Button>
             </Link>
             <Link href="/schedule">
               <Button size="lg" variant="outline" className="min-w-[200px]">
                 <Calendar className="mr-2 h-5 w-5" />
-                경기 일정
+                Schedule
               </Button>
             </Link>
           </div>
@@ -55,37 +60,29 @@ export function HeroSection() {
               <div className="flex items-center justify-center space-x-2 text-nba-red">
                 <Users className="h-5 w-5" />
               </div>
-              <div className="mt-2 text-center text-3xl font-bold">16</div>
-              <div className="mt-1 text-center text-sm text-gray-400">
-                참가 팀
-              </div>
+              <div className="mt-2 text-center text-3xl font-bold">{teamsCount}</div>
+              <div className="mt-1 text-center text-sm text-gray-400">Teams</div>
             </div>
             <div className="rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <div className="flex items-center justify-center space-x-2 text-nba-red">
                 <BarChart3 className="h-5 w-5" />
               </div>
-              <div className="mt-2 text-center text-3xl font-bold">80+</div>
-              <div className="mt-1 text-center text-sm text-gray-400">
-                경기 수
-              </div>
+              <div className="mt-2 text-center text-3xl font-bold">{finishedMatches}</div>
+              <div className="mt-1 text-center text-sm text-gray-400">Finished Games</div>
             </div>
             <div className="rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <div className="flex items-center justify-center space-x-2 text-nba-red">
                 <Trophy className="h-5 w-5" />
               </div>
-              <div className="mt-2 text-center text-3xl font-bold">3</div>
-              <div className="mt-1 text-center text-sm text-gray-400">
-                시즌 진행
-              </div>
+              <div className="mt-2 text-center text-3xl font-bold">Live</div>
+              <div className="mt-1 text-center text-sm text-gray-400">Active Season</div>
             </div>
             <div className="rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <div className="flex items-center justify-center space-x-2 text-nba-red">
                 <Calendar className="h-5 w-5" />
               </div>
-              <div className="mt-2 text-center text-3xl font-bold">주3회</div>
-              <div className="mt-1 text-center text-sm text-gray-400">
-                정기 경기
-              </div>
+              <div className="mt-2 text-center text-3xl font-bold">{scheduleDays}</div>
+              <div className="mt-1 text-center text-sm text-gray-400">Weekly Slots</div>
             </div>
           </div>
         </div>
