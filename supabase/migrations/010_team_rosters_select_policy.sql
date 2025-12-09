@@ -7,7 +7,7 @@ begin
         from pg_policies
         where schemaname = 'public'
           and tablename = 'team_rosters'
-          and polname = 'Team rosters viewable by everyone'
+          and policyname = 'Team rosters viewable by everyone'
     ) then
         execute $policy$
             create policy "Team rosters viewable by everyone"
