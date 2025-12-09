@@ -408,6 +408,7 @@ async function main() {
       .from('profiles')
       .upsert({
         id: userId,
+        email,
         psn_id: leaguer.psnId.trim(),
         role: 'user',
       });
