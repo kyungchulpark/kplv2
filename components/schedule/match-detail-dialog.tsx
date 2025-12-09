@@ -10,10 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { YouTubeEmbed } from "@/components/match/youtube-embed";
+import Link from "next/link";
 
 interface Match {
   id: string;
@@ -111,6 +112,84 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
     }
   };
 
+  const renderTeamInfo = (team: Match["home_team"], score: number | null, isWinner: boolean) => (
+    <div className="text-center space-y-2">
+      <Link href={`/teams/${team.id}`} className="block hover:opacity-80 transition-opacity">
+        {team.logo_url ? (
+          <img
+            src={team.logo_url}
+            alt={team.name}
+            className="h-16 w-16 object-contain mx-auto"
+          />
+        ) : (
+          <div className="h-16 w-16 mx-auto rounded-lg bg-nba-red flex items-center justify-center text-xl font-bold text-white">
+            {team.name.substring(0, 2)}
+          </div>
+        )}
+        <h3 className="font-bold mt-2">{team.name}</h3>
+      </Link>
+      {match.status === "finished" && (
+        <div
+          className={cn(
+            "text-4xl font-bold",
+            isWinner ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          {score}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderStatsTable = (teamStats: MatchStats[]) => (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm min-w-[600px]">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left py-2 sticky left-0 bg-background z-10 w-32">선수</th>
+            <th className="text-center w-12">PTS</th>
+            <th className="text-center w-12">REB</th>
+            <th className="text-center w-12">AST</th>
+            <th className="text-center w-12">STL</th>
+            <th className="text-center w-12">BLK</th>
+            <th className="text-center w-16">FG</th>
+            <th className="text-center w-16">3P</th>
+            <th className="text-center w-16">FT</th>
+            <th className="text-center w-12">TO</th>
+            <th className="text-center w-12">FLS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {teamStats.map((stat, idx) => (
+            <tr key={idx} className="border-b hover:bg-muted/50">
+              <td className="py-2 font-medium sticky left-0 bg-background z-10">
+                <Link href={`/players/${stat.player_id}`} className="hover:underline text-primary">
+                  {stat.player.psn_id}
+                </Link>
+              </td>
+              <td className="text-center font-semibold">{stat.pts}</td>
+              <td className="text-center">{stat.reb}</td>
+              <td className="text-center">{stat.ast}</td>
+              <td className="text-center">{stat.stl}</td>
+              <td className="text-center">{stat.blk}</td>
+              <td className="text-center text-xs text-muted-foreground">
+                {stat.fgm}/{stat.fga}
+              </td>
+              <td className="text-center text-xs text-muted-foreground">
+                {stat.three_pm}/{stat.three_pa}
+              </td>
+              <td className="text-center text-xs text-muted-foreground">
+                {stat.ftm}/{stat.fta}
+              </td>
+              <td className="text-center">{stat.turnovers}</td>
+              <td className="text-center">{stat.fls}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -144,32 +223,11 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
           <CardContent className="pt-6">
             <div className="grid grid-cols-3 gap-4 items-center">
               {/* Home Team */}
-              <div className="text-center space-y-2">
-                {match.home_team.logo_url ? (
-                  <img
-                    src={match.home_team.logo_url}
-                    alt={match.home_team.name}
-                    className="h-16 w-16 object-contain mx-auto"
-                  />
-                ) : (
-                  <div className="h-16 w-16 mx-auto rounded-lg bg-nba-red flex items-center justify-center text-xl font-bold text-white">
-                    {match.home_team.name.substring(0, 2)}
-                  </div>
-                )}
-                <h3 className="font-bold">{match.home_team.name}</h3>
-                {match.status === "finished" && (
-                  <div
-                    className={cn(
-                      "text-4xl font-bold",
-                      match.home_score! > match.away_score!
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {match.home_score}
-                  </div>
-                )}
-              </div>
+              {renderTeamInfo(
+                match.home_team,
+                match.home_score,
+                (match.home_score || 0) > (match.away_score || 0)
+              )}
 
               {/* VS */}
               <div className="text-center">
@@ -177,124 +235,47 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
               </div>
 
               {/* Away Team */}
-              <div className="text-center space-y-2">
-                {match.away_team.logo_url ? (
-                  <img
-                    src={match.away_team.logo_url}
-                    alt={match.away_team.name}
-                    className="h-16 w-16 object-contain mx-auto"
-                  />
-                ) : (
-                  <div className="h-16 w-16 mx-auto rounded-lg bg-nba-red flex items-center justify-center text-xl font-bold text-white">
-                    {match.away_team.name.substring(0, 2)}
-                  </div>
-                )}
-                <h3 className="font-bold">{match.away_team.name}</h3>
-                {match.status === "finished" && (
-                  <div
-                    className={cn(
-                      "text-4xl font-bold",
-                      match.away_score! > match.home_score!
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {match.away_score}
-                  </div>
-                )}
-              </div>
+              {renderTeamInfo(
+                match.away_team,
+                match.away_score,
+                (match.away_score || 0) > (match.home_score || 0)
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* Match Stats (if finished) */}
         {match.status === "finished" && stats && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h3 className="text-lg font-semibold">경기 기록</h3>
 
             {/* Home Team Stats */}
             <div>
-              <h4 className="font-semibold mb-2">{match.home_team.name}</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">선수</th>
-                      <th className="text-center">PTS</th>
-                      <th className="text-center">REB</th>
-                      <th className="text-center">AST</th>
-                      <th className="text-center">FG</th>
-                      <th className="text-center">3P</th>
-                      <th className="text-center">FT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {homeStats.map((stat, idx) => (
-                      <tr key={idx} className="border-b">
-                        <td className="py-2 font-medium">{stat.player.psn_id}</td>
-                        <td className="text-center">{stat.pts}</td>
-                        <td className="text-center">{stat.reb}</td>
-                        <td className="text-center">{stat.ast}</td>
-                        <td className="text-center text-xs">
-                          {stat.fgm}/{stat.fga}
-                        </td>
-                        <td className="text-center text-xs">
-                          {stat.three_pm}/{stat.three_pa}
-                        </td>
-                        <td className="text-center text-xs">
-                          {stat.ftm}/{stat.fta}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-semibold">{match.home_team.name}</h4>
+                <Link href={`/teams/${match.home_team.id}`} className="text-xs text-muted-foreground hover:underline">
+                  팀 정보 &rarr;
+                </Link>
               </div>
+              {renderStatsTable(homeStats)}
             </div>
 
             {/* Away Team Stats */}
             <div>
-              <h4 className="font-semibold mb-2">{match.away_team.name}</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">선수</th>
-                      <th className="text-center">PTS</th>
-                      <th className="text-center">REB</th>
-                      <th className="text-center">AST</th>
-                      <th className="text-center">FG</th>
-                      <th className="text-center">3P</th>
-                      <th className="text-center">FT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {awayStats.map((stat, idx) => (
-                      <tr key={idx} className="border-b">
-                        <td className="py-2 font-medium">{stat.player.psn_id}</td>
-                        <td className="text-center">{stat.pts}</td>
-                        <td className="text-center">{stat.reb}</td>
-                        <td className="text-center">{stat.ast}</td>
-                        <td className="text-center text-xs">
-                          {stat.fgm}/{stat.fga}
-                        </td>
-                        <td className="text-center text-xs">
-                          {stat.three_pm}/{stat.three_pa}
-                        </td>
-                        <td className="text-center text-xs">
-                          {stat.ftm}/{stat.fta}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-semibold">{match.away_team.name}</h4>
+                <Link href={`/teams/${match.away_team.id}`} className="text-xs text-muted-foreground hover:underline">
+                  팀 정보 &rarr;
+                </Link>
               </div>
+              {renderStatsTable(awayStats)}
             </div>
           </div>
         )}
 
         {/* Streaming & Screenshot (if finished) */}
         {match.status === "finished" && (match.home_stream_url || match.away_stream_url || match.result_screenshot_url) && (
-          <div className="space-y-6 mt-6">
+          <div className="space-y-6 mt-6 border-t pt-6">
             {/* Screenshot */}
             {match.result_screenshot_url && (
               <div className="space-y-2">

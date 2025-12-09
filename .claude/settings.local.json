@@ -16,7 +16,9 @@
       "Bash(npx shadcn@latest add:*)",
       "Bash(cat:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []

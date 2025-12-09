@@ -5,8 +5,9 @@
 -- when they upload match results for their team's games.
 -- ============================================================================
 
--- Drop existing restrictive policy
+-- Drop ALL existing policies first
 DROP POLICY IF EXISTS "Admins and staff can update matches" ON matches;
+DROP POLICY IF EXISTS "Admins, staff, and team members can update matches" ON matches;
 
 -- Create new policy: Admins, staff, AND team members can update matches
 CREATE POLICY "Admins, staff, and team members can update matches"
