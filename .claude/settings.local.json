@@ -14,7 +14,9 @@
       "Bash(npm install:*)",
       "Bash(npx tsx:*)",
       "Bash(npx shadcn@latest add:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

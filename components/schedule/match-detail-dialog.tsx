@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
+import { YouTubeEmbed } from "@/components/match/youtube-embed";
 
 interface Match {
   id: string;
@@ -20,6 +21,9 @@ interface Match {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  home_stream_url?: string | null;
+  away_stream_url?: string | null;
+  result_screenshot_url?: string | null;
   home_team: {
     id: string;
     name: string;
@@ -285,6 +289,54 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Streaming & Screenshot (if finished) */}
+        {match.status === "finished" && (match.home_stream_url || match.away_stream_url || match.result_screenshot_url) && (
+          <div className="space-y-6 mt-6">
+            {/* Screenshot */}
+            {match.result_screenshot_url && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">경기 결과 스크린샷</h3>
+                <img
+                  src={match.result_screenshot_url}
+                  alt="Match result screenshot"
+                  className="w-full rounded-lg border"
+                />
+              </div>
+            )}
+
+            {/* Streaming Videos */}
+            {(match.home_stream_url || match.away_stream_url) && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">경기 스트리밍</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {match.home_stream_url && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">
+                        {match.home_team.name} (홈)
+                      </h4>
+                      <YouTubeEmbed
+                        url={match.home_stream_url}
+                        title={`${match.home_team.name} Stream`}
+                      />
+                    </div>
+                  )}
+                  {match.away_stream_url && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">
+                        {match.away_team.name} (원정)
+                      </h4>
+                      <YouTubeEmbed
+                        url={match.away_stream_url}
+                        title={`${match.away_team.name} Stream`}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

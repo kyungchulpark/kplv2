@@ -33,8 +33,8 @@ const statusCopy: Record<Match["status"], { label: string; variant: "outline" | 
 export default async function ResultsUploadPage() {
   const user = await getCurrentUser();
 
-  // Only league operators can register results
-  if (!user || !["admin", "staff"].includes((user.profile as any)?.role)) {
+  // Check if user is logged in
+  if (!user) {
     redirect("/");
   }
 
@@ -59,7 +59,13 @@ export default async function ResultsUploadPage() {
     );
   }
 
-  const { data: matches } = await supabase
+  // Permission logic: Show matches based on user role
+  // - Admin/Staff: See all scheduled/live matches
+  // - Team members: See only their team's scheduled/live matches
+  const userRole = (user.profile as any)?.role;
+  const isAdminOrStaff = ["admin", "staff"].includes(userRole);
+
+  let matchesQuery = supabase
     .from("matches")
     .select(
       `
@@ -74,6 +80,42 @@ export default async function ResultsUploadPage() {
     .eq("season_id", activeSeason.id)
     .in("status", ["scheduled", "live"])
     .order("match_date", { ascending: true });
+
+  // If not admin/staff, filter to only show matches where user is a team member
+  if (!isAdminOrStaff) {
+    // Get user's teams
+    const { data: userRosters } = await supabase
+      .from("team_rosters")
+      .select("team_id")
+      .eq("player_id", user.id)
+      .eq("season_id", activeSeason.id)
+      .eq("is_active", true);
+
+    const userTeamIds = userRosters?.map((r) => r.team_id) || [];
+
+    if (userTeamIds.length === 0) {
+      // User is not on any team - show empty state
+      return (
+        <div className="container mx-auto px-4 py-10">
+          <Card>
+            <CardHeader>
+              <CardTitle>팀에 소속되어 있지 않습니다</CardTitle>
+              <CardDescription>
+                경기 결과를 입력하려면 먼저 팀에 가입해야 합니다.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      );
+    }
+
+    // Filter matches where user's team is playing (home or away)
+    matchesQuery = matchesQuery.or(
+      `home_team_id.in.(${userTeamIds.join(",")}),away_team_id.in.(${userTeamIds.join(",")})`
+    );
+  }
+
+  const { data: matches } = await matchesQuery;
 
   return (
     <div className="container mx-auto px-4 py-10 space-y-8">

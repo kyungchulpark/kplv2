@@ -163,6 +163,9 @@ export interface Database {
           status: "scheduled" | "live" | "finished" | "cancelled";
           home_score: number | null;
           away_score: number | null;
+          home_stream_url: string | null;
+          away_stream_url: string | null;
+          result_screenshot_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -175,6 +178,9 @@ export interface Database {
           status?: "scheduled" | "live" | "finished" | "cancelled";
           home_score?: number | null;
           away_score?: number | null;
+          home_stream_url?: string | null;
+          away_stream_url?: string | null;
+          result_screenshot_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -187,6 +193,9 @@ export interface Database {
           status?: "scheduled" | "live" | "finished" | "cancelled";
           home_score?: number | null;
           away_score?: number | null;
+          home_stream_url?: string | null;
+          away_stream_url?: string | null;
+          result_screenshot_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };

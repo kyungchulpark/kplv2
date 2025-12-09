@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { MatchStatsInput } from "@/components/admin/match-stats-input";
 import { createClient, getCurrentUser } from "@/utils/supabase/server";
+import { canUserUploadMatchResult } from "@/lib/permissions";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PageProps {
   params: Promise<{
@@ -12,7 +14,7 @@ export default async function MatchResultUploadPage({ params }: PageProps) {
   const { id } = await params;
   const user = await getCurrentUser();
 
-  if (!user || !["admin", "staff"].includes((user.profile as any)?.role)) {
+  if (!user) {
     redirect("/");
   }
 
@@ -46,6 +48,32 @@ export default async function MatchResultUploadPage({ params }: PageProps) {
 
   if (!match) {
     redirect("/stats/upload");
+  }
+
+  // Check user permission to upload results for this match
+  const permission = await canUserUploadMatchResult(
+    user.id,
+    id,
+    (match as any).season_id
+  );
+
+  if (!permission.canUpload) {
+    // User does not have permission - show error message
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle>권한이 없습니다</CardTitle>
+            <CardDescription>{permission.reason}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              이 경기의 결과를 입력할 권한이 없습니다. 경기에 참가하는 팀의 선수만 결과를 입력할 수 있습니다.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if ((match as any).status === "finished") {

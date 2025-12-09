@@ -16,6 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Save, AlertCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
+import { ScreenshotUpload } from "@/components/match/screenshot-upload";
+import { StreamUrlInputs } from "@/components/match/stream-url-inputs";
+import { uploadScreenshot } from "@/lib/storage/upload-screenshot";
+import { matchPlayersToRoster, type OCRMatchResult } from "@/lib/ocr/tesseract-service";
 
 interface Player {
   player_id: string;
@@ -78,7 +82,7 @@ interface MatchStatsInputProps {
 }
 
 const emptyStats: Omit<PlayerStats, "player_id"> = {
-  grade: "",
+  grade: "", // Keep for DB compatibility, but not shown in UI
   pts: 0,
   reb: 0,
   ast: 0,
@@ -103,6 +107,11 @@ export function MatchStatsInput({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Screenshot and streaming state
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [homeStreamUrl, setHomeStreamUrl] = useState("");
+  const [awayStreamUrl, setAwayStreamUrl] = useState("");
 
   const [homeStats, setHomeStats] = useState<PlayerStats[]>(
     Array(5)
@@ -156,6 +165,55 @@ export function MatchStatsInput({
 
   const calculatePoints = (stats: PlayerStats): number => {
     return (stats.fgm - stats.three_pm) * 2 + stats.three_pm * 3 + stats.ftm;
+  };
+
+  // OCR complete handler
+  const handleOCRComplete = async (result: OCRMatchResult) => {
+    try {
+      // Match home team players to roster
+      const homeMatches = await matchPlayersToRoster(
+        result.homeTeamPlayers,
+        homeRoster.map((r) => ({ player_id: r.player_id, psn_id: r.profiles.psn_id }))
+      );
+
+      // Match away team players to roster
+      const awayMatches = await matchPlayersToRoster(
+        result.awayTeamPlayers,
+        awayRoster.map((r) => ({ player_id: r.player_id, psn_id: r.profiles.psn_id }))
+      );
+
+      // Populate home stats (limit to 5 players)
+      const newHomeStats = homeMatches.slice(0, 5).map((match) => ({
+        player_id: match.player_id,
+        grade: "", // Not used
+        ...match.stats,
+      }));
+
+      // Fill remaining slots if less than 5
+      while (newHomeStats.length < 5) {
+        newHomeStats.push({ player_id: "", ...emptyStats });
+      }
+
+      // Populate away stats (limit to 5 players)
+      const newAwayStats = awayMatches.slice(0, 5).map((match) => ({
+        player_id: match.player_id,
+        grade: "", // Not used
+        ...match.stats,
+      }));
+
+      // Fill remaining slots if less than 5
+      while (newAwayStats.length < 5) {
+        newAwayStats.push({ player_id: "", ...emptyStats });
+      }
+
+      setHomeStats(newHomeStats);
+      setAwayStats(newAwayStats);
+
+      toast.success("OCR 데이터가 입력되었습니다. 확인 후 수정해주세요.");
+    } catch (error) {
+      console.error("OCR matching error:", error);
+      toast.error("선수 매칭 중 오류가 발생했습니다");
+    }
   };
 
   const validateStats = (): string[] => {
@@ -255,6 +313,13 @@ export function MatchStatsInput({
   };
 
   const handleSave = async () => {
+    // Validate streaming URLs
+    if (!homeStreamUrl || !awayStreamUrl) {
+      setErrors(["홈팀과 원정팀 스트리밍 URL을 모두 입력해주세요."]);
+      toast.error("스트리밍 URL은 필수 입력입니다");
+      return;
+    }
+
     const validationErrors = validateStats();
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
@@ -266,6 +331,17 @@ export function MatchStatsInput({
 
     try {
       const supabase = createClient();
+
+      // Upload screenshot if provided
+      let screenshotUrl: string | null = null;
+      if (screenshotFile) {
+        try {
+          screenshotUrl = await uploadScreenshot(screenshotFile, match.id);
+        } catch (uploadError) {
+          console.error("Screenshot upload error:", uploadError);
+          toast.error("스크린샷 업로드 실패 (경기 결과는 저장됩니다)");
+        }
+      }
 
       // Auto-correct points based on shooting stats
       const correctedHomeStats = homeStats.map((s) => ({
@@ -302,13 +378,16 @@ export function MatchStatsInput({
 
       if (statsError) throw statsError;
 
-      // Update match status and scores
+      // Update match status, scores, stream URLs, and screenshot URL
       const { error: matchError } = await supabase
         .from("matches")
         .update({
           status: "finished",
           home_score: homeScore,
           away_score: awayScore,
+          home_stream_url: homeStreamUrl,
+          away_stream_url: awayStreamUrl,
+          result_screenshot_url: screenshotUrl,
         })
         .eq("id", match.id);
 
@@ -337,6 +416,20 @@ export function MatchStatsInput({
           {match.season.name} - {new Date(match.match_date).toLocaleDateString("ko-KR")}
         </p>
       </div>
+
+      {/* Screenshot Upload */}
+      <ScreenshotUpload
+        onOCRComplete={handleOCRComplete}
+        onFileSelected={setScreenshotFile}
+      />
+
+      {/* Stream URL Inputs */}
+      <StreamUrlInputs
+        homeTeamName={match.home_team.name}
+        awayTeamName={match.away_team.name}
+        onHomeUrlChange={setHomeStreamUrl}
+        onAwayUrlChange={setAwayStreamUrl}
+      />
 
       {/* Scoreboard */}
       <Card className="border-2">
@@ -519,16 +612,6 @@ function StatsInputTable({
 
           {playerStats.player_id && (
             <div className="grid grid-cols-4 gap-2">
-              <div>
-                <Label className="text-xs">Grade</Label>
-                <Input
-                  type="text"
-                  placeholder="A+"
-                  value={playerStats.grade}
-                  onChange={(e) => onStatChange(index, "grade", e.target.value)}
-                  className="h-8"
-                />
-              </div>
               <div>
                 <Label className="text-xs">PTS</Label>
                 <Input
