@@ -176,11 +176,12 @@ export function ScheduleCalendar({ matches, onDateSelect }: ScheduleCalendarProp
                       {hasMatches && (
                         <div className="space-y-1">
                           {dayMatches.map((match) => {
-                            const matchTime = new Date(match.match_date).toLocaleTimeString("en-US", {
+                            const matchTime = new Intl.DateTimeFormat("en-US", {
+                              timeZone: "Asia/Seoul",
                               hour: "2-digit",
                               minute: "2-digit",
                               hour12: false,
-                            });
+                            }).format(new Date(match.match_date));
 
                             return (
                               <div

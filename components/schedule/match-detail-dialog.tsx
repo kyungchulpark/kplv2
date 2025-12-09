@@ -207,11 +207,12 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
                 <span>
-                  {matchDate.toLocaleTimeString("ko-KR", {
+                  {new Intl.DateTimeFormat("en-US", {
+                    timeZone: "Asia/Seoul",
                     hour: "2-digit",
                     minute: "2-digit",
                     hour12: false,
-                  })}
+                  }).format(matchDate)}
                 </span>
               </div>
             </div>
