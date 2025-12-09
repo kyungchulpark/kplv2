@@ -2,24 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Loader2, Save, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { ScreenshotUpload } from "@/components/match/screenshot-upload";
 import { StreamUrlInputs } from "@/components/match/stream-url-inputs";
-import { uploadScreenshot } from "@/lib/storage/upload-screenshot";
-import { matchPlayersToRoster, type OCRMatchResult } from "@/lib/ocr/gpt-vision-service";
+import { NBA2KStyleStatsInput } from "@/components/match/nba2k-style-stats-input";
 
 interface Player {
   player_id: string;
@@ -58,7 +47,6 @@ interface MatchData {
 
 interface PlayerStats {
   player_id: string;
-  grade: string;
   pts: number;
   reb: number;
   ast: number;
@@ -81,23 +69,6 @@ interface MatchStatsInputProps {
   onSuccessRedirect?: string;
 }
 
-const emptyStats: Omit<PlayerStats, "player_id"> = {
-  grade: "", // Keep for DB compatibility, but not shown in UI
-  pts: 0,
-  reb: 0,
-  ast: 0,
-  stl: 0,
-  blk: 0,
-  fls: 0,
-  turnovers: 0,
-  fgm: 0,
-  fga: 0,
-  three_pm: 0,
-  three_pa: 0,
-  ftm: 0,
-  fta: 0,
-};
-
 export function MatchStatsInput({
   match,
   homeRoster,
@@ -108,123 +79,18 @@ export function MatchStatsInput({
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Screenshot and streaming state
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  // Streaming URLs
   const [homeStreamUrl, setHomeStreamUrl] = useState("");
   const [awayStreamUrl, setAwayStreamUrl] = useState("");
-
-  const [homeStats, setHomeStats] = useState<PlayerStats[]>(
-    Array(5)
-      .fill(null)
-      .map(() => ({ player_id: "", ...emptyStats }))
-  );
-
-  const [awayStats, setAwayStats] = useState<PlayerStats[]>(
-    Array(5)
-      .fill(null)
-      .map(() => ({ player_id: "", ...emptyStats }))
-  );
-
-  const updateHomePlayer = (index: number, playerId: string) => {
-    const newStats = [...homeStats];
-    newStats[index] = { ...newStats[index], player_id: playerId };
-    setHomeStats(newStats);
-  };
-
-  const updateAwayPlayer = (index: number, playerId: string) => {
-    const newStats = [...awayStats];
-    newStats[index] = { ...newStats[index], player_id: playerId };
-    setAwayStats(newStats);
-  };
-
-  const updateHomeStat = (
-    index: number,
-    field: keyof Omit<PlayerStats, "player_id">,
-    value: string | number
-  ) => {
-    const newStats = [...homeStats];
-    newStats[index] = {
-      ...newStats[index],
-      [field]: typeof value === "string" ? value : Number(value),
-    };
-    setHomeStats(newStats);
-  };
-
-  const updateAwayStat = (
-    index: number,
-    field: keyof Omit<PlayerStats, "player_id">,
-    value: string | number
-  ) => {
-    const newStats = [...awayStats];
-    newStats[index] = {
-      ...newStats[index],
-      [field]: typeof value === "string" ? value : Number(value),
-    };
-    setAwayStats(newStats);
-  };
 
   const calculatePoints = (stats: PlayerStats): number => {
     return (stats.fgm - stats.three_pm) * 2 + stats.three_pm * 3 + stats.ftm;
   };
 
-  // OCR complete handler
-  const handleOCRComplete = async (result: OCRMatchResult) => {
-    try {
-      // Match home team players to roster
-      const homeMatches = await matchPlayersToRoster(
-        result.homeTeamPlayers,
-        homeRoster.map((r) => ({ player_id: r.player_id, psn_id: r.profiles.psn_id }))
-      );
-
-      // Match away team players to roster
-      const awayMatches = await matchPlayersToRoster(
-        result.awayTeamPlayers,
-        awayRoster.map((r) => ({ player_id: r.player_id, psn_id: r.profiles.psn_id }))
-      );
-
-      // Populate home stats (limit to 5 players)
-      const newHomeStats = homeMatches.slice(0, 5).map((match) => {
-        // playerName은 DB에 없는 필드이므로 제외
-        const { playerName, ...statsWithoutPlayerName } = match.stats;
-        return {
-          player_id: match.player_id,
-          grade: "", // Not used
-          ...statsWithoutPlayerName,
-        };
-      });
-
-      // Fill remaining slots if less than 5
-      while (newHomeStats.length < 5) {
-        newHomeStats.push({ player_id: "", ...emptyStats });
-      }
-
-      // Populate away stats (limit to 5 players)
-      const newAwayStats = awayMatches.slice(0, 5).map((match) => {
-        // playerName은 DB에 없는 필드이므로 제외
-        const { playerName, ...statsWithoutPlayerName } = match.stats;
-        return {
-          player_id: match.player_id,
-          grade: "", // Not used
-          ...statsWithoutPlayerName,
-        };
-      });
-
-      // Fill remaining slots if less than 5
-      while (newAwayStats.length < 5) {
-        newAwayStats.push({ player_id: "", ...emptyStats });
-      }
-
-      setHomeStats(newHomeStats);
-      setAwayStats(newAwayStats);
-
-      toast.success("OCR 데이터가 입력되었습니다. 확인 후 수정해주세요.");
-    } catch (error) {
-      console.error("OCR matching error:", error);
-      toast.error("선수 매칭 중 오류가 발생했습니다");
-    }
-  };
-
-  const validateStats = (): string[] => {
+  const validateStats = (
+    homeStats: PlayerStats[],
+    awayStats: PlayerStats[]
+  ): string[] => {
     const validationErrors: string[] = [];
 
     if (homeRoster.length < 5) {
@@ -260,33 +126,12 @@ export function MatchStatsInput({
       validationErrors.push("같은 선수가 양 팀에 중복 배치되었습니다.");
     }
 
-    const numericLabels: Record<keyof Omit<PlayerStats, "player_id" | "grade">, string> = {
-      pts: "득점",
-      reb: "리바운드",
-      ast: "어시스트",
-      stl: "스틸",
-      blk: "블록",
-      fls: "파울",
-      turnovers: "턴오버",
-      fgm: "야투 성공",
-      fga: "야투 시도",
-      three_pm: "3점 성공",
-      three_pa: "3점 시도",
-      ftm: "자유투 성공",
-      fta: "자유투 시도",
-    };
-
     // Validate stats for each player
     [...homeStats, ...awayStats].forEach((stats, idx) => {
       if (!stats.player_id) return;
 
       const team = idx < 5 ? "홈 팀" : "원정 팀";
       const playerNum = (idx % 5) + 1;
-      (Object.keys(numericLabels) as Array<keyof Omit<PlayerStats, "player_id" | "grade">>).forEach((field) => {
-        if (stats[field] < 0) {
-          validationErrors.push(`${team} ${playerNum}번 ${numericLabels[field]} 값은 0 이상이어야 합니다.`);
-        }
-      });
 
       if (stats.fgm > stats.fga) {
         validationErrors.push(
@@ -320,7 +165,12 @@ export function MatchStatsInput({
     return validationErrors;
   };
 
-  const handleSave = async () => {
+  const handleSubmit = async (data: {
+    homeScore: number;
+    awayScore: number;
+    homeStats: PlayerStats[];
+    awayStats: PlayerStats[];
+  }) => {
     // Validate streaming URLs
     if (!homeStreamUrl || !awayStreamUrl) {
       setErrors(["홈팀과 원정팀 스트리밍 URL을 모두 입력해주세요."]);
@@ -328,9 +178,10 @@ export function MatchStatsInput({
       return;
     }
 
-    const validationErrors = validateStats();
+    const validationErrors = validateStats(data.homeStats, data.awayStats);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
+      toast.error("입력값을 확인해주세요");
       return;
     }
 
@@ -340,23 +191,12 @@ export function MatchStatsInput({
     try {
       const supabase = createClient();
 
-      // Upload screenshot if provided
-      let screenshotUrl: string | null = null;
-      if (screenshotFile) {
-        try {
-          screenshotUrl = await uploadScreenshot(screenshotFile, match.id);
-        } catch (uploadError) {
-          console.error("Screenshot upload error:", uploadError);
-          toast.error("스크린샷 업로드 실패 (경기 결과는 저장됩니다)");
-        }
-      }
-
       // Auto-correct points based on shooting stats
-      const correctedHomeStats = homeStats.map((s) => ({
+      const correctedHomeStats = data.homeStats.map((s) => ({
         ...s,
         pts: calculatePoints(s),
       }));
-      const correctedAwayStats = awayStats.map((s) => ({
+      const correctedAwayStats = data.awayStats.map((s) => ({
         ...s,
         pts: calculatePoints(s),
       }));
@@ -365,16 +205,18 @@ export function MatchStatsInput({
       const homeScore = correctedHomeStats.reduce((sum, s) => sum + s.pts, 0);
       const awayScore = correctedAwayStats.reduce((sum, s) => sum + s.pts, 0);
 
-      // Prepare match_stats data
+      // Prepare match_stats data (add grade field for DB compatibility)
       const matchStatsData = [
         ...correctedHomeStats.map((stats) => ({
           match_id: match.id,
           team_id: match.home_team_id,
+          grade: "", // Empty grade for DB compatibility
           ...stats,
         })),
         ...correctedAwayStats.map((stats) => ({
           match_id: match.id,
           team_id: match.away_team_id,
+          grade: "", // Empty grade for DB compatibility
           ...stats,
         })),
       ];
@@ -386,7 +228,7 @@ export function MatchStatsInput({
 
       if (statsError) throw statsError;
 
-      // Update match status, scores, stream URLs, and screenshot URL
+      // Update match status, scores, and stream URLs
       const { error: matchError } = await supabase
         .from("matches")
         .update({
@@ -395,7 +237,6 @@ export function MatchStatsInput({
           away_score: awayScore,
           home_stream_url: homeStreamUrl,
           away_stream_url: awayStreamUrl,
-          result_screenshot_url: screenshotUrl,
         })
         .eq("id", match.id);
 
@@ -405,15 +246,17 @@ export function MatchStatsInput({
       router.push(onSuccessRedirect);
       router.refresh();
     } catch (error: unknown) {
-      // 상세 에러 로그 출력
       console.error("Error saving match stats:", error);
-      console.error("Error type:", typeof error);
       console.error("Error JSON:", JSON.stringify(error, null, 2));
 
-      // 에러 메시지 추출
       let errorMessage = "경기 결과 저장 중 오류가 발생했습니다.";
       if (error && typeof error === "object") {
-        const err = error as { message?: string; details?: string; hint?: string; code?: string };
+        const err = error as {
+          message?: string;
+          details?: string;
+          hint?: string;
+          code?: string;
+        };
         if (err.message) {
           errorMessage = `오류: ${err.message}`;
           if (err.details) errorMessage += ` (${err.details})`;
@@ -428,9 +271,6 @@ export function MatchStatsInput({
     }
   };
 
-  const homeScore = homeStats.reduce((sum, s) => sum + s.pts, 0);
-  const awayScore = awayStats.reduce((sum, s) => sum + s.pts, 0);
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -439,13 +279,10 @@ export function MatchStatsInput({
         <p className="text-muted-foreground">
           {match.season.name} - {new Date(match.match_date).toLocaleDateString("ko-KR")}
         </p>
+        <p className="text-sm text-muted-foreground">
+          {match.home_team.name} vs {match.away_team.name}
+        </p>
       </div>
-
-      {/* Screenshot Upload */}
-      <ScreenshotUpload
-        onOCRComplete={handleOCRComplete}
-        onFileSelected={setScreenshotFile}
-      />
 
       {/* Stream URL Inputs */}
       <StreamUrlInputs
@@ -455,115 +292,39 @@ export function MatchStatsInput({
         onAwayUrlChange={setAwayStreamUrl}
       />
 
-      {/* Scoreboard */}
-      <Card className="border-2">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-3 gap-4 items-center">
-            {/* Home Team */}
-            <div className="text-center space-y-2">
-              <div className="flex items-center justify-center space-x-2">
-                {match.home_team.logo_url && (
-                  <img
-                    src={match.home_team.logo_url}
-                    alt={match.home_team.name}
-                    className="h-12 w-12 object-contain"
-                  />
-                )}
-                <div>
-                  <h2 className="text-2xl font-bold">{match.home_team.name}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {match.home_team.conference}
-                  </p>
-                </div>
-              </div>
-              <div className="text-5xl font-bold text-primary">{homeScore}</div>
-            </div>
-
-            {/* VS */}
-            <div className="text-center">
-              <div className="text-2xl font-bold text-muted-foreground">VS</div>
-            </div>
-
-            {/* Away Team */}
-            <div className="text-center space-y-2">
-              <div className="flex items-center justify-center space-x-2">
-                <div>
-                  <h2 className="text-2xl font-bold">{match.away_team.name}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {match.away_team.conference}
-                  </p>
-                </div>
-                {match.away_team.logo_url && (
-                  <img
-                    src={match.away_team.logo_url}
-                    alt={match.away_team.name}
-                    className="h-12 w-12 object-contain"
-                  />
-                )}
-              </div>
-              <div className="text-5xl font-bold text-primary">{awayScore}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Errors */}
       {errors.length > 0 && (
         <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="flex items-center text-destructive">
-              <AlertCircle className="mr-2 h-5 w-5" />
-              검증 오류
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              {errors.map((error, idx) => (
-                <li key={idx}>{error}</li>
-              ))}
-            </ul>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-destructive mb-2">검증 오류</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {errors.map((error, idx) => (
+                    <li key={idx}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Stats Input */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Home Team Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <span>{match.home_team.name}</span>
-              <span className="text-sm font-normal text-muted-foreground">(홈)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StatsInputTable
-              roster={homeRoster}
-              stats={homeStats}
-              onPlayerChange={updateHomePlayer}
-              onStatChange={updateHomeStat}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Away Team Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <span>{match.away_team.name}</span>
-              <span className="text-sm font-normal text-muted-foreground">(원정)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StatsInputTable
-              roster={awayRoster}
-              stats={awayStats}
-              onPlayerChange={updateAwayPlayer}
-              onStatChange={updateAwayStat}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      {/* NBA 2K Style Stats Input */}
+      <NBA2KStyleStatsInput
+        homeTeam={match.home_team}
+        awayTeam={match.away_team}
+        homeRoster={homeRoster.map((p) => ({
+          player_id: p.player_id,
+          psn_id: p.profiles.psn_id,
+        }))}
+        awayRoster={awayRoster.map((p) => ({
+          player_id: p.player_id,
+          psn_id: p.profiles.psn_id,
+        }))}
+        onSubmit={handleSubmit}
+      />
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-4">
@@ -574,238 +335,19 @@ export function MatchStatsInput({
         >
           취소
         </Button>
-        <Button onClick={handleSave} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              저장 중...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              경기 종료
-            </>
-          )}
-        </Button>
       </div>
-    </div>
-  );
-}
 
-interface StatsInputTableProps {
-  roster: Player[];
-  stats: PlayerStats[];
-  onPlayerChange: (index: number, playerId: string) => void;
-  onStatChange: (
-    index: number,
-    field: keyof Omit<PlayerStats, "player_id">,
-    value: string | number
-  ) => void;
-}
-
-function StatsInputTable({
-  roster,
-  stats,
-  onPlayerChange,
-  onStatChange,
-}: StatsInputTableProps) {
-  return (
-    <div className="space-y-4">
-      {stats.map((playerStats, index) => (
-        <div key={index} className="space-y-3 border rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <Label className="font-semibold">선수 {index + 1}</Label>
-            <Select
-              value={playerStats.player_id}
-              onValueChange={(value) => onPlayerChange(index, value)}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="선수 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {roster.map((player) => (
-                  <SelectItem key={player.player_id} value={player.player_id}>
-                    {player.profiles.psn_id}
-                    {player.jersey_number && ` #${player.jersey_number}`}
-                    {player.position && ` (${player.position})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {playerStats.player_id && (
-            <div className="grid grid-cols-4 gap-2">
-              <div>
-                <Label className="text-xs">PTS</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.pts}
-                  onChange={(e) =>
-                    onStatChange(index, "pts", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">REB</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.reb}
-                  onChange={(e) =>
-                    onStatChange(index, "reb", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">AST</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.ast}
-                  onChange={(e) =>
-                    onStatChange(index, "ast", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">STL</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.stl}
-                  onChange={(e) =>
-                    onStatChange(index, "stl", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">BLK</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.blk}
-                  onChange={(e) =>
-                    onStatChange(index, "blk", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">FLS</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.fls}
-                  onChange={(e) =>
-                    onStatChange(index, "fls", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">TO</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={playerStats.turnovers}
-                  onChange={(e) =>
-                    onStatChange(index, "turnovers", parseInt(e.target.value) || 0)
-                  }
-                  className="h-8"
-                />
-              </div>
-
-              {/* Shooting Stats */}
-              <div className="col-span-2">
-                <Label className="text-xs">FG (Made/Att)</Label>
-                <div className="flex space-x-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Made"
-                    value={playerStats.fgm}
-                    onChange={(e) =>
-                      onStatChange(index, "fgm", parseInt(e.target.value) || 0)
-                    }
-                    className="h-8"
-                  />
-                  <span className="flex items-center">/</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Att"
-                    value={playerStats.fga}
-                    onChange={(e) =>
-                      onStatChange(index, "fga", parseInt(e.target.value) || 0)
-                    }
-                    className="h-8"
-                  />
-                </div>
-              </div>
-
-              <div className="col-span-2">
-                <Label className="text-xs">3PT (Made/Att)</Label>
-                <div className="flex space-x-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Made"
-                    value={playerStats.three_pm}
-                    onChange={(e) =>
-                      onStatChange(index, "three_pm", parseInt(e.target.value) || 0)
-                    }
-                    className="h-8"
-                  />
-                  <span className="flex items-center">/</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Att"
-                    value={playerStats.three_pa}
-                    onChange={(e) =>
-                      onStatChange(index, "three_pa", parseInt(e.target.value) || 0)
-                    }
-                    className="h-8"
-                  />
-                </div>
-              </div>
-
-              <div className="col-span-2">
-                <Label className="text-xs">FT (Made/Att)</Label>
-                <div className="flex space-x-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Made"
-                    value={playerStats.ftm}
-                    onChange={(e) =>
-                      onStatChange(index, "ftm", parseInt(e.target.value) || 0)
-                    }
-                    className="h-8"
-                  />
-                  <span className="flex items-center">/</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Att"
-                    value={playerStats.fta}
-                    onChange={(e) =>
-                      onStatChange(index, "fta", parseInt(e.target.value) || 0)
-                    }
-                    className="h-8"
-                  />
-                </div>
-              </div>
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <Card className="p-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="text-lg font-semibold">저장 중...</span>
             </div>
-          )}
+          </Card>
         </div>
-      ))}
+      )}
     </div>
   );
 }
