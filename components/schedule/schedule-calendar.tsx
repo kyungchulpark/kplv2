@@ -30,13 +30,14 @@ interface Match {
 
 interface ScheduleCalendarProps {
   matches: Match[];
+  onDateSelect?: (date: string) => void;
 }
 
-export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
+export function ScheduleCalendar({ matches, onDateSelect }: ScheduleCalendarProps) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Group matches by date
   const matchesByDate = useMemo(() => {
@@ -74,7 +75,7 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
     return days;
   }, [currentYear, currentMonth]);
 
-  const monthName = new Date(currentYear, currentMonth).toLocaleDateString("ko-KR", {
+  const monthName = new Date(currentYear, currentMonth).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
   });
@@ -119,7 +120,7 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
             </CardTitle>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" onClick={goToToday}>
-                오늘
+                Today
               </Button>
               <Button variant="outline" size="icon" onClick={previousMonth}>
                 <ChevronLeft className="h-4 w-4" />
@@ -134,7 +135,7 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-2">
             {/* Day Headers */}
-            {["일", "월", "화", "수", "목", "금", "토"].map((day, idx) => (
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
               <div
                 key={day}
                 className={cn(
@@ -157,11 +158,15 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
                   className={cn(
                     "min-h-[100px] border rounded-lg p-2 transition-colors",
                     day.date ? "hover:bg-accent cursor-pointer" : "bg-muted/30",
-                    isToday(day.date, day.fullDate) && "border-primary border-2 bg-primary/5"
+                    isToday(day.date, day.fullDate) && "border-primary border-2 bg-primary/5",
+                    selectedDate === day.fullDate && "ring-2 ring-primary"
                   )}
                   onClick={() => {
-                    if (dayMatches.length > 0) {
-                      setSelectedMatch(dayMatches[0]);
+                    if (day.fullDate) {
+                      setSelectedDate(day.fullDate);
+                      if (onDateSelect) {
+                        onDateSelect(day.fullDate);
+                      }
                     }
                   }}
                 >
@@ -171,7 +176,7 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
                       {hasMatches && (
                         <div className="space-y-1">
                           {dayMatches.map((match) => {
-                            const matchTime = new Date(match.match_date).toLocaleTimeString("ko-KR", {
+                            const matchTime = new Date(match.match_date).toLocaleTimeString("en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
                               hour12: false,
@@ -186,7 +191,7 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
                                   <span className="text-[10px] text-muted-foreground">{matchTime}</span>
                                   {match.status === "finished" && (
                                     <Badge variant="secondary" className="text-[8px] h-4 px-1">
-                                      종료
+                                      Final
                                     </Badge>
                                   )}
                                   {match.status === "live" && (
@@ -223,24 +228,15 @@ export function ScheduleCalendar({ matches }: ScheduleCalendarProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-secondary"></div>
-              <span className="text-muted-foreground">종료</span>
+              <span className="text-muted-foreground">Final</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full border-2 border-primary"></div>
-              <span className="text-muted-foreground">예정</span>
+              <span className="text-muted-foreground">Scheduled</span>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Match Detail Dialog */}
-      {selectedMatch && (
-        <MatchDetailDialog
-          match={selectedMatch}
-          open={!!selectedMatch}
-          onOpenChange={(open) => !open && setSelectedMatch(null)}
-        />
-      )}
     </>
   );
 }

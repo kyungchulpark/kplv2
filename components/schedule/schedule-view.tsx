@@ -34,6 +34,7 @@ type ScheduleViewProps = {
 
 export function ScheduleView({ matches }: ScheduleViewProps) {
     const [view, setView] = useState<"list" | "calendar">("list");
+    const [selectedDate, setSelectedDate] = useState<string>("");
 
     return (
         <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
@@ -41,21 +42,31 @@ export function ScheduleView({ matches }: ScheduleViewProps) {
                 <TabsList>
                     <TabsTrigger value="list" className="flex items-center gap-2">
                         <List className="h-4 w-4" />
-                        리스트
+                        리스??
                     </TabsTrigger>
                     <TabsTrigger value="calendar" className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        캘린더
+                        캘린??
                     </TabsTrigger>
                 </TabsList>
             </div>
 
             <TabsContent value="list">
-                <ScheduleTable matches={matches} />
+                <ScheduleTable
+                    matches={matches}
+                    selectedDate={selectedDate}
+                    onDateChange={(date) => setSelectedDate(date)}
+                />
             </TabsContent>
 
             <TabsContent value="calendar">
-                <ScheduleCalendar matches={matches as any} />
+                <ScheduleCalendar
+                    matches={matches as any}
+                    onDateSelect={(date) => {
+                        setSelectedDate(date);
+                        setView("list");
+                    }}
+                />
             </TabsContent>
         </Tabs>
     );

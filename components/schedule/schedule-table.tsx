@@ -32,10 +32,12 @@ type Match = {
 
 type ScheduleTableProps = {
   matches: Match[];
+  selectedDate?: string;
+  onDateChange?: (date: string) => void;
 };
 
-export function ScheduleTable({ matches }: ScheduleTableProps) {
-  const [selectedDate, setSelectedDate] = useState<string>("");
+export function ScheduleTable({ matches, selectedDate, onDateChange }: ScheduleTableProps) {
+  const [internalDate, setInternalDate] = useState<string>("");
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
   // Group matches by date
@@ -55,12 +57,19 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
 
   // Initialize selected date to today or nearest future date, or last date if all past
   useEffect(() => {
-    if (sortedDates.length > 0 && !selectedDate) {
+    if (sortedDates.length > 0 && !(selectedDate ?? internalDate)) {
       const today = startOfDay(new Date());
       const futureDate = sortedDates.find(date => !isBefore(parseISO(date), today));
-      setSelectedDate(futureDate || sortedDates[sortedDates.length - 1]);
+      setInternalDate(futureDate || sortedDates[sortedDates.length - 1]);
     }
-  }, [sortedDates, selectedDate]);
+  }, [sortedDates, selectedDate, internalDate]);
+
+  // Sync controlled selectedDate into internal state
+  useEffect(() => {
+    if (selectedDate) {
+      setInternalDate(selectedDate);
+    }
+  }, [selectedDate]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -110,8 +119,11 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
     );
   };
 
+  // Derived selected date
+  const effectiveDate = selectedDate ?? internalDate;
+
   // Filter matches for selected date
-  const currentMatches = selectedDate ? groupedMatches[selectedDate] || [] : [];
+  const currentMatches = effectiveDate ? groupedMatches[effectiveDate] || [] : [];
 
   const formatKstTime = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -120,6 +132,14 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
       minute: "2-digit",
       hour12: false,
     }).format(new Date(dateString));
+  };
+
+  const handleDateChange = (date: string) => {
+    if (onDateChange) {
+      onDateChange(date);
+    } else {
+      setInternalDate(date);
+    }
   };
 
   const statusTheme = (status: string) => {
@@ -140,8 +160,8 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
       {/* Date Slider */}
       <DateSlider
         dates={sortedDates}
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
+        selectedDate={effectiveDate || sortedDates[0] || ""}
+        onDateChange={handleDateChange}
       />
 
       {/* Matches List */}
