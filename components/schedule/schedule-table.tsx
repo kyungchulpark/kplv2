@@ -3,9 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { format, parseISO, isBefore, startOfDay, isSameDay } from "date-fns";
-import { ko } from "date-fns/locale";
-import { Calendar, Clock, Key } from "lucide-react";
+import { parseISO, isBefore, startOfDay } from "date-fns";
+import { Clock, Key } from "lucide-react";
 import { MatchDetailDialog } from "./match-detail-dialog";
 import { DateSlider } from "./date-slider";
 import { cn } from "@/lib/utils";
@@ -67,8 +66,8 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
     switch (status) {
       case "scheduled":
         return (
-          <Badge variant="outline" className="text-xs">
-            예정
+          <Badge className="text-xs bg-blue-600 text-white">
+            Scheduled
           </Badge>
         );
       case "live":
@@ -79,14 +78,14 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
         );
       case "finished":
         return (
-          <Badge variant="secondary" className="text-xs">
-            종료
+          <Badge className="text-xs bg-emerald-600 text-white">
+            Final
           </Badge>
         );
       case "cancelled":
         return (
           <Badge variant="destructive" className="text-xs">
-            취소
+            Cancelled
           </Badge>
         );
       default:
@@ -114,6 +113,19 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
   // Filter matches for selected date
   const currentMatches = selectedDate ? groupedMatches[selectedDate] || [] : [];
 
+  const statusTheme = (status: string) => {
+    switch (status) {
+      case "finished":
+        return "bg-emerald-50 text-emerald-800 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-100 dark:border-emerald-800";
+      case "live":
+        return "bg-red-50 text-red-800 border-red-100 dark:bg-red-900/30 dark:text-red-100 dark:border-red-800";
+      case "cancelled":
+        return "bg-rose-50 text-rose-800 border-rose-100 dark:bg-rose-900/30 dark:text-rose-100 dark:border-rose-800";
+      default:
+        return "bg-blue-50 text-blue-800 border-blue-100 dark:bg-blue-900/30 dark:text-blue-100 dark:border-blue-800";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Date Slider */}
@@ -127,7 +139,7 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
       <div className="space-y-4">
         {currentMatches.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-            선택한 날짜에 경기 일정이 없습니다
+            No scheduled matches for this date.
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
@@ -142,11 +154,16 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
                   className="bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all duration-200 group"
                 >
                   {/* Match Header */}
-                  <div className="bg-muted/30 px-4 py-2 flex items-center justify-between text-xs text-muted-foreground border-b">
+                  <div
+                    className={cn(
+                      "px-4 py-2 flex items-center justify-between text-xs font-semibold border-b",
+                      statusTheme(match.status)
+                    )}
+                  >
                     <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3" />
                       <span>
-                        {new Date(match.match_date).toLocaleTimeString("ko-KR", {
+                        {new Date(match.match_date).toLocaleTimeString("en-US", {
                           hour: "2-digit",
                           minute: "2-digit",
                           hour12: false,
@@ -196,7 +213,7 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
                       >
                         <div className="text-muted-foreground font-bold text-sm md:text-lg">VS</div>
                         <Button variant="outline" size="sm" className="h-7 text-xs">
-                          상세보기
+                          View Details
                         </Button>
                       </div>
 
@@ -232,7 +249,7 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
                         <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800">
                           <Key className="h-3 w-3 text-green-600 dark:text-green-400" />
                           <span className="text-xs text-green-700 dark:text-green-300 font-medium">
-                            비번: <code className="font-mono font-bold">{match.game_password}</code>
+                            Password: <code className="font-mono font-bold">{match.game_password}</code>
                           </span>
                         </div>
                       </div>
