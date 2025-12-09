@@ -74,10 +74,6 @@ export function NBA2KStyleStatsInput({
   // Swappable team positions
   const [topTeamIsAway, setTopTeamIsAway] = useState(true);
 
-  // Scores (displayed as quarters in NBA 2K style)
-  const [homeScore, setHomeScore] = useState(0);
-  const [awayScore, setAwayScore] = useState(0);
-
   // Stats arrays (5 players each)
   const [homeStats, setHomeStats] = useState<PlayerStats[]>(
     Array(5)
@@ -92,6 +88,10 @@ export function NBA2KStyleStatsInput({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Calculate team scores from PTS (auto-calculate)
+  const homeScore = homeStats.reduce((sum, s) => sum + s.pts, 0);
+  const awayScore = awayStats.reduce((sum, s) => sum + s.pts, 0);
+
   const topTeam = topTeamIsAway ? awayTeam : homeTeam;
   const bottomTeam = topTeamIsAway ? homeTeam : awayTeam;
   const topRoster = topTeamIsAway ? awayRoster : homeRoster;
@@ -102,8 +102,6 @@ export function NBA2KStyleStatsInput({
   const setBottomStats = topTeamIsAway ? setHomeStats : setAwayStats;
   const topScore = topTeamIsAway ? awayScore : homeScore;
   const bottomScore = topTeamIsAway ? homeScore : awayScore;
-  const setTopScore = topTeamIsAway ? setAwayScore : setHomeScore;
-  const setBottomScore = topTeamIsAway ? setHomeScore : setAwayScore;
 
   const handleSwap = () => {
     setTopTeamIsAway(!topTeamIsAway);
@@ -159,7 +157,6 @@ export function NBA2KStyleStatsInput({
         roster={topRoster}
         stats={topStats}
         score={topScore}
-        onScoreChange={setTopScore}
         onStatChange={(index, field, value) =>
           updateStat(true, index, field, value)
         }
@@ -172,7 +169,6 @@ export function NBA2KStyleStatsInput({
         roster={bottomRoster}
         stats={bottomStats}
         score={bottomScore}
-        onScoreChange={setBottomScore}
         onStatChange={(index, field, value) =>
           updateStat(false, index, field, value)
         }
@@ -200,7 +196,6 @@ interface TeamStatsSectionProps {
   stats: PlayerStats[];
   score: number;
   label: string;
-  onScoreChange: (score: number) => void;
   onStatChange: (
     index: number,
     field: keyof PlayerStats,
@@ -214,7 +209,6 @@ function TeamStatsSection({
   stats,
   score,
   label,
-  onScoreChange,
   onStatChange,
 }: TeamStatsSectionProps) {
   return (
@@ -226,20 +220,14 @@ function TeamStatsSection({
           <h3 className="text-lg font-bold">{team.name}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground mb-1">최종 점수</div>
-          <Input
-            type="number"
-            value={score}
-            onChange={(e) => onScoreChange(parseInt(e.target.value) || 0)}
-            className="w-20 text-center text-xl font-bold"
-            min={0}
-          />
+          <div className="text-xs text-muted-foreground mb-1">팀 점수 (자동 합산)</div>
+          <div className="text-3xl font-bold text-primary">{score}</div>
         </div>
       </div>
 
       {/* Stats Table - Desktop */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="hidden md:block overflow-x-auto w-full">
+        <table className="w-full text-sm min-w-[1200px]">
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="text-left p-2 font-semibold">#</th>
