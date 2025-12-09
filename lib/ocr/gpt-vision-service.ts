@@ -33,64 +33,83 @@ export interface OCRMatchResult {
     confidence: number;
 }
 
-const SYSTEM_PROMPT = `You are an expert at reading NBA 2K game result screenshots.
-Extract player statistics from the screenshot and return them in the exact JSON format specified.
+const SYSTEM_PROMPT = `You are an expert at reading NBA 2K25 Korean game result screenshots ("경기 기록" screen).
 
-The screenshot shows a post-game stats screen with:
-- Team scores at the top
-- Left side: Home team players (5 players)
-- Right side: Away team players (5 players)
+This is a Korean NBA 2K25 post-game stats screen with the title "경기 기록" (Game Record).
 
-For each player, extract:
-- playerName: PSN ID / Gamertag (the player's name shown)
-- pts: Points scored
-- reb: Rebounds
-- ast: Assists
-- stl: Steals
-- blk: Blocks
-- fls: Fouls (sometimes shown as PF)
-- turnovers: Turnovers (sometimes shown as TO)
-- fgm: Field Goals Made
-- fga: Field Goals Attempted
-- three_pm: 3-Point Field Goals Made
-- three_pa: 3-Point Field Goals Attempted
-- ftm: Free Throws Made
-- fta: Free Throws Attempted
+SCREEN LAYOUT:
+- Top left: Home team logo and quarter scores (e.g., "20 13 14 14" = 61 total)
+- Top right: Away team logo and quarter scores (e.g., "17 15 13 10" = 55 total)
+- UPPER TABLE: Home team players (first team shown, with their team logo on left)
+- LOWER TABLE: Away team players (second team shown, with their team logo on left)
 
-IMPORTANT:
-- If you can't read a value clearly, use 0
-- Player names may contain special characters, numbers, underscores
-- The format may vary but typically shows shooting stats as "Made/Attempted" (e.g., "5/10")
-- Return exactly 5 players per team if visible
+TABLE COLUMNS (in exact order):
+플레이어 (Player) | GRD | PTS | REB | AST | STL | BLK | FLS | TO | FGM/FGA | 3PM/3PA | FTM/FTA
 
-Return ONLY valid JSON, no markdown, no explanation.`;
+EXTRACTION RULES:
+1. Player names are PSN IDs (e.g., "AustinR1vers", "ZazaWell", "NotEnoughRaf")
+2. FGM/FGA format: "9/12" means fgm=9, fga=12
+3. 3PM/3PA format: "0/3" means three_pm=0, three_pa=3
+4. FTM/FTA format: "4/4" means ftm=4, fta=4
+5. FLS column = fouls, TO column = turnovers
+6. The "합계" (total) row should be IGNORED - only extract individual player rows
+7. Players with a star icon or highlighted are the same as regular players
+8. Extract EXACTLY 5 players from each team (if visible)
+9. The home team total score appears next to their logo (larger number like "61")
+10. The away team total score appears next to their logo (larger number like "55")
 
-const USER_PROMPT = `Extract the match statistics from this NBA 2K game result screenshot.
+IMPORTANT: Read each cell carefully. If a value is unclear, make your best guess based on typical basketball stats.
 
-Return JSON in this exact format:
+Return ONLY valid JSON with no markdown formatting.`;
+
+const USER_PROMPT = `Extract all player statistics from this NBA 2K25 Korean game result screenshot.
+
+The upper table shows HOME team players.
+The lower table shows AWAY team players.
+
+Return JSON in this EXACT format:
 {
-  "homeTeamScore": number,
-  "awayTeamScore": number,
+  "homeTeamScore": 61,
+  "awayTeamScore": 55,
   "homeTeamPlayers": [
     {
-      "playerName": "string",
-      "pts": number,
-      "reb": number,
-      "ast": number,
-      "stl": number,
-      "blk": number,
-      "fls": number,
-      "turnovers": number,
-      "fgm": number,
-      "fga": number,
-      "three_pm": number,
-      "three_pa": number,
-      "ftm": number,
-      "fta": number
+      "playerName": "AustinR1vers",
+      "pts": 22,
+      "reb": 1,
+      "ast": 8,
+      "stl": 0,
+      "blk": 0,
+      "fls": 3,
+      "turnovers": 4,
+      "fgm": 9,
+      "fga": 12,
+      "three_pm": 0,
+      "three_pa": 3,
+      "ftm": 4,
+      "fta": 4
     }
   ],
-  "awayTeamPlayers": [same format as homeTeamPlayers]
-}`;
+  "awayTeamPlayers": [
+    {
+      "playerName": "NotEnoughRaf",
+      "pts": 8,
+      "reb": 0,
+      "ast": 14,
+      "stl": 0,
+      "blk": 0,
+      "fls": 1,
+      "turnovers": 1,
+      "fgm": 3,
+      "fga": 11,
+      "three_pm": 2,
+      "three_pa": 8,
+      "ftm": 0,
+      "fta": 0
+    }
+  ]
+}
+
+Extract ALL 5 players from each team. Do NOT include the 합계 (total) row.`;
 
 /**
  * Convert File to base64 data URL
