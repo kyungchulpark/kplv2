@@ -177,7 +177,7 @@ export function ScheduleCalendar({ matches, onDateSelect }: ScheduleCalendarProp
                         <div className="space-y-1">
                           {dayMatches.map((match) => {
                             const matchTime = new Intl.DateTimeFormat("en-US", {
-                              timeZone: "Asia/Seoul",
+                              timeZone: "UTC",
                               hour: "2-digit",
                               minute: "2-digit",
                               hour12: false,

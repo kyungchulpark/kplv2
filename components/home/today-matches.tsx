@@ -45,7 +45,7 @@ export function TodayMatches({ matches, isToday }: TodayMatchesProps) {
 
   const formatMatchTime = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Seoul",
+      timeZone: "UTC",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -54,7 +54,7 @@ export function TodayMatches({ matches, isToday }: TodayMatchesProps) {
 
   const formatMatchDate = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Seoul",
+      timeZone: "UTC",
       month: "long",
       day: "numeric",
       weekday: "short",

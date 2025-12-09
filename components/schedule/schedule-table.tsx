@@ -127,9 +127,10 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
   // Filter matches for selected date
   const currentMatches = resolvedDate ? groupedMatches[resolvedDate] || [] : [];
 
-  const formatKstTime = (dateString: string) => {
+  // Display time as stored (avoid extra timezone shifts). Matches are saved in UTC; render raw HH:mm.
+  const formatMatchTime = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Seoul",
+      timeZone: "UTC",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -199,13 +200,8 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                     <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3" />
                       <span>
-                        {formatKstTime(match.match_date)}
+                        {formatMatchTime(match.match_date)}
                       </span>
-                      {match.match_sequence && (
-                        <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] border">
-                          {match.match_sequence}
-                        </span>
-                      )}
                     </div>
                     <div>{getStatusBadge(match.status)}</div>
                   </div>

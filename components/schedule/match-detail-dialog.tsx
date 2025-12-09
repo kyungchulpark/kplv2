@@ -208,7 +208,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
                 <Clock className="h-4 w-4" />
                 <span>
                   {new Intl.DateTimeFormat("en-US", {
-                    timeZone: "Asia/Seoul",
+                    timeZone: "UTC",
                     hour: "2-digit",
                     minute: "2-digit",
                     hour12: false,
