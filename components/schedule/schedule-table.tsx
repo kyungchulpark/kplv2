@@ -113,6 +113,15 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
   // Filter matches for selected date
   const currentMatches = selectedDate ? groupedMatches[selectedDate] || [] : [];
 
+  const formatKstTime = (dateString: string) => {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(dateString));
+  };
+
   const statusTheme = (status: string) => {
     switch (status) {
       case "finished":
@@ -163,11 +172,7 @@ export function ScheduleTable({ matches }: ScheduleTableProps) {
                     <div className="flex items-center gap-2">
                       <Clock className="h-3 w-3" />
                       <span>
-                        {new Date(match.match_date).toLocaleTimeString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })}
+                        {formatKstTime(match.match_date)}
                       </span>
                       {match.match_sequence && (
                         <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] border">
