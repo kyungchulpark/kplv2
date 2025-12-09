@@ -80,6 +80,37 @@ export default async function MatchResultUploadPage({ params }: PageProps) {
     redirect("/schedule");
   }
 
+  // Check if match stats already exist (prevent duplicate entries)
+  const { data: existingStats } = await supabase
+    .from("match_stats")
+    .select("id")
+    .eq("match_id", id)
+    .limit(1);
+
+  if (existingStats && existingStats.length > 0) {
+    // Stats already exist - redirect to schedule
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <Card className="border-amber-500">
+          <CardHeader>
+            <CardTitle>이미 입력된 경기입니다</CardTitle>
+            <CardDescription>
+              이 경기의 결과는 이미 입력되었습니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              경기 결과를 수정해야 하는 경우 관리자에게 문의하세요.
+            </p>
+            <a href="/schedule" className="text-primary hover:underline">
+              일정표로 돌아가기 →
+            </a>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const { data: homeRoster } = await supabase
     .from("team_rosters")
     .select(

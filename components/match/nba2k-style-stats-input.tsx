@@ -305,7 +305,7 @@ function TeamStatsSection({
                       onChange={(e) =>
                         onStatChange(index, "fgm", e.target.value)
                       }
-                      className="w-12 text-center"
+                      className="w-16 text-center"
                       min={0}
                     />
                     <span className="text-muted-foreground">/</span>
@@ -315,7 +315,7 @@ function TeamStatsSection({
                       onChange={(e) =>
                         onStatChange(index, "fga", e.target.value)
                       }
-                      className="w-12 text-center"
+                      className="w-16 text-center"
                       min={0}
                     />
                   </div>
@@ -328,7 +328,7 @@ function TeamStatsSection({
                       onChange={(e) =>
                         onStatChange(index, "three_pm", e.target.value)
                       }
-                      className="w-12 text-center"
+                      className="w-16 text-center"
                       min={0}
                     />
                     <span className="text-muted-foreground">/</span>
@@ -338,7 +338,7 @@ function TeamStatsSection({
                       onChange={(e) =>
                         onStatChange(index, "three_pa", e.target.value)
                       }
-                      className="w-12 text-center"
+                      className="w-16 text-center"
                       min={0}
                     />
                   </div>
@@ -351,7 +351,7 @@ function TeamStatsSection({
                       onChange={(e) =>
                         onStatChange(index, "ftm", e.target.value)
                       }
-                      className="w-12 text-center"
+                      className="w-16 text-center"
                       min={0}
                     />
                     <span className="text-muted-foreground">/</span>
@@ -361,7 +361,7 @@ function TeamStatsSection({
                       onChange={(e) =>
                         onStatChange(index, "fta", e.target.value)
                       }
-                      className="w-12 text-center"
+                      className="w-16 text-center"
                       min={0}
                     />
                   </div>
@@ -483,7 +483,7 @@ function StatInput({
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-16 text-center"
+        className="w-20 text-center"
         min={0}
       />
     </td>
