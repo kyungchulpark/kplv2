@@ -34,9 +34,10 @@ type ScheduleTableProps = {
   matches: Match[];
   selectedDate?: string;
   onDateChange?: (date: string) => void;
+  leagueEnded?: boolean;
 };
 
-export function ScheduleTable({ matches, selectedDate, onDateChange }: ScheduleTableProps) {
+export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded = false }: ScheduleTableProps) {
   const [internalDate, setInternalDate] = useState<string>("");
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
@@ -158,6 +159,11 @@ export function ScheduleTable({ matches, selectedDate, onDateChange }: ScheduleT
 
   return (
     <div className="space-y-6">
+      {leagueEnded && (
+        <div className="rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          No upcoming matches. Season has ended.
+        </div>
+      )}
       {/* Date Slider */}
       <DateSlider
         dates={sortedDates}

@@ -30,11 +30,13 @@ type Match = {
 
 type ScheduleViewProps = {
     matches: Match[];
+    initialSelectedDate?: string;
+    leagueEnded?: boolean;
 };
 
-export function ScheduleView({ matches }: ScheduleViewProps) {
+export function ScheduleView({ matches, initialSelectedDate = "", leagueEnded = false }: ScheduleViewProps) {
     const [view, setView] = useState<"list" | "calendar">("list");
-    const [selectedDate, setSelectedDate] = useState<string>("");
+    const [selectedDate, setSelectedDate] = useState<string>(initialSelectedDate);
 
     return (
         <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
@@ -56,6 +58,7 @@ export function ScheduleView({ matches }: ScheduleViewProps) {
                     matches={matches}
                     selectedDate={selectedDate}
                     onDateChange={(date) => setSelectedDate(date)}
+                    leagueEnded={leagueEnded}
                 />
             </TabsContent>
 

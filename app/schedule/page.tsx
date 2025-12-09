@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { ScheduleView } from "@/components/schedule/schedule-view";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { startOfDay } from "date-fns";
 
 export default async function SchedulePage() {
   const supabase = await createClient();
@@ -60,8 +61,36 @@ export default async function SchedulePage() {
         </div>
 
         {/* Schedule View with Tabs */}
-        <ScheduleView matches={matches || []} />
+        <ScheduleView
+          matches={matches || []}
+          initialSelectedDate={getInitialDate(matches || [])}
+          leagueEnded={isLeagueEnded(matches || [])}
+        />
       </div>
     </div>
   );
+}
+
+function getInitialDate(matches: any[]): string {
+  if (!matches || matches.length === 0) return "";
+  const today = startOfDay(new Date()).getTime();
+  const futureDates = matches
+    .map((m) => new Date(m.match_date).getTime())
+    .filter((t) => t >= today)
+    .sort((a, b) => a - b);
+
+  if (futureDates.length > 0) {
+    return new Date(futureDates[0]).toISOString().split("T")[0];
+  }
+
+  // No future matches: pick last match date
+  const last = matches[matches.length - 1];
+  return last.match_date.split("T")[0];
+}
+
+function isLeagueEnded(matches: any[]): boolean {
+  if (!matches || matches.length === 0) return true;
+  const today = startOfDay(new Date()).getTime();
+  const hasFuture = matches.some((m) => new Date(m.match_date).getTime() >= today);
+  return !hasFuture;
 }
