@@ -90,7 +90,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                     리그 기록
                   </Link>
                 </DropdownMenuItem>
-                {isOperator && (
+                {user && (
                   <DropdownMenuItem asChild>
                     <Link href="/stats/upload" className="cursor-pointer">
                       경기 결과 업로드
@@ -245,7 +245,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             >
               리그 기록
             </Link>
-            {isOperator && (
+            {user && (
               <Link
                 href="/stats/upload"
                 className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
