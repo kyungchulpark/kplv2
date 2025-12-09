@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { ScreenshotUpload } from "@/components/match/screenshot-upload";
 import { StreamUrlInputs } from "@/components/match/stream-url-inputs";
 import { uploadScreenshot } from "@/lib/storage/upload-screenshot";
-import { matchPlayersToRoster, type OCRMatchResult } from "@/lib/ocr/tesseract-service";
+import { matchPlayersToRoster, type OCRMatchResult } from "@/lib/ocr/gpt-vision-service";
 
 interface Player {
   player_id: string;
@@ -183,11 +183,15 @@ export function MatchStatsInput({
       );
 
       // Populate home stats (limit to 5 players)
-      const newHomeStats = homeMatches.slice(0, 5).map((match) => ({
-        player_id: match.player_id,
-        grade: "", // Not used
-        ...match.stats,
-      }));
+      const newHomeStats = homeMatches.slice(0, 5).map((match) => {
+        // playerName은 DB에 없는 필드이므로 제외
+        const { playerName, ...statsWithoutPlayerName } = match.stats;
+        return {
+          player_id: match.player_id,
+          grade: "", // Not used
+          ...statsWithoutPlayerName,
+        };
+      });
 
       // Fill remaining slots if less than 5
       while (newHomeStats.length < 5) {
@@ -195,11 +199,15 @@ export function MatchStatsInput({
       }
 
       // Populate away stats (limit to 5 players)
-      const newAwayStats = awayMatches.slice(0, 5).map((match) => ({
-        player_id: match.player_id,
-        grade: "", // Not used
-        ...match.stats,
-      }));
+      const newAwayStats = awayMatches.slice(0, 5).map((match) => {
+        // playerName은 DB에 없는 필드이므로 제외
+        const { playerName, ...statsWithoutPlayerName } = match.stats;
+        return {
+          player_id: match.player_id,
+          grade: "", // Not used
+          ...statsWithoutPlayerName,
+        };
+      });
 
       // Fill remaining slots if less than 5
       while (newAwayStats.length < 5) {
@@ -396,10 +404,26 @@ export function MatchStatsInput({
       toast.success("경기 결과가 저장되었습니다.");
       router.push(onSuccessRedirect);
       router.refresh();
-    } catch (error) {
+    } catch (error: unknown) {
+      // 상세 에러 로그 출력
       console.error("Error saving match stats:", error);
-      setErrors(["경기 결과 저장 중 오류가 발생했습니다."]);
-      toast.error("경기 결과 저장 중 오류가 발생했습니다.");
+      console.error("Error type:", typeof error);
+      console.error("Error JSON:", JSON.stringify(error, null, 2));
+
+      // 에러 메시지 추출
+      let errorMessage = "경기 결과 저장 중 오류가 발생했습니다.";
+      if (error && typeof error === "object") {
+        const err = error as { message?: string; details?: string; hint?: string; code?: string };
+        if (err.message) {
+          errorMessage = `오류: ${err.message}`;
+          if (err.details) errorMessage += ` (${err.details})`;
+          if (err.hint) errorMessage += ` - 힌트: ${err.hint}`;
+          if (err.code) errorMessage += ` [코드: ${err.code}]`;
+        }
+      }
+
+      setErrors([errorMessage]);
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   };

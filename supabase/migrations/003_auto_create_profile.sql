@@ -8,10 +8,11 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role, created_at, updated_at)
+  INSERT INTO public.profiles (id, email, psn_id, role, created_at, updated_at)
   VALUES (
     NEW.id,
     NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'psn_id', split_part(NEW.email, '@', 1)), -- user_metadata에서 psn_id 가져오거나 이메일 앞부분 사용
     'user', -- default role
     NOW(),
     NOW()

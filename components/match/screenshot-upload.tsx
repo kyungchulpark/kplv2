@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   extractStatsFromScreenshot,
   type OCRMatchResult,
-} from "@/lib/ocr/tesseract-service";
+} from "@/lib/ocr/gpt-vision-service";
 import { toast } from "sonner";
 
 interface ScreenshotUploadProps {

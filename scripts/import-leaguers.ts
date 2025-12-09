@@ -267,6 +267,19 @@ const LEAGUERS: Leaguer[] = [
   { psnId: 'Imgbc', teamName: 'Ride or die', position: 'PF' },
 ];
 
+/**
+ * PSN ID를 이메일에 사용 가능한 형태로 변환
+ * - 공백 제거
+ * - 이메일에 사용할 수 없는 특수문자 제거/변환
+ */
+function sanitizeForEmail(psnId: string): string {
+  return psnId
+    .trim()
+    .replace(/\s+/g, '_')    // 공백을 언더스코어로
+    .replace(/\|/g, 'l')     // 파이프를 'l'로
+    .replace(/[^a-zA-Z0-9._-]/g, ''); // 허용되지 않는 문자 제거
+}
+
 async function main() {
   console.log('🚀 KPL 26 1st Season 리거 임포트 시작...\n');
 
@@ -362,7 +375,8 @@ async function main() {
   const errors: string[] = [];
 
   for (const leaguer of LEAGUERS) {
-    const email = `${leaguer.psnId.trim()}@kpl.test`;
+    const sanitizedPsnId = sanitizeForEmail(leaguer.psnId);
+    const email = `${sanitizedPsnId}@kpl.test`;
     const password = 'Test1234!';
     const teamId = teamMap.get(leaguer.teamName);
 
@@ -373,34 +387,52 @@ async function main() {
       continue;
     }
 
-    // 기존 유저 체크
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users.find((u) => u.email === email);
-
     let userId: string;
 
-    if (existingUser) {
-      console.log(`  ℹ️  기존 유저 재사용: ${leaguer.psnId}`);
-      userId = existingUser.id;
-    } else {
-      // 유저 생성
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // 이메일 인증 스킵
-        user_metadata: {
-          psn_id: leaguer.psnId.trim(),
-        },
-      });
+    // 유저 생성 (중복 체크는 Supabase가 자동으로 처리)
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // 이메일 인증 스킵
+      user_metadata: {
+        psn_id: leaguer.psnId.trim(),
+      },
+    });
 
-      if (authError || !authData.user) {
-        console.error(`  ❌ 유저 생성 실패: ${leaguer.psnId}`, authError?.message);
-        errors.push(`유저 생성 실패: ${leaguer.psnId} - ${authError?.message}`);
+    if (authError) {
+      // 이미 존재하는 유저인 경우 무시하고 계속 진행
+      if (authError.message?.includes('already') || authError.message?.includes('exists')) {
+        console.log(`  ℹ️  기존 유저 건너뛰기: ${leaguer.psnId} (${email})`);
+        // 기존 유저 ID 찾기 (profiles 테이블에서)
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single();
+
+        if (existingProfile) {
+          userId = existingProfile.id;
+        } else {
+          console.warn(`  ⚠️  기존 유저를 찾을 수 없음: ${email}`);
+          errorCount++;
+          continue;
+        }
+      } else {
+        console.error(`  ❌ 유저 생성 실패: ${leaguer.psnId}`);
+        console.error(`     이메일: ${email}`);
+        console.error(`     에러: ${authError.message}`);
+        console.error(`     전체 에러:`, JSON.stringify(authError, null, 2));
+        errors.push(`유저 생성 실패: ${leaguer.psnId} - ${authError.message}`);
         errorCount++;
         continue;
       }
-
+    } else if (!authData?.user) {
+      console.error(`  ❌ 유저 생성 실패: ${leaguer.psnId} - authData.user가 없음`);
+      errorCount++;
+      continue;
+    } else {
       userId = authData.user.id;
+      console.log(`  ✅ 유저 생성: ${leaguer.psnId} (${email})`);
     }
 
     // Profile 생성 (auto trigger로 이미 생성되었을 수 있음)
