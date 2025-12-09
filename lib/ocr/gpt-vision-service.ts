@@ -43,22 +43,27 @@ SCREEN LAYOUT:
 - UPPER TABLE: Home team players (first team shown, with their team logo on left)
 - LOWER TABLE: Away team players (second team shown, with their team logo on left)
 
-TABLE COLUMNS (in exact order):
-플레이어 (Player) | GRD | PTS | REB | AST | STL | BLK | FLS | TO | FGM/FGA | 3PM/3PA | FTM/FTA
+TABLE STRUCTURE:
+- Header row: 플레이어 (Player) | GRD | PTS | REB | AST | STL | BLK | FLS | TO | FGM/FGA | 3PM/3PA | FTM/FTA
+- GRAY TEXT on the left of each table (before GRD column): This is the TEAM CAPTAIN name - IGNORE THIS
+- BLACK TEXT rows: These are the ACTUAL PLAYER stats - EXTRACT THESE ONLY
+
+CRITICAL: The first column shows player names in two different styles:
+1. GRAY/FADED text = Team captain indicator (IGNORE)
+2. BLACK/BOLD text = Actual player PSN ID (EXTRACT THIS)
 
 EXTRACTION RULES:
-1. Player names are PSN IDs (e.g., "AustinR1vers", "ZazaWell", "NotEnoughRaf")
-2. FGM/FGA format: "9/12" means fgm=9, fga=12
-3. 3PM/3PA format: "0/3" means three_pm=0, three_pa=3
-4. FTM/FTA format: "4/4" means ftm=4, fta=4
-5. FLS column = fouls, TO column = turnovers
-6. The "합계" (total) row should be IGNORED - only extract individual player rows
-7. Players with a star icon or highlighted are the same as regular players
-8. Extract EXACTLY 5 players from each team (if visible)
-9. The home team total score appears next to their logo (larger number like "61")
-10. The away team total score appears next to their logo (larger number like "55")
+1. Extract ONLY the rows with BLACK text - these are the 5 actual players per team
+2. Player names are PSN IDs (e.g., "AustinR1vers", "ZazaWell", "NotEnoughRaf")
+3. FGM/FGA format: "9/12" means fgm=9, fga=12
+4. 3PM/3PA format: "0/3" means three_pm=0, three_pa=3
+5. FTM/FTA format: "4/4" means ftm=4, fta=4
+6. FLS column = fouls, TO column = turnovers
+7. The "합계" (total) row with yellow background should be IGNORED
+8. Extract players in the EXACT ORDER they appear in the table (top to bottom)
+9. Each table has exactly 5 player rows with black text
 
-IMPORTANT: Read each cell carefully. If a value is unclear, make your best guess based on typical basketball stats.
+IMPORTANT: Read each row carefully from top to bottom. Maintain the exact order.
 
 Return ONLY valid JSON with no markdown formatting.`;
 
@@ -238,32 +243,49 @@ export async function extractStatsFromScreenshot(
 
 /**
  * Match OCR player names to database player IDs using fuzzy matching
- * (Re-exported from original service for compatibility)
+ * IMPORTANT: Prevents duplicate matching - each roster player can only be matched once
  */
 export async function matchPlayersToRoster(
     ocrPlayers: OCRPlayerStats[],
     rosterPlayers: Array<{ player_id: string; psn_id: string }>
 ): Promise<Array<{ player_id: string; stats: OCRPlayerStats; confidence: number }>> {
-    // Simple fuzzy matching - compare lowercased names
-    return ocrPlayers.map((ocrPlayer) => {
-        let bestMatch = rosterPlayers[0];
+    // Track which roster players have already been matched
+    const usedPlayerIds = new Set<string>();
+    const results: Array<{ player_id: string; stats: OCRPlayerStats; confidence: number }> = [];
+
+    for (const ocrPlayer of ocrPlayers) {
+        let bestMatch: { player_id: string; psn_id: string } | null = null;
         let bestScore = 0;
 
-        for (const rosterPlayer of rosterPlayers) {
+        // Only consider roster players that haven't been used yet
+        const availablePlayers = rosterPlayers.filter(p => !usedPlayerIds.has(p.player_id));
+
+        for (const rosterPlayer of availablePlayers) {
             // Calculate similarity score
             const ocrName = ocrPlayer.playerName.toLowerCase().replace(/[^a-z0-9]/g, "");
             const rosterName = rosterPlayer.psn_id.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-            // Simple matching: check if one contains the other or calculate overlap
             let score = 0;
             if (ocrName === rosterName) {
                 score = 100;
             } else if (ocrName.includes(rosterName) || rosterName.includes(ocrName)) {
                 score = 80;
             } else {
-                // Calculate character overlap
+                // Calculate character overlap using Levenshtein-like approach
+                const minLen = Math.min(ocrName.length, rosterName.length);
+                const maxLen = Math.max(ocrName.length, rosterName.length);
+                let matches = 0;
+
+                // Check consecutive matching characters
+                for (let i = 0; i < minLen; i++) {
+                    if (ocrName[i] === rosterName[i]) {
+                        matches++;
+                    }
+                }
+
+                // Also check if characters exist anywhere
                 const overlap = [...ocrName].filter(char => rosterName.includes(char)).length;
-                score = Math.round((overlap / Math.max(ocrName.length, rosterName.length)) * 60);
+                score = Math.round(((matches / maxLen) * 40) + ((overlap / maxLen) * 20));
             }
 
             if (score > bestScore) {
@@ -272,12 +294,19 @@ export async function matchPlayersToRoster(
             }
         }
 
-        return {
+        // Mark this player as used to prevent duplicates
+        if (bestMatch) {
+            usedPlayerIds.add(bestMatch.player_id);
+        }
+
+        results.push({
             player_id: bestMatch?.player_id || "",
             stats: ocrPlayer,
             confidence: bestScore / 100,
-        };
-    });
+        });
+    }
+
+    return results;
 }
 
 /**
