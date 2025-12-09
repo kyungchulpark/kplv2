@@ -23,6 +23,7 @@ const navLinks = [
   { href: "/standings", label: "순위" },
   { href: "/stats", label: "기록실" },
   { href: "/teams", label: "팀" },
+  { href: "/stats/upload", label: "경기결과 업로드" },
   { href: "https://cafe.naver.com/nbakpl", label: "네이버 카페", external: true },
 ];
 
