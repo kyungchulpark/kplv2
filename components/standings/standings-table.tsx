@@ -12,11 +12,13 @@ interface Team {
   gamesPlayed: number;
   winRate: number;
   points: number; // 승점
+  penalty_points?: number; // 감점 (optional for backward compatibility)
   points_for: number;
   points_against: number;
   margin: number;
   ppg: number; // Points Per Game (득점 평균)
   papg: number; // Points Against Per Game (실점 평균)
+  is_withdrawn?: boolean; // 탈퇴 여부
   recentForm: string[];
 }
 
@@ -37,6 +39,7 @@ export function StandingsTable({ teams }: StandingsTableProps) {
             <th className="text-center py-3 px-2">패</th>
             <th className="text-center py-3 px-2">승률</th>
             <th className="text-center py-3 px-2">승점</th>
+            <th className="text-center py-3 px-2">감점</th>
             <th className="text-center py-3 px-2">PPG</th>
             <th className="text-center py-3 px-2">PAPG</th>
             <th className="text-center py-3 px-2">득실차</th>
@@ -88,7 +91,12 @@ export function StandingsTable({ teams }: StandingsTableProps) {
                         {team.name.substring(0, 2).toUpperCase()}
                       </div>
                     )}
-                    <span className="font-semibold">{team.name}</span>
+                    <span className={cn("font-semibold", team.is_withdrawn && "line-through text-muted-foreground")}>
+                      {team.name}
+                    </span>
+                    {team.is_withdrawn && (
+                      <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground">(탈퇴)</span>
+                    )}
                   </div>
                 </td>
 
@@ -115,6 +123,17 @@ export function StandingsTable({ teams }: StandingsTableProps) {
                 {/* Points (승점) */}
                 <td className="py-4 px-2 text-center font-bold text-primary">
                   {team.points}
+                </td>
+
+                {/* Penalty Points (감점) */}
+                <td className="py-4 px-2 text-center">
+                  {team.penalty_points && team.penalty_points > 0 ? (
+                    <span className="font-semibold text-red-500">
+                      -{team.penalty_points}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </td>
 
                 {/* PPG (Points Per Game) */}

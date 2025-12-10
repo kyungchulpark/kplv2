@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { StandingsTable } from "@/components/standings/standings-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default async function StandingsPage() {
   const supabase = await createClient();
@@ -121,47 +122,75 @@ export default async function StandingsPage() {
       return b.points_for - a.points_for;
     });
 
+  // Combine all teams for "전체" tab
+  const allTeams = [...westTeams, ...eastTeams].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.ppg !== a.ppg) return b.ppg - a.ppg;
+    return b.points_for - a.points_for;
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">
-            순위표
-          </h1>
+          <h1 className="text-4xl font-bold">순위표</h1>
           <p className="text-xl text-muted-foreground">{activeSeason.name}</p>
         </div>
 
-        {/* Conference Standings */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tabs for Conference Selection */}
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="all">전체</TabsTrigger>
+            <TabsTrigger value="west">Western</TabsTrigger>
+            <TabsTrigger value="east">Eastern</TabsTrigger>
+          </TabsList>
+
+          {/* All Teams */}
+          <TabsContent value="all" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>전체 순위</CardTitle>
+                <CardDescription>상위 16팀 플레이오프 진출</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StandingsTable teams={allTeams} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Western Conference */}
-          <Card className="border-blue-500/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
-                <span className="text-2xl">Western Conference</span>
-              </CardTitle>
-              <CardDescription>상위 8팀 플레이오프 진출</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StandingsTable teams={westTeams} />
-            </CardContent>
-          </Card>
+          <TabsContent value="west" className="space-y-4">
+            <Card className="border-red-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <div className="h-1 w-12 bg-red-500 rounded-full"></div>
+                  <span className="text-2xl">Western Conference</span>
+                </CardTitle>
+                <CardDescription>상위 8팀 플레이오프 진출</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StandingsTable teams={westTeams} />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Eastern Conference */}
-          <Card className="border-nba-red/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className="h-1 w-12 bg-nba-red rounded-full"></div>
-                <span className="text-2xl">Eastern Conference</span>
-              </CardTitle>
-              <CardDescription>상위 8팀 플레이오프 진출</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StandingsTable teams={eastTeams} />
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="east" className="space-y-4">
+            <Card className="border-blue-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
+                  <span className="text-2xl">Eastern Conference</span>
+                </CardTitle>
+                <CardDescription>상위 8팀 플레이오프 진출</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StandingsTable teams={eastTeams} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Legend */}
         <Card className="border-muted">
