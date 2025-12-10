@@ -62,19 +62,18 @@ export function MatchesManager({
   };
 
   const handleDelete = async (matchId: string) => {
-    if (!confirm("경기를 완전히 삭제할까요?")) {
+    if (!confirm("Delete this match permanently?")) {
       return;
     }
 
     try {
       const { error } = await supabase.from("matches").delete().eq("id", matchId);
-
       if (error) throw error;
 
-      toast.success("경기가 삭제되었습니다.");
+      toast.success("Match deleted.");
       router.refresh();
     } catch (error: any) {
-      toast.error(error.message || "삭제 실패");
+      toast.error(error.message || "Delete failed.");
     }
   };
 
@@ -84,9 +83,14 @@ export function MatchesManager({
   };
 
   const handleReset = async (match: Match) => {
+    if (!match?.id) {
+      toast.error("Missing match ID.");
+      return;
+    }
+
     if (
       !confirm(
-        "이 경기의 결과/몰수 여부를 모두 초기화하고 예정 상태로 되돌립니다.\n관련 기록도 삭제됩니다."
+        "Reset this match to scheduled? Scores/forfeit flags will be cleared and stats deleted."
       )
     ) {
       return;
@@ -112,17 +116,22 @@ export function MatchesManager({
       if (error) throw error;
 
       await recalcStandings();
-      toast.success("경기를 리셋했습니다.");
+      toast.success("Match has been reset.");
       router.refresh();
     } catch (error: any) {
-      toast.error(error.message || "리셋 중 오류가 발생했습니다.");
+      toast.error(error.message || "Reset failed.");
     } finally {
       setProcessingId(null);
     }
   };
 
   const handleRandomResult = async (match: Match) => {
-    if (!confirm("무작위 점수로 경기 결과를 입력할까요?")) {
+    if (!match?.id) {
+      toast.error("Missing match ID.");
+      return;
+    }
+
+    if (!confirm("Apply a random result for this match? Existing scores/stats will be overwritten.")) {
       return;
     }
 
@@ -154,10 +163,10 @@ export function MatchesManager({
       if (error) throw error;
 
       await recalcStandings();
-      toast.success("무작위 결과가 적용되었습니다.");
+      toast.success("Random result applied.");
       router.refresh();
     } catch (error: any) {
-      toast.error(error.message || "무작위 결과 적용 실패");
+      toast.error(error.message || "Failed to apply random result.");
     } finally {
       setProcessingId(null);
     }
@@ -166,13 +175,13 @@ export function MatchesManager({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "scheduled":
-        return <Badge variant="outline">예정</Badge>;
+        return <Badge variant="outline">Scheduled</Badge>;
       case "live":
         return <Badge className="bg-red-500">LIVE</Badge>;
       case "finished":
-        return <Badge variant="secondary">종료</Badge>;
+        return <Badge variant="secondary">Final</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">취소</Badge>;
+        return <Badge variant="destructive">Cancelled</Badge>;
       default:
         return null;
     }
@@ -185,7 +194,7 @@ export function MatchesManager({
           <div>
             <h1 className="text-3xl font-bold">Matches</h1>
             <p className="text-muted-foreground">
-              {seasonName} - {matches.length}경기
+              {seasonName} - {matches.length} games
             </p>
           </div>
           <Button onClick={handleCreate}>
@@ -300,7 +309,7 @@ export function MatchesManager({
                         disabled={processingId === match.id}
                       >
                         <Sparkles className="h-4 w-4 mr-1" />
-                        랜덤 결과
+                        Random Result
                       </Button>
                       <Button
                         variant="outline"
@@ -309,7 +318,7 @@ export function MatchesManager({
                         disabled={processingId === match.id}
                       >
                         <RefreshCcw className="h-4 w-4 mr-1" />
-                        리셋
+                        Reset
                       </Button>
                       {match.status === "scheduled" && (
                         <ForfeitDialog
@@ -343,7 +352,7 @@ export function MatchesManager({
 
           {matches.length === 0 && (
             <div className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">등록된 경기가 없습니다</p>
+              <p className="text-muted-foreground mb-4">No matches yet.</p>
               <Button onClick={handleCreate}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add First Match
