@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PenaltyManager } from "@/components/admin/penalty-manager";
 import { WithdrawalManager } from "@/components/admin/withdrawal-manager";
+import { TeamResetManager } from "@/components/admin/team-reset-manager";
 import { AlertTriangle, UserX } from "lucide-react";
 
 export default async function TeamManagementPage() {
@@ -79,6 +80,25 @@ export default async function TeamManagementPage() {
           <CardContent>
             <WithdrawalManager
               teams={teams || []}
+              seasonId={activeSeason.id}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Team Reset */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <span>팀 경기 리셋</span>
+            </CardTitle>
+            <CardDescription>
+              선택한 팀의 경기 결과/기록을 모두 초기화하고 순위를 다시 계산합니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TeamResetManager
+              teams={(teams || []).map((t: any) => ({ id: t.id, name: t.name }))}
               seasonId={activeSeason.id}
             />
           </CardContent>

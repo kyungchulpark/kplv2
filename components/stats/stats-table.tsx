@@ -57,10 +57,35 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("pts");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
+  const perGameKeys: Set<SortKey> = new Set([
+    "pts",
+    "reb",
+    "ast",
+    "stl",
+    "blk",
+    "fls",
+    "turnovers",
+    "fgm",
+    "fga",
+    "three_pm",
+    "three_pa",
+    "ftm",
+    "fta",
+  ]);
+
+  const getSortableValue = (row: PlayerStatRow, key: SortKey) => {
+    const raw = row[key] as any;
+    if (perGameKeys.has(key)) {
+      const games = row.games_played || 0;
+      return games > 0 ? Number(raw || 0) / games : 0;
+    }
+    return raw ?? 0;
+  };
+
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
-      const aVal = a[sortKey] ?? 0;
-      const bVal = b[sortKey] ?? 0;
+      const aVal = getSortableValue(a, sortKey);
+      const bVal = getSortableValue(b, sortKey);
       if (sortDir === "asc") return Number(aVal) - Number(bVal);
       return Number(bVal) - Number(aVal);
     });
@@ -82,6 +107,18 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
     ) : (
       <ArrowDown className="h-3.5 w-3.5" />
     );
+  };
+
+  const formatStat = (row: PlayerStatRow, key: SortKey) => {
+    const value = row[key] as any;
+    if (!perGameKeys.has(key)) return value;
+
+    const games = row.games_played || 0;
+    if (games === 0) return 0;
+
+    const avg = Number(value || 0) / games;
+    // 2경기 이상이면 평균, 아니면 원값
+    return games >= 2 ? avg.toFixed(1) : Number(value || 0);
   };
 
   return (
@@ -154,19 +191,21 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
                     </div>
                   </td>
                   <td className="px-3 py-2 text-center">{row.games_played}</td>
-                  <td className="px-3 py-2 text-center font-semibold">{row.pts}</td>
-                  <td className="px-3 py-2 text-center">{row.reb}</td>
-                  <td className="px-3 py-2 text-center">{row.ast}</td>
-                  <td className="px-3 py-2 text-center">{row.stl}</td>
-                  <td className="px-3 py-2 text-center">{row.blk}</td>
-                  <td className="px-3 py-2 text-center">{row.fls}</td>
-                  <td className="px-3 py-2 text-center">{row.turnovers}</td>
-                  <td className="px-3 py-2 text-center">{row.fgm}</td>
-                  <td className="px-3 py-2 text-center">{row.fga}</td>
-                  <td className="px-3 py-2 text-center">{row.three_pm}</td>
-                  <td className="px-3 py-2 text-center">{row.three_pa}</td>
-                  <td className="px-3 py-2 text-center">{row.ftm}</td>
-                  <td className="px-3 py-2 text-center">{row.fta}</td>
+                  <td className="px-3 py-2 text-center font-semibold">
+                    {formatStat(row, "pts")}
+                  </td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "reb")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "ast")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "stl")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "blk")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "fls")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "turnovers")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "fgm")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "fga")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "three_pm")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "three_pa")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "ftm")}</td>
+                  <td className="px-3 py-2 text-center">{formatStat(row, "fta")}</td>
                 </tr>
               ))
             )}

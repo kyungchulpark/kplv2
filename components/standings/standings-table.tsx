@@ -11,14 +11,15 @@ interface Team {
   losses: number;
   gamesPlayed: number;
   winRate: number;
-  points: number; // 승점
-  penalty_points?: number; // 감점 (optional for backward compatibility)
+  points: number; // 총 승점
+  pointsNet: number; // 벌점 적용 승점
+  penalty_points?: number; // 감점
   points_for: number;
   points_against: number;
   margin: number;
-  ppg: number; // Points Per Game (득점 평균)
-  papg: number; // Points Against Per Game (실점 평균)
-  is_withdrawn?: boolean; // 탈퇴 여부
+  ppg: number; // Points Per Game
+  papg: number; // Points Against Per Game
+  is_withdrawn?: boolean;
   recentForm: string[];
 }
 
@@ -28,12 +29,36 @@ interface StandingsTableProps {
 }
 
 export function StandingsTable({ teams, conference }: StandingsTableProps) {
-  // Conference colors: West = Red, East = Blue
-  const bgClass = conference === "West" ? "bg-red-500/5" : conference === "East" ? "bg-blue-500/5" : "bg-primary/5";
-  const borderClass = conference === "West" ? "border-red-500/20" : conference === "East" ? "border-blue-500/20" : "border-primary/20";
-  const textClass = conference === "West" ? "text-red-500" : conference === "East" ? "text-blue-500" : "text-primary";
-  const borderColorClass = conference === "West" ? "border-red-500" : conference === "East" ? "border-blue-500" : "border-primary";
-  const bgLightClass = conference === "West" ? "bg-red-500/10" : conference === "East" ? "bg-blue-500/10" : "bg-primary/10";
+  const bgClass =
+    conference === "West"
+      ? "bg-red-500/5"
+      : conference === "East"
+      ? "bg-blue-500/5"
+      : "bg-primary/5";
+  const borderClass =
+    conference === "West"
+      ? "border-red-500/20"
+      : conference === "East"
+      ? "border-blue-500/20"
+      : "border-primary/20";
+  const textClass =
+    conference === "West"
+      ? "text-red-500"
+      : conference === "East"
+      ? "text-blue-500"
+      : "text-primary";
+  const borderColorClass =
+    conference === "West"
+      ? "border-red-500"
+      : conference === "East"
+      ? "border-blue-500"
+      : "border-primary";
+  const bgLightClass =
+    conference === "West"
+      ? "bg-red-500/10"
+      : conference === "East"
+      ? "bg-blue-500/10"
+      : "bg-primary/10";
 
   return (
     <div className="overflow-x-auto">
@@ -47,10 +72,10 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
             <th className="text-center py-3 px-2">패</th>
             <th className="text-center py-3 px-2">승률</th>
             <th className="text-center py-3 px-2">승점</th>
-            <th className="text-center py-3 px-2">감점</th>
+            <th className="text-center py-3 px-2">벌점</th>
             <th className="text-center py-3 px-2">PPG</th>
             <th className="text-center py-3 px-2">PAPG</th>
-            <th className="text-center py-3 px-2">득실차</th>
+            <th className="text-center py-3 px-2">득실</th>
             <th className="text-left py-3 px-2">최근5경기</th>
           </tr>
         </thead>
@@ -71,7 +96,15 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
                 <td className="py-4 px-2">
                   <div className="flex items-center space-x-2">
                     {isPlayoffTeam ? (
-                      <div className={cn("flex h-8 w-8 items-center justify-center rounded-md font-bold", bgLightClass, borderColorClass, textClass, "border")}>
+                      <div
+                        className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-md font-bold",
+                          bgLightClass,
+                          borderColorClass,
+                          textClass,
+                          "border"
+                        )}
+                      >
                         {rank}
                       </div>
                     ) : (
@@ -79,9 +112,7 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
                         {rank}
                       </div>
                     )}
-                    {rank === 1 && (
-                      <Trophy className="h-4 w-4 text-yellow-500" />
-                    )}
+                    {rank === 1 && <Trophy className="h-4 w-4 text-yellow-500" />}
                   </div>
                 </td>
 
@@ -99,11 +130,18 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
                         {team.name.substring(0, 2).toUpperCase()}
                       </div>
                     )}
-                    <span className={cn("font-semibold", team.is_withdrawn && "line-through text-muted-foreground")}>
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        team.is_withdrawn && "line-through text-muted-foreground"
+                      )}
+                    >
                       {team.name}
                     </span>
                     {team.is_withdrawn && (
-                      <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground">(탈퇴)</span>
+                      <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground">
+                        (탈퇴)
+                      </span>
                     )}
                   </div>
                 </td>
@@ -128,12 +166,21 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
                   {team.winRate.toFixed(1)}%
                 </td>
 
-                {/* Points (승점) */}
+                {/* Points */}
                 <td className="py-4 px-2 text-center font-bold text-primary">
-                  {team.points}
+                  <div className="flex flex-col items-center leading-tight">
+                    <span>
+                      {Number.isInteger(team.pointsNet)
+                        ? team.pointsNet
+                        : team.pointsNet.toFixed(1)}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      ({team.points} - {team.penalty_points ?? 0})
+                    </span>
+                  </div>
                 </td>
 
-                {/* Penalty Points (감점) */}
+                {/* Penalty Points */}
                 <td className="py-4 px-2 text-center">
                   {team.penalty_points && team.penalty_points > 0 ? (
                     <span className="font-semibold text-red-500">
@@ -144,12 +191,12 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
                   )}
                 </td>
 
-                {/* PPG (Points Per Game) */}
+                {/* PPG */}
                 <td className="py-4 px-2 text-center text-muted-foreground">
                   {team.ppg.toFixed(1)}
                 </td>
 
-                {/* PAPG (Points Against Per Game) */}
+                {/* PAPG */}
                 <td className="py-4 px-2 text-center text-muted-foreground">
                   {team.papg.toFixed(1)}
                 </td>

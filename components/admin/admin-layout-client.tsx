@@ -15,6 +15,7 @@ import {
   UserCheck,
   UserCog,
   Shuffle,
+  Award,
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,9 @@ type IconKey =
   | "conferenceDraw"
   | "matches"
   | "uploadSchedule"
-  | "users";
+  | "users"
+  | "playoffs"
+  | "history";
 
 type NavItem = {
   href: string;
@@ -60,6 +63,8 @@ export function AdminLayoutClient({
     matches: Calendar,
     uploadSchedule: FileSpreadsheet,
     users: UserCog,
+    playoffs: Trophy,
+    history: Award,
   };
 
   return (

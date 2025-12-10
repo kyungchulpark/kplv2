@@ -62,9 +62,19 @@ export default async function AdminLayout({
       icon: "matches",
     },
     {
+      href: "/admin/playoffs",
+      label: "Playoffs",
+      icon: "playoffs",
+    },
+    {
       href: "/admin/upload-schedule",
       label: "Upload Schedule",
       icon: "uploadSchedule",
+    },
+    {
+      href: "/admin/history",
+      label: "연혁/시상",
+      icon: "history",
     },
     {
       href: "/admin/users",

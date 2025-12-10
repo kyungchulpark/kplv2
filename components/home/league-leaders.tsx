@@ -29,6 +29,30 @@ export function LeagueLeaders({
   reboundLeaders,
   seasonName,
 }: LeagueLeadersProps) {
+  const colorStyles: Record<
+    string,
+    { bg: string; border: string; accent: string; solid: string }
+  > = {
+    orange: {
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      accent: "text-orange-500",
+      solid: "bg-orange-500",
+    },
+    blue: {
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/20",
+      accent: "text-blue-500",
+      solid: "bg-blue-500",
+    },
+    green: {
+      bg: "bg-green-500/10",
+      border: "border-green-500/20",
+      accent: "text-green-500",
+      solid: "bg-green-500",
+    },
+  };
+
   const renderLeaderCard = (
     title: string,
     icon: React.ReactNode,
@@ -37,11 +61,18 @@ export function LeagueLeaders({
     statLabel: string,
     color: string
   ) => {
+    const style = colorStyles[color] || colorStyles.orange;
+
     return (
-      <Card className={cn("border-2 transition-all hover:shadow-lg", `hover:border-${color}-500/50`)}>
+      <Card
+        className={cn(
+          "border-2 transition-all hover:shadow-lg",
+          style.border
+        )}
+      >
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <div className={cn("p-2 rounded-lg", `bg-${color}-500/10`)}>
+            <div className={cn("p-2 rounded-lg", style.bg)}>
               {icon}
             </div>
             <span>{title}</span>
@@ -68,14 +99,14 @@ export function LeagueLeaders({
                       className={cn(
                         "flex items-center space-x-3 p-3 rounded-lg transition-all cursor-pointer",
                         isTopPlayer
-                          ? `bg-${color}-500/10 border border-${color}-500/20`
+                          ? cn(style.bg, style.border, "border")
                           : "hover:bg-accent"
                       )}
                     >
                       {/* Rank */}
                       <div className="flex items-center justify-center min-w-[2rem]">
                         {isTopPlayer ? (
-                          <div className={cn("p-1 rounded-full", `bg-${color}-500`)}>
+                          <div className={cn("p-1 rounded-full", style.solid)}>
                             <Trophy className="h-4 w-4 text-white" />
                           </div>
                         ) : (
@@ -107,7 +138,7 @@ export function LeagueLeaders({
                         <p
                           className={cn(
                             "text-2xl font-bold",
-                            isTopPlayer ? `text-${color}-500` : ""
+                            isTopPlayer ? style.accent : ""
                           )}
                         >
                           {leader[statKey].toFixed(1)}

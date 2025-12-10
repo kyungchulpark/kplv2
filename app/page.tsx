@@ -26,20 +26,8 @@ export default async function Home() {
     );
   }
 
-  // Get today's date range (start and end of today in KST)
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayEnd = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    23,
-    59,
-    59
-  );
-
-  // Get today's matches (scheduled or recently finished)
-  const { data: todayMatches } = await supabase
+  // 최근 20경기 (NBA 스타일 슬라이드용)
+  const { data: recentMatches } = await supabase
     .from("matches")
     .select(
       `
@@ -59,39 +47,9 @@ export default async function Home() {
     `
     )
     .eq("season_id", activeSeason.id)
-    .gte("match_date", todayStart.toISOString())
-    .lte("match_date", todayEnd.toISOString())
-    .order("match_date", { ascending: true });
-
-  // If no matches today, get recent finished matches
-  let displayMatches = todayMatches || [];
-  if (displayMatches.length === 0) {
-    const { data: recentMatches } = await supabase
-      .from("matches")
-      .select(
-        `
-        *,
-        home_team:teams!matches_home_team_id_fkey(
-          id,
-          name,
-          logo_url,
-          conference
-        ),
-        away_team:teams!matches_away_team_id_fkey(
-          id,
-          name,
-          logo_url,
-          conference
-        )
-      `
-      )
-      .eq("season_id", activeSeason.id)
-      .eq("status", "finished")
-      .order("match_date", { ascending: false })
-      .limit(3);
-
-    displayMatches = recentMatches || [];
-  }
+    .eq("status", "finished")
+    .order("match_date", { ascending: false })
+    .limit(20);
 
   // Get league leaders (top 5 in each category)
   const { data: scoringLeaders } = await supabase
@@ -138,7 +96,7 @@ export default async function Home() {
 
       <div className="container mx-auto px-4 py-12 space-y-12">
         {/* Today's Matches */}
-        <TodayMatches matches={displayMatches} isToday={todayMatches && todayMatches.length > 0} />
+        <TodayMatches matches={recentMatches || []} />
 
         {/* League Leaders */}
         <LeagueLeaders

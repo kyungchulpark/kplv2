@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, RefreshCcw, Sparkles } from "lucide-react";
 import { MatchFormDialog } from "./match-form-dialog";
 import { ForfeitDialog } from "./forfeit-dialog";
 import { createClient } from "@/utils/supabase/client";
@@ -45,6 +45,9 @@ export function MatchesManager({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const supabase = createClient();
 
   const handleCreate = () => {
     setSelectedMatch(null);
@@ -59,20 +62,104 @@ export function MatchesManager({
   };
 
   const handleDelete = async (matchId: string) => {
-    if (!confirm("경기를 삭제하시겠습니까?")) {
+    if (!confirm("경기를 완전히 삭제할까요?")) {
       return;
     }
 
     try {
-      const supabase = createClient();
       const { error } = await supabase.from("matches").delete().eq("id", matchId);
 
       if (error) throw error;
 
-      toast.success("경기가 삭제되었습니다");
+      toast.success("경기가 삭제되었습니다.");
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || "삭제 실패");
+    }
+  };
+
+  const recalcStandings = async () => {
+    const { error } = await supabase.rpc("recalculate_team_standings");
+    if (error) throw error;
+  };
+
+  const handleReset = async (match: Match) => {
+    if (
+      !confirm(
+        "이 경기의 결과/몰수 여부를 모두 초기화하고 예정 상태로 되돌립니다.\n관련 기록도 삭제됩니다."
+      )
+    ) {
+      return;
+    }
+
+    setProcessingId(match.id);
+    try {
+      await supabase.from("match_stats").delete().eq("match_id", match.id);
+
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          status: "scheduled",
+          home_score: null,
+          away_score: null,
+          is_forfeit: false,
+          forfeit_winner_id: null,
+          forfeit_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", match.id);
+
+      if (error) throw error;
+
+      await recalcStandings();
+      toast.success("경기를 리셋했습니다.");
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || "리셋 중 오류가 발생했습니다.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRandomResult = async (match: Match) => {
+    if (!confirm("무작위 점수로 경기 결과를 입력할까요?")) {
+      return;
+    }
+
+    setProcessingId(match.id);
+    try {
+      const baseScore = 60 + Math.floor(Math.random() * 41); // 60~100
+      const diff = Math.floor(Math.random() * 16) - 8; // -8 ~ +7
+      let homeScore = baseScore;
+      let awayScore = baseScore + diff;
+      if (homeScore === awayScore) {
+        awayScore += 3;
+      }
+
+      await supabase.from("match_stats").delete().eq("match_id", match.id);
+
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          status: "finished",
+          home_score: homeScore,
+          away_score: awayScore,
+          is_forfeit: false,
+          forfeit_winner_id: null,
+          forfeit_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", match.id);
+
+      if (error) throw error;
+
+      await recalcStandings();
+      toast.success("무작위 결과가 적용되었습니다.");
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || "무작위 결과 적용 실패");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -98,7 +185,7 @@ export function MatchesManager({
           <div>
             <h1 className="text-3xl font-bold">Matches</h1>
             <p className="text-muted-foreground">
-              {seasonName} - {matches.length}개 경기
+              {seasonName} - {matches.length}경기
             </p>
           </div>
           <Button onClick={handleCreate}>
@@ -197,13 +284,32 @@ export function MatchesManager({
                     </code>
                   </td>
                   <td className="py-4 px-2 text-right">
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex justify-end flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(match)}
+                        disabled={processingId === match.id}
                       >
                         Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRandomResult(match)}
+                        disabled={processingId === match.id}
+                      >
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        랜덤 결과
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReset(match)}
+                        disabled={processingId === match.id}
+                      >
+                        <RefreshCcw className="h-4 w-4 mr-1" />
+                        리셋
                       </Button>
                       {match.status === "scheduled" && (
                         <ForfeitDialog
@@ -224,6 +330,7 @@ export function MatchesManager({
                         size="sm"
                         className="text-destructive"
                         onClick={() => handleDelete(match.id)}
+                        disabled={processingId === match.id}
                       >
                         Delete
                       </Button>
