@@ -25,15 +25,15 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
 
       if (user) {
-        // Check if profile exists
+        // Check if profile exists and has psn_id
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", user.id)
           .single();
 
-        // If profile doesn't exist, redirect to profile setup
-        if (!profile) {
+        // If profile doesn't exist or missing PSN ID, redirect to profile setup
+        if (!profile || !profile.psn_id) {
           return NextResponse.redirect(`${origin}/auth/setup`);
         }
 

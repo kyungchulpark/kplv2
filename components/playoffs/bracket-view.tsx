@@ -20,7 +20,7 @@ interface PlayoffSeries {
   team1_wins: number;
   team2_wins: number;
   winner_id: string | null;
-  series_format: "BO3" | "BO5";
+  series_format: "BO1" | "BO3" | "BO5";
   status: "pending" | "ongoing" | "completed";
 }
 
@@ -30,29 +30,27 @@ interface BracketViewProps {
 }
 
 export function BracketView({ series, conference }: BracketViewProps) {
-  const conferenceColor = conference === "West" ? "red" : "blue";
-
-  // Group series by round
+  const playIn = series.filter((s) => s.round_number === 0);
   const round1 = series.filter((s) => s.round_number === 1);
   const round2 = series.filter((s) => s.round_number === 2);
   const round3 = series.filter((s) => s.round_number === 3);
   const round4 = series.filter((s) => s.round_number === 4);
 
   const SeriesCard = ({ s }: { s: PlayoffSeries }) => {
-    const maxWins = s.series_format === "BO3" ? 2 : 3;
+    const maxWins =
+      s.series_format === "BO5" ? 3 : s.series_format === "BO1" ? 1 : 2;
     const isCompleted = s.status === "completed";
 
     return (
       <div
         className={cn(
-          "border rounded-lg p-3 space-y-2 min-w-[200px]",
-          isCompleted && "bg-muted/50"
+          "border rounded-lg p-3 space-y-2 min-w-[200px] bg-background/60",
+          isCompleted && "bg-muted/60"
         )}
       >
-        {/* Series Info */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {s.series_format} (First to {maxWins})
+            {s.series_format} (first to {maxWins})
           </span>
           {isCompleted && <Trophy className="h-3 w-3 text-yellow-500" />}
         </div>
@@ -66,7 +64,7 @@ export function BracketView({ series, conference }: BracketViewProps) {
         >
           <div className="flex items-center space-x-2">
             {s.team1_seed && (
-              <span className="text-xs font-bold text-muted-foreground w-4">
+              <span className="text-xs font-bold text-muted-foreground w-5 text-right">
                 {s.team1_seed}
               </span>
             )}
@@ -98,7 +96,7 @@ export function BracketView({ series, conference }: BracketViewProps) {
         >
           <div className="flex items-center space-x-2">
             {s.team2_seed && (
-              <span className="text-xs font-bold text-muted-foreground w-4">
+              <span className="text-xs font-bold text-muted-foreground w-5 text-right">
                 {s.team2_seed}
               </span>
             )}
@@ -121,90 +119,51 @@ export function BracketView({ series, conference }: BracketViewProps) {
           <span className="font-bold">{s.team2_wins}</span>
         </div>
 
-        {/* Status */}
-        {!isCompleted && s.status === "ongoing" && (
-          <div className="text-xs text-center text-primary">경기 중</div>
+        {s.status === "ongoing" && !isCompleted && (
+          <div className="text-xs text-center text-primary">In progress</div>
         )}
       </div>
     );
   };
 
+  const renderRound = (title: string, data: PlayoffSeries[]) => (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-center text-muted-foreground">
+        {title}
+      </h3>
+      {data.length > 0 ? (
+        data.map((s) => <SeriesCard key={s.id} s={s} />)
+      ) : (
+        <p className="text-xs text-muted-foreground text-center">No series yet.</p>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      {/* Conference Header */}
-      <div
-        className={cn(
-          "flex items-center justify-center space-x-2 py-3 rounded-lg border-2",
-          conferenceColor === "red"
-            ? "border-red-500/50 bg-red-500/10"
-            : "border-blue-500/50 bg-blue-500/10"
-        )}
-      >
+      <div className="flex items-center justify-center space-x-2 py-3 rounded-lg border bg-muted/50">
         <Trophy
           className={cn(
             "h-5 w-5",
-            conferenceColor === "red" ? "text-red-500" : "text-blue-500"
+            conference === "West" ? "text-red-500" : "text-blue-500"
           )}
         />
-        <h2
-          className={cn(
-            "text-xl font-bold",
-            conferenceColor === "red" ? "text-red-500" : "text-blue-500"
-          )}
-        >
-          {conference === "West" ? "서부 컨퍼런스" : "동부 컨퍼런스"}
+        <h2 className="text-xl font-bold">
+          {conference === "West" ? "Western Conference" : "Eastern Conference"}
         </h2>
       </div>
 
-      {/* Bracket Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Round 1: 8강 */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-center text-muted-foreground">
-            8강 (Round 1)
-          </h3>
-          {round1.map((s) => (
-            <SeriesCard key={s.id} s={s} />
-          ))}
-        </div>
-
-        {/* Round 2: 4강 */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-center text-muted-foreground">
-            4강 (Round 2)
-          </h3>
-          {round2.map((s) => (
-            <SeriesCard key={s.id} s={s} />
-          ))}
-        </div>
-
-        {/* Round 3: Conference Finals */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-center text-muted-foreground">
-            컨퍼런스 결승
-          </h3>
-          {round3.map((s) => (
-            <SeriesCard key={s.id} s={s} />
-          ))}
-        </div>
-
-        {/* Round 4: Championship (if applicable) */}
-        {round4.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-center text-muted-foreground">
-              챔피언십
-            </h3>
-            {round4.map((s) => (
-              <SeriesCard key={s.id} s={s} />
-            ))}
-          </div>
-        )}
+        {playIn.length > 0 && renderRound("Play-In", playIn)}
+        {renderRound("Quarterfinals (Round 1)", round1)}
+        {renderRound("Semifinals (Round 2)", round2)}
+        {renderRound("Conference Finals", round3)}
+        {round4.length > 0 && renderRound("Finals", round4)}
       </div>
 
-      {/* Empty State */}
       {series.length === 0 && (
         <div className="py-12 text-center text-muted-foreground">
-          플레이오프 브라켓이 아직 생성되지 않았습니다.
+          Bracket is empty. Create or edit it from the admin panel.
         </div>
       )}
     </div>

@@ -87,7 +87,7 @@ export default async function PlayoffsPage() {
                 Playoff bracket not created yet.
               </p>
               <p className="text-sm text-muted-foreground">
-                Seed the bracket from the admin panel to view playoff series here.
+                Create or edit the bracket from the admin panel to view playoff series here.
               </p>
             </div>
           </div>

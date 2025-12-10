@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Search } from "lucide-react";
+import { Shield, Search, UserRound } from "lucide-react";
 import Link from "next/link";
 
 interface Player {
@@ -37,12 +43,10 @@ export function PlayersClient({ players }: { players: Player[] }) {
 
   const filteredPlayers = useMemo(() => {
     return players.filter((player) => {
-      // Search filter
       const matchesSearch =
         player.psn_id?.toLowerCase().includes(search.toLowerCase()) ||
         player.email?.toLowerCase().includes(search.toLowerCase());
 
-      // Team filter
       const matchesFilter =
         filter === "all" ||
         (filter === "team" && player.team) ||
@@ -55,8 +59,8 @@ export function PlayersClient({ players }: { players: Player[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>선수 목록</CardTitle>
-        <CardDescription>검색 및 필터링</CardDescription>
+        <CardTitle>Players</CardTitle>
+        <CardDescription>Search and filter</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Filter */}
@@ -64,7 +68,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="PSN ID 또는 이메일 검색..."
+              placeholder="Search by PSN ID or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -72,12 +76,12 @@ export function PlayersClient({ players }: { players: Player[] }) {
           </div>
           <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="필터" />
+              <SelectValue placeholder="Filter" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">전체 선수</SelectItem>
-              <SelectItem value="team">팀 소속</SelectItem>
-              <SelectItem value="free">자유 계약</SelectItem>
+              <SelectItem value="all">All players</SelectItem>
+              <SelectItem value="team">On a team</SelectItem>
+              <SelectItem value="free">Free agent</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -90,14 +94,14 @@ export function PlayersClient({ players }: { players: Player[] }) {
                 <div className="flex items-start gap-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={player.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {player.psn_id?.substring(0, 2).toUpperCase() || "??"}
+                    <AvatarFallback className="bg-muted">
+                      <UserRound className="h-5 w-5 text-muted-foreground" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-semibold truncate">
-                        {player.psn_id || "PSN ID 없음"}
+                        {player.psn_id || "PSN ID"}
                       </p>
                       {player.isCaptain && (
                         <Shield className="h-4 w-4 text-yellow-500 flex-shrink-0" />
@@ -128,7 +132,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
                       </Link>
                     ) : (
                       <Badge variant="outline" className="text-xs">
-                        자유 계약
+                        Free agent
                       </Badge>
                     )}
                   </div>
@@ -139,8 +143,8 @@ export function PlayersClient({ players }: { players: Player[] }) {
         </div>
 
         {filteredPlayers.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>검색 결과가 없습니다</p>
+          <div className="py-6 text-center text-muted-foreground text-sm">
+            No players match this filter.
           </div>
         )}
       </CardContent>

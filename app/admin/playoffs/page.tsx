@@ -1,6 +1,11 @@
 import { createClient } from "@/utils/supabase/server";
 import { PlayoffManager } from "@/components/admin/playoff-manager";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 
 export default async function AdminPlayoffsPage() {
@@ -17,7 +22,7 @@ export default async function AdminPlayoffsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Playoffs</CardTitle>
-          <CardDescription>진행 중인 시즌이 없습니다.</CardDescription>
+          <CardDescription>No active season.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -33,6 +38,8 @@ export default async function AdminPlayoffsPage() {
 
   let westSeries: any[] = [];
   let eastSeries: any[] = [];
+  const westBracketId = westBracket?.id;
+  const eastBracketId = eastBracket?.id;
 
   if (westBracket) {
     const { data } = await supabase
@@ -73,7 +80,7 @@ export default async function AdminPlayoffsPage() {
       <div className="flex items-center gap-2">
         <Trophy className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">Playoffs 관리</h1>
+          <h1 className="text-3xl font-bold">Playoffs</h1>
           <p className="text-muted-foreground">{season.name}</p>
         </div>
       </div>
@@ -82,6 +89,8 @@ export default async function AdminPlayoffsPage() {
         seasonId={season.id}
         westSeries={westSeries}
         eastSeries={eastSeries}
+        westBracketId={westBracketId}
+        eastBracketId={eastBracketId}
       />
     </div>
   );

@@ -73,7 +73,7 @@ export default async function AdminLayout({
     },
     {
       href: "/admin/history",
-      label: "연혁/시상",
+      label: "History",
       icon: "history",
     },
     {

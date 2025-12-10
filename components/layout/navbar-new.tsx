@@ -69,37 +69,37 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               href="/schedule"
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              일정
+              Schedule
             </Link>
             <Link
               href="/standings"
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              순위
+              Standings
             </Link>
             <Link
               href="/playoffs"
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              플레이오프
+              Playoffs
             </Link>
 
             {/* Stats Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground inline-flex items-center gap-1">
-                기록실
+                Stats
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem asChild>
                   <Link href="/stats" className="cursor-pointer">
-                    리그 기록
+                    League stats
                   </Link>
                 </DropdownMenuItem>
                 {user && (
                   <DropdownMenuItem asChild>
                     <Link href="/stats/upload" className="cursor-pointer">
-                      경기 결과 업로드
+                      Upload results
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -109,18 +109,18 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             {/* Teams Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground inline-flex items-center gap-1">
-                팀
+                Teams
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem asChild>
                   <Link href="/teams" className="cursor-pointer">
-                    전체 팀
+                    All teams
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/players" className="cursor-pointer">
-                    선수 목록
+                    Players
                   </Link>
                 </DropdownMenuItem>
                 {user && (
@@ -128,12 +128,12 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link href="/teams/create" className="cursor-pointer">
-                        팀 생성 신청
+                        Submit a team
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/teams/my-requests" className="cursor-pointer">
-                        내 신청 내역
+                        My requests
                       </Link>
                     </DropdownMenuItem>
                   </>
@@ -145,7 +145,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               href="/history"
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              챔피언십
+              History
             </Link>
 
             <a
@@ -154,7 +154,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               rel="noopener noreferrer"
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground inline-flex items-center gap-1"
             >
-              네이버 카페
+              Naver Cafe
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
@@ -185,7 +185,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 {isOperator && (
                   <Link href="/admin">
                     <Button variant="outline" size="sm">
-                      관리자
+                      Admin
                     </Button>
                   </Link>
                 )}
@@ -194,7 +194,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 <Link href="/profile">
                   <Button variant="default" size="sm">
                     <User className="mr-2 h-4 w-4" />
-                    {user.profile?.psn_id || "내 프로필"}
+                    {user.profile?.psn_id || "Profile"}
                   </Button>
                 </Link>
               </div>
@@ -202,7 +202,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               <Link href="/auth/signin" className="hidden md:block">
                 <Button variant="default" size="sm">
                   <LogIn className="mr-2 h-4 w-4" />
-                  로그인
+                  Sign in
                 </Button>
               </Link>
             )}
@@ -238,32 +238,32 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
-            일정
+            Schedule
           </Link>
           <Link
             href="/standings"
             className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
-            순위
+            Standings
           </Link>
           <Link
             href="/playoffs"
             className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
-            플레이오프
+            Playoffs
           </Link>
 
           {/* Stats Submenu */}
           <div className="space-y-1">
-            <div className="px-3 py-2 text-sm font-semibold text-foreground">기록실</div>
+            <div className="px-3 py-2 text-sm font-semibold text-foreground">Stats</div>
             <Link
               href="/stats"
               className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              리그 기록
+              League stats
             </Link>
             {user && (
               <Link
@@ -271,27 +271,27 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                경기 결과 업로드
+                Upload results
               </Link>
             )}
           </div>
 
           {/* Team Submenu */}
           <div className="space-y-1">
-            <div className="px-3 py-2 text-sm font-semibold text-foreground">팀</div>
+            <div className="px-3 py-2 text-sm font-semibold text-foreground">Teams</div>
             <Link
               href="/teams"
               className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              전체 팀
+              All teams
             </Link>
             <Link
               href="/players"
               className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
-              선수 목록
+              Players
             </Link>
             {user && (
               <>
@@ -300,14 +300,14 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                   className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  팀 생성 신청
+                  Submit a team
                 </Link>
                 <Link
                   href="/teams/my-requests"
                   className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  내 신청 내역
+                  My requests
                 </Link>
               </>
             )}
@@ -318,7 +318,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
-            챔피언십
+            History
           </Link>
 
           <a
@@ -328,7 +328,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
-            네이버 카페
+            Naver Cafe
             <ExternalLink className="h-4 w-4" />
           </a>
 
@@ -352,7 +352,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                       ) : (
                         <Shield className="h-4 w-4" />
                       )}
-                      내 팀: {userTeam.name}
+                      My team: {userTeam.name}
                     </Button>
                   </Link>
                 )}
@@ -360,14 +360,14 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 {isOperator && (
                   <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full">
-                      관리자
+                      Admin
                     </Button>
                   </Link>
                 )}
                 <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="default" size="sm" className="w-full">
                     <User className="mr-2 h-4 w-4" />
-                    {user.profile?.psn_id || "내 프로필"}
+                    {user.profile?.psn_id || "Profile"}
                   </Button>
                 </Link>
               </>
@@ -378,7 +378,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               >
                 <Button variant="default" size="sm" className="w-full">
                   <LogIn className="mr-2 h-4 w-4" />
-                  로그인
+                  Sign in
                 </Button>
               </Link>
             )}
