@@ -30,11 +30,11 @@ BEGIN
     RAISE NOTICE '==============================================';
 END $$;
 
--- Step 2: Fix the times - subtract 9 hours from all match_date
--- This converts incorrectly stored times back to correct UTC
--- Example: 2025-12-10 23:20:00+00 → 2025-12-10 14:20:00+00
+-- Step 2: Fix the dates - add 1 day to all match_date
+-- Dates were stored 1 day earlier than they should be
+-- Example: 2025-12-10 14:20:00+00 → 2025-12-11 14:20:00+00
 UPDATE matches
-SET match_date = match_date - INTERVAL '9 hours',
+SET match_date = match_date + INTERVAL '1 day',
     updated_at = NOW();
 
 -- Step 3: Verify the fix
@@ -68,4 +68,4 @@ BEGIN
 END $$;
 
 -- ROLLBACK (if needed):
--- UPDATE matches SET match_date = match_date + INTERVAL '9 hours';
+-- UPDATE matches SET match_date = match_date - INTERVAL '1 day';
