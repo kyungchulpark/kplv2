@@ -9,6 +9,7 @@ import { MatchDetailDialog } from "./match-detail-dialog";
 import { DateSlider } from "./date-slider";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { formatMatchTimeKST } from "@/utils/date-helpers";
 
 type Match = {
   id: string;
@@ -127,14 +128,9 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
   // Filter matches for selected date
   const currentMatches = resolvedDate ? groupedMatches[resolvedDate] || [] : [];
 
-  // Display time as stored (avoid extra timezone shifts). Matches are saved in UTC; render raw HH:mm.
+  // Format time in KST to display correctly (no date shift)
   const formatMatchTime = (dateString: string) => {
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: "UTC",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(dateString));
+    return formatMatchTimeKST(dateString);
   };
 
   const handleDateChange = (date: string) => {

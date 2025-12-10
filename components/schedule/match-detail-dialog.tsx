@@ -15,6 +15,7 @@ import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { YouTubeEmbed } from "@/components/match/youtube-embed";
 import Link from "next/link";
+import { formatMatchTimeKST, formatMatchDateKoreanKST } from "@/utils/date-helpers";
 
 interface Match {
   id: string;
@@ -202,18 +203,11 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-1">
                 <Calendar className="h-4 w-4" />
-                <span>{matchDate.toLocaleDateString("ko-KR")}</span>
+                <span>{formatMatchDateKoreanKST(match.match_date)}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-                <span>
-                  {new Intl.DateTimeFormat("en-US", {
-                    timeZone: "UTC",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  }).format(matchDate)}
-                </span>
+                <span>{formatMatchTimeKST(match.match_date)}</span>
               </div>
             </div>
           </DialogDescription>

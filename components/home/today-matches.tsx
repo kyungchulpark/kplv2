@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+import { formatMatchTimeKST, formatMatchDateLongKST } from "@/utils/date-helpers";
 
 type Match = {
   id: string;
@@ -44,21 +45,11 @@ export function TodayMatches({ matches, isToday }: TodayMatchesProps) {
   };
 
   const formatMatchTime = (dateString: string) => {
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: "UTC",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(dateString));
+    return formatMatchTimeKST(dateString);
   };
 
   const formatMatchDate = (dateString: string) => {
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: "UTC",
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-    }).format(new Date(dateString));
+    return formatMatchDateLongKST(dateString);
   };
 
   return (
