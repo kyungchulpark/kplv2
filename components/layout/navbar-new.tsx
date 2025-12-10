@@ -77,6 +77,12 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             >
               순위
             </Link>
+            <Link
+              href="/playoffs"
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              플레이오프
+            </Link>
 
             {/* Stats Dropdown */}
             <DropdownMenu>
@@ -134,6 +140,13 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Link
+              href="/history"
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              챔피언십
+            </Link>
 
             <a
               href="https://cafe.naver.com/nbakpl"
@@ -234,6 +247,13 @@ export function Navbar({ user, userTeam }: NavbarProps) {
           >
             순위
           </Link>
+          <Link
+            href="/playoffs"
+            className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            플레이오프
+          </Link>
 
           {/* Stats Submenu */}
           <div className="space-y-1">
@@ -292,6 +312,14 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               </>
             )}
           </div>
+
+          <Link
+            href="/history"
+            className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            챔피언십
+          </Link>
 
           <a
             href="https://cafe.naver.com/nbakpl"

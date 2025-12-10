@@ -21,8 +21,10 @@ interface NavbarProps {
 const navLinks = [
   { href: "/schedule", label: "일정" },
   { href: "/standings", label: "순위" },
+  { href: "/playoffs", label: "플레이오프" },
   { href: "/stats", label: "기록실" },
   { href: "/teams", label: "팀" },
+  { href: "/history", label: "챔피언십" },
   { href: "/stats/upload", label: "경기결과 업로드" },
   { href: "https://cafe.naver.com/nbakpl", label: "네이버 카페", external: true },
 ];
