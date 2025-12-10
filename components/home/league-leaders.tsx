@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trophy, Target, Users2, TrendingUp } from "lucide-react";
+import { Trophy, Target, Users2, TrendingUp, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LeaderStats {
@@ -118,8 +118,8 @@ export function LeagueLeaders({
 
                       {/* Player Avatar */}
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-nba-red text-white font-bold">
-                          {leader.psn_id.substring(0, 2).toUpperCase()}
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-5 w-5 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
 

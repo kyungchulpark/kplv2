@@ -117,7 +117,7 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
           >
             {sorted.map((match) => (
               <Link key={match.id} href={`/matches/${match.id}`} className="snap-start">
-                <Card className="min-w-[280px] w-[300px] hover:shadow-lg transition-shadow border border-primary/10 bg-gradient-to-br from-background to-muted/40">
+                <Card className="min-w-[280px] w-[300px] hover:shadow-lg transition-shadow bg-white/5 border border-white/10 text-white">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <span>{formatMatchTime(match.match_date)}</span>

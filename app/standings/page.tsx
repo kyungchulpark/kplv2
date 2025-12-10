@@ -328,7 +328,7 @@ export default async function StandingsPage() {
 
           {/* All Teams */}
           <TabsContent value="all" className="space-y-4">
-            <Card>
+            <Card className="bg-neutral-900/5 dark:bg-white/5">
               <CardHeader>
                 <CardTitle>전체 순위</CardTitle>
                 <CardDescription>승점(벌점 반영) 기준 정렬</CardDescription>

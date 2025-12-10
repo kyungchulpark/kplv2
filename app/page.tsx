@@ -86,7 +86,7 @@ export default async function Home() {
     .eq("status", "finished");
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-neutral-950 text-white">
       <HeroSection
         seasonName={activeSeason.name}
         teamsCount={teamsCount || 0}
@@ -95,10 +95,8 @@ export default async function Home() {
       />
 
       <div className="container mx-auto px-4 py-12 space-y-12">
-        {/* Today's Matches */}
         <TodayMatches matches={recentMatches || []} />
 
-        {/* League Leaders */}
         <LeagueLeaders
           scoringLeaders={scoringLeaders || []}
           assistLeaders={assistLeaders || []}

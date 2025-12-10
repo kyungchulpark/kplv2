@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Trash2, UserCog, Shield } from "lucide-react";
+import { Search, Trash2, UserCog, Shield, User as UserIcon } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
@@ -210,8 +210,8 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {user.psn_id?.substring(0, 2).toUpperCase() || "??"}
+                          <AvatarFallback className="bg-muted">
+                            <UserIcon className="h-4 w-4 text-muted-foreground" />
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm">{user.email}</span>

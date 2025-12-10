@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PlayerStatRow = {
@@ -117,7 +117,7 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
     if (games === 0) return 0;
 
     const avg = Number(value || 0) / games;
-    // 2경기 이상이면 평균, 아니면 원값
+    // 2寃쎄린 ?댁긽?대㈃ ?됯퇏, ?꾨땲硫??먭컪
     return games >= 2 ? avg.toFixed(1) : Number(value || 0);
   };
 
@@ -170,7 +170,9 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={row.avatar_url || undefined} />
-                        <AvatarFallback>{row.psn_id.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                        </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
                         <div className="font-semibold truncate">{row.psn_id}</div>
