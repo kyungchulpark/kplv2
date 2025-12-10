@@ -35,7 +35,7 @@ export function TeamResetManager({
 
   const handleResetTeam = async () => {
     if (!selectedTeam) {
-      toast.error("팀을 선택하세요.");
+      toast.error("Please select a team.");
       return;
     }
 
@@ -43,7 +43,7 @@ export function TeamResetManager({
 
     if (
       !confirm(
-        `${teamName}의 모든 경기 결과를 초기화하고 예정 상태로 되돌릴까요?\n기록/승점이 모두 재계산됩니다.`
+        `Reset ALL results for ${teamName}? Scores/forfeit flags will be cleared and stats deleted.`
       )
     ) {
       return;
@@ -81,14 +81,15 @@ export function TeamResetManager({
       }
 
       const { error: recalcError } = await supabase.rpc(
-        "recalculate_team_standings"
+        "recalculate_team_standings",
+        { p_season_id: seasonId }
       );
       if (recalcError) throw recalcError;
 
-      toast.success("팀 경기 결과를 모두 리셋했습니다.");
+      toast.success("Team matches have been reset and standings recalculated.");
       if (onSuccess) onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "팀 경기 리셋 실패");
+      toast.error(error.message || "Failed to reset team matches.");
     } finally {
       setLoading(false);
     }
@@ -98,11 +99,11 @@ export function TeamResetManager({
     <div className="space-y-3">
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <AlertTriangle className="h-4 w-4" />
-        <span>선택한 팀의 모든 경기 결과를 초기화합니다.</span>
+        <span>Reset all results for the selected team.</span>
       </div>
       <Select value={selectedTeam} onValueChange={setSelectedTeam}>
         <SelectTrigger>
-          <SelectValue placeholder="팀을 선택하세요" />
+          <SelectValue placeholder="Select a team" />
         </SelectTrigger>
         <SelectContent>
           {teams.map((team) => (
@@ -119,7 +120,7 @@ export function TeamResetManager({
         className="w-full"
       >
         <RotateCcw className="h-4 w-4 mr-2" />
-        팀 경기 전부 리셋
+        Reset all matches
       </Button>
     </div>
   );

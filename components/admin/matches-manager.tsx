@@ -78,7 +78,9 @@ export function MatchesManager({
   };
 
   const recalcStandings = async () => {
-    const { error } = await supabase.rpc("recalculate_team_standings");
+    const { error } = await supabase.rpc("recalculate_team_standings", {
+      p_season_id: seasonId,
+    });
     if (error) throw error;
   };
 
