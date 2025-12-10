@@ -24,9 +24,17 @@ interface Team {
 
 interface StandingsTableProps {
   teams: Team[];
+  conference?: "West" | "East";
 }
 
-export function StandingsTable({ teams }: StandingsTableProps) {
+export function StandingsTable({ teams, conference }: StandingsTableProps) {
+  // Conference colors: West = Red, East = Blue
+  const bgClass = conference === "West" ? "bg-red-500/5" : conference === "East" ? "bg-blue-500/5" : "bg-primary/5";
+  const borderClass = conference === "West" ? "border-red-500/20" : conference === "East" ? "border-blue-500/20" : "border-primary/20";
+  const textClass = conference === "West" ? "text-red-500" : conference === "East" ? "text-blue-500" : "text-primary";
+  const borderColorClass = conference === "West" ? "border-red-500" : conference === "East" ? "border-blue-500" : "border-primary";
+  const bgLightClass = conference === "West" ? "bg-red-500/10" : conference === "East" ? "bg-blue-500/10" : "bg-primary/10";
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -56,14 +64,14 @@ export function StandingsTable({ teams }: StandingsTableProps) {
                 key={team.id}
                 className={cn(
                   "border-b transition-colors hover:bg-muted/50",
-                  isPlayoffTeam && "bg-primary/5 border-primary/20"
+                  isPlayoffTeam && `${bgClass} ${borderClass}`
                 )}
               >
                 {/* Rank */}
                 <td className="py-4 px-2">
                   <div className="flex items-center space-x-2">
                     {isPlayoffTeam ? (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary font-bold text-primary">
+                      <div className={cn("flex h-8 w-8 items-center justify-center rounded-md font-bold", bgLightClass, borderColorClass, textClass, "border")}>
                         {rank}
                       </div>
                     ) : (

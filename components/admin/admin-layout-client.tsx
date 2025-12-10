@@ -15,6 +15,7 @@ import {
   UserCheck,
   UserCog,
   Shuffle,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,7 @@ type IconKey =
   | "seasons"
   | "teams"
   | "teamRequests"
+  | "teamManagement"
   | "conferenceDraw"
   | "matches"
   | "uploadSchedule"
@@ -53,6 +55,7 @@ export function AdminLayoutClient({
     seasons: Trophy,
     teams: Users,
     teamRequests: UserCheck,
+    teamManagement: AlertTriangle,
     conferenceDraw: Shuffle,
     matches: Calendar,
     uploadSchedule: FileSpreadsheet,

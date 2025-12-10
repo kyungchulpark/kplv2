@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar } from "lucide-react";
 import { MatchFormDialog } from "./match-form-dialog";
+import { ForfeitDialog } from "./forfeit-dialog";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
@@ -204,6 +205,20 @@ export function MatchesManager({
                       >
                         Edit
                       </Button>
+                      {match.status === "scheduled" && (
+                        <ForfeitDialog
+                          match={{
+                            id: match.id,
+                            home_team_id: match.home_team_id,
+                            away_team_id: match.away_team_id,
+                            home_team_name: match.home_team.name,
+                            away_team_name: match.away_team.name,
+                            match_date: match.match_date,
+                            status: match.status,
+                          }}
+                          onSuccess={() => router.refresh()}
+                        />
+                      )}
                       <Button
                         variant="outline"
                         size="sm"

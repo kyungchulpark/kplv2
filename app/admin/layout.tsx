@@ -10,6 +10,8 @@ import {
   UserCheck,
   UserCog,
   Shuffle,
+  Award,
+  AlertTriangle,
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -43,6 +45,11 @@ export default async function AdminLayout({
       href: "/admin/team-requests",
       label: "Team Requests",
       icon: "teamRequests",
+    },
+    {
+      href: "/admin/team-management",
+      label: "Team Management",
+      icon: "teamManagement",
     },
     {
       href: "/admin/conference-draw",

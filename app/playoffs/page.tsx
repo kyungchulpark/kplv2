@@ -101,15 +101,17 @@ export default async function PlayoffsPage() {
           </TabsContent>
         </Tabs>
       ) : (
-        <div className="py-12 text-center space-y-4">
-          <Trophy className="h-16 w-16 mx-auto text-muted-foreground/50" />
-          <div className="space-y-2">
-            <p className="text-lg font-semibold">
-              플레이오프가 아직 시작되지 않았습니다
-            </p>
-            <p className="text-sm text-muted-foreground">
-              정규 시즌이 종료되면 플레이오프 브라켓이 생성됩니다
-            </p>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center space-y-4 max-w-md">
+            <Trophy className="h-16 w-16 mx-auto text-muted-foreground/50" />
+            <div className="space-y-2">
+              <p className="text-lg font-semibold">
+                플레이오프가 아직 시작되지 않았습니다
+              </p>
+              <p className="text-sm text-muted-foreground">
+                정규 시즌이 종료되면 플레이오프 브라켓이 생성됩니다
+              </p>
+            </div>
           </div>
         </div>
       )}

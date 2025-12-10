@@ -170,7 +170,7 @@ export default async function StandingsPage() {
                 <CardDescription>상위 8팀 플레이오프 진출</CardDescription>
               </CardHeader>
               <CardContent>
-                <StandingsTable teams={westTeams} />
+                <StandingsTable teams={westTeams} conference="West" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -186,7 +186,7 @@ export default async function StandingsPage() {
                 <CardDescription>상위 8팀 플레이오프 진출</CardDescription>
               </CardHeader>
               <CardContent>
-                <StandingsTable teams={eastTeams} />
+                <StandingsTable teams={eastTeams} conference="East" />
               </CardContent>
             </Card>
           </TabsContent>
