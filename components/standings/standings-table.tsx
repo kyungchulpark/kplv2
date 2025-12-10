@@ -11,9 +11,12 @@ interface Team {
   losses: number;
   gamesPlayed: number;
   winRate: number;
+  points: number; // 승점
   points_for: number;
   points_against: number;
   margin: number;
+  ppg: number; // Points Per Game (득점 평균)
+  papg: number; // Points Against Per Game (실점 평균)
   recentForm: string[];
 }
 
@@ -33,8 +36,9 @@ export function StandingsTable({ teams }: StandingsTableProps) {
             <th className="text-center py-3 px-2">승</th>
             <th className="text-center py-3 px-2">패</th>
             <th className="text-center py-3 px-2">승률</th>
-            <th className="text-center py-3 px-2">득점</th>
-            <th className="text-center py-3 px-2">실점</th>
+            <th className="text-center py-3 px-2">승점</th>
+            <th className="text-center py-3 px-2">PPG</th>
+            <th className="text-center py-3 px-2">PAPG</th>
             <th className="text-center py-3 px-2">득실차</th>
             <th className="text-left py-3 px-2">최근5경기</th>
           </tr>
@@ -108,14 +112,19 @@ export function StandingsTable({ teams }: StandingsTableProps) {
                   {team.winRate.toFixed(1)}%
                 </td>
 
-                {/* Points For */}
-                <td className="py-4 px-2 text-center text-muted-foreground">
-                  {team.points_for}
+                {/* Points (승점) */}
+                <td className="py-4 px-2 text-center font-bold text-primary">
+                  {team.points}
                 </td>
 
-                {/* Points Against */}
+                {/* PPG (Points Per Game) */}
                 <td className="py-4 px-2 text-center text-muted-foreground">
-                  {team.points_against}
+                  {team.ppg.toFixed(1)}
+                </td>
+
+                {/* PAPG (Points Against Per Game) */}
+                <td className="py-4 px-2 text-center text-muted-foreground">
+                  {team.papg.toFixed(1)}
                 </td>
 
                 {/* Margin */}

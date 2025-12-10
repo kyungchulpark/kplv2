@@ -74,12 +74,20 @@ export default async function StandingsPage() {
         team.wins + team.losses === 0
           ? 0
           : (team.points_for - team.points_against) / (team.wins + team.losses),
+      ppg:
+        team.wins + team.losses === 0
+          ? 0
+          : team.points_for / (team.wins + team.losses),
+      papg:
+        team.wins + team.losses === 0
+          ? 0
+          : team.points_against / (team.wins + team.losses),
     }))
     .sort((a, b) => {
-      // Ranking: Win Rate > Wins > Margin > Points Scored
-      if (b.winRate !== a.winRate) return b.winRate - a.winRate;
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      if (b.margin !== a.margin) return b.margin - a.margin;
+      // NEW Ranking: Points > Head-to-head (TODO) > Avg Points Scored
+      if (b.points !== a.points) return b.points - a.points;
+      // TODO: Add head-to-head comparison here
+      if (b.ppg !== a.ppg) return b.ppg - a.ppg;
       return b.points_for - a.points_for;
     });
 
@@ -96,11 +104,20 @@ export default async function StandingsPage() {
         team.wins + team.losses === 0
           ? 0
           : (team.points_for - team.points_against) / (team.wins + team.losses),
+      ppg:
+        team.wins + team.losses === 0
+          ? 0
+          : team.points_for / (team.wins + team.losses),
+      papg:
+        team.wins + team.losses === 0
+          ? 0
+          : team.points_against / (team.wins + team.losses),
     }))
     .sort((a, b) => {
-      if (b.winRate !== a.winRate) return b.winRate - a.winRate;
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      if (b.margin !== a.margin) return b.margin - a.margin;
+      // NEW Ranking: Points > Head-to-head (TODO) > Avg Points Scored
+      if (b.points !== a.points) return b.points - a.points;
+      // TODO: Add head-to-head comparison here
+      if (b.ppg !== a.ppg) return b.ppg - a.ppg;
       return b.points_for - a.points_for;
     });
 
