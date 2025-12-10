@@ -97,10 +97,10 @@ export function MatchFormDialog({
     try {
       const supabase = createClient();
 
-      // Combine date and time
-      const matchDateTime = new Date(
-        `${formData.match_date}T${formData.match_time}:00`
-      ).toISOString();
+      // Combine date and time - Convert KST to UTC
+      // Add +09:00 to explicitly mark as KST, then convert to UTC
+      const kstDateTime = `${formData.match_date}T${formData.match_time}:00+09:00`;
+      const matchDateTime = new Date(kstDateTime).toISOString();
 
       const matchData = {
         season_id: seasonId,

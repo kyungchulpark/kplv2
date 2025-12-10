@@ -322,12 +322,21 @@ export default function UploadSchedulePage() {
         setTeams([...teams, ...(insertedTeams || [])]);
       }
 
+      // Helper: Convert KST to UTC
+      const convertKSTtoUTC = (dateStr: string, timeStr: string): string => {
+        // dateStr: "2025-12-10", timeStr: "22:20"
+        // Create date in KST, then convert to UTC
+        const kstDateTime = `${dateStr}T${timeStr}:00+09:00`; // Explicitly mark as KST (+09:00)
+        const utcDate = new Date(kstDateTime);
+        return utcDate.toISOString();
+      };
+
       // Prepare matches for insert
       const matches = parsedData.map((match) => ({
         season_id: activeSeason.id,
         home_team_id: teamMap.get(match.home_team),
         away_team_id: teamMap.get(match.away_team),
-        match_date: `${match.match_date}T${match.match_time}:00`,
+        match_date: convertKSTtoUTC(match.match_date, match.match_time),
         status: "scheduled",
         match_sequence: match.match_sequence,
         game_password: match.game_password,
