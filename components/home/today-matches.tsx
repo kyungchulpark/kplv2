@@ -39,11 +39,19 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
   const getStatusBadge = (status: Match["status"]) => {
     switch (status) {
       case "live":
-        return <Badge className="bg-red-500">LIVE</Badge>;
+        return <Badge className="bg-rose-500 text-white">LIVE</Badge>;
       case "finished":
-        return <Badge variant="secondary">Final</Badge>;
+        return (
+          <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">
+            Final
+          </Badge>
+        );
       case "scheduled":
-        return <Badge variant="outline">Scheduled</Badge>;
+        return (
+          <Badge className="border border-slate-200 bg-slate-100 text-slate-600">
+            Scheduled
+          </Badge>
+        );
       case "cancelled":
         return <Badge variant="destructive">Cancelled</Badge>;
       default:
@@ -86,20 +94,20 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            최근 경기 20개 슬라이드
+            Last 20 games
           </Badge>
           <div className="flex items-center gap-1">
             <button
               className="rounded-full border p-2 hover:bg-accent"
               onClick={() => scroll("prev")}
-              aria-label="이전 경기"
+              aria-label="Previous games"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               className="rounded-full border p-2 hover:bg-accent"
               onClick={() => scroll("next")}
-              aria-label="다음 경기"
+              aria-label="Next games"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -117,7 +125,7 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
           >
             {sorted.map((match) => (
               <Link key={match.id} href={`/matches/${match.id}`} className="snap-start">
-                <Card className="min-w-[280px] w-[300px] hover:shadow-lg transition-shadow bg-white/5 border border-white/10 text-white">
+                <Card className="min-w-[280px] w-[300px] border border-slate-100 bg-white text-slate-900 transition-shadow hover:shadow-lg">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <span>{formatMatchTime(match.match_date)}</span>
@@ -125,7 +133,7 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
                         {match.is_forfeit && (
                           <Badge variant="destructive" className="flex items-center gap-1">
                             <Flag className="h-3 w-3" />
-                            몰수
+                            Forfeit
                           </Badge>
                         )}
                         {getStatusBadge(match.status)}
@@ -141,7 +149,7 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
                             className="h-8 w-8 object-contain"
                           />
                         ) : (
-                          <div className="h-8 w-8 rounded bg-nba-red text-white text-xs font-bold flex items-center justify-center">
+                          <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-500 text-xs font-bold text-white">
                             {match.home_team.name.substring(0, 2)}
                           </div>
                         )}
@@ -173,7 +181,7 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
                             className="h-8 w-8 object-contain"
                           />
                         ) : (
-                          <div className="h-8 w-8 rounded bg-nba-red text-white text-xs font-bold flex items-center justify-center">
+                          <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-500 text-xs font-bold text-white">
                             {match.away_team.name.substring(0, 2)}
                           </div>
                         )}

@@ -23,7 +23,7 @@ export default async function HistoryPage() {
       `
       *,
       season:season_id(name),
-      player:player_id(psn_id, full_name)
+      player:player_id(psn_id)
     `
     )
     .order("created_at", { ascending: false });
@@ -55,10 +55,15 @@ export default async function HistoryPage() {
     }
   };
 
+  const formatDate = (value?: string | null) => {
+    if (!value) return "TBD";
+    return new Date(value).toLocaleDateString("en-US");
+  };
+
   return (
-    <div className="container py-8 space-y-8">
-      <div className="space-y-2">
-        <div className="flex items-center space-x-3">
+    <div className="container space-y-8 py-8">
+      <div className="space-y-2 text-center">
+        <div className="flex items-center justify-center space-x-3">
           <Trophy className="h-8 w-8 text-yellow-500" />
           <h1 className="text-3xl font-bold">History</h1>
         </div>
@@ -68,14 +73,14 @@ export default async function HistoryPage() {
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Champions</h2>
+        <h2 className="text-center text-2xl font-bold">Champions</h2>
 
         {championships && championships.length > 0 ? (
           <div className="grid gap-6">
             {championships.map((champ: any) => (
               <Card key={champ.id} className="border-2 border-primary/20">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <CardTitle className="flex items-center space-x-2">
                       <Trophy className="h-6 w-6 text-yellow-500" />
                       <span>{champ.season_name}</span>
@@ -85,8 +90,7 @@ export default async function HistoryPage() {
                     </Badge>
                   </div>
                   <CardDescription>
-                    {new Date(champ.start_date).toLocaleDateString("ko-KR")} -{" "}
-                    {new Date(champ.end_date).toLocaleDateString("ko-KR")}
+                    {formatDate(champ.start_date)} – {formatDate(champ.end_date)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -109,7 +113,7 @@ export default async function HistoryPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">
+                      <div className="text-2xl font-bold text-emerald-600">
                         {champ.finals_series_wins}
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -119,7 +123,7 @@ export default async function HistoryPage() {
                   </div>
 
                   {champ.runner_up_team_name && (
-                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center justify-between rounded-lg border p-3">
                       <div className="flex items-center space-x-3">
                         {champ.runner_up_logo && (
                           <img
@@ -140,7 +144,7 @@ export default async function HistoryPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid gap-3 md:grid-cols-2">
                     {champ.finals_mvp_name && (
                       <div className="flex items-center space-x-2 p-2 rounded border bg-muted/50">
                         <Trophy className="h-4 w-4 text-yellow-500" />
@@ -181,7 +185,7 @@ export default async function HistoryPage() {
 
       {awards && awards.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Season Awards</h2>
+          <h2 className="text-center text-2xl font-bold">Season Awards</h2>
 
           <div className="grid gap-4">
             {awards.map((award: any) => (

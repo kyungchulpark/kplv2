@@ -30,24 +30,23 @@ export function TeamCard({ team }: TeamCardProps) {
 
   return (
     <Link href={`/teams/${team.id}`}>
-      <Card className="group hover:border-primary/50 transition-all hover:shadow-lg cursor-pointer">
+      <Card className="group cursor-pointer border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            {/* Team Logo */}
-            <div className="flex items-center space-x-3 flex-1">
+            <div className="flex flex-1 items-center space-x-3">
               {team.logo_url ? (
                 <img
                   src={team.logo_url}
                   alt={team.name}
-                  className="h-16 w-16 object-contain"
+                  className="h-12 w-12 rounded object-contain"
                 />
               ) : (
-                <div className="h-16 w-16 rounded-lg bg-nba-red flex items-center justify-center text-2xl font-bold text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500 text-xl font-bold text-white">
                   {team.name.substring(0, 2).toUpperCase()}
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-lg group-hover:text-primary transition-colors truncate">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-lg font-bold transition-colors group-hover:text-emerald-600">
                   {team.name}
                 </h3>
                 {team.region && (
@@ -56,14 +55,13 @@ export function TeamCard({ team }: TeamCardProps) {
               </div>
             </div>
 
-            {/* Conference Badge */}
             {team.conference && (
               <Badge
                 variant="outline"
                 className={
                   team.conference === "West"
-                    ? "border-blue-500 text-blue-500"
-                    : "border-red-500 text-red-500"
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                    : "border-cyan-300 bg-cyan-50 text-cyan-700"
                 }
               >
                 {team.conference}
@@ -72,31 +70,30 @@ export function TeamCard({ team }: TeamCardProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-3">
-          {/* Record */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">전적</span>
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Record</span>
             <div className="flex items-center space-x-2">
-              <Trophy className="h-4 w-4 text-yellow-500" />
+              <Trophy className="h-4 w-4 text-amber-500" />
               <span className="font-semibold">
-                {team.wins}승 {team.losses}패
+                {team.wins}-{team.losses}
               </span>
-              <span className="text-muted-foreground">({winRate}%)</span>
+              <span className="text-xs text-muted-foreground">
+                ({winRate}%)
+              </span>
             </div>
           </div>
 
-          {/* Roster Count */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">로스터</span>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Roster Size</span>
             <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-primary" />
-              <span className="font-semibold">{rosterCount}명</span>
+              <Users className="h-4 w-4 text-emerald-600" />
+              <span className="font-semibold">{rosterCount} players</span>
             </div>
           </div>
 
-          {/* Captain */}
           {team.captain && (
-            <div className="pt-2 border-t">
+            <div className="border-t pt-2">
               <div className="flex items-center space-x-2">
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={team.captain.avatar_url || undefined} />
@@ -105,7 +102,7 @@ export function TeamCard({ team }: TeamCardProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-xs text-muted-foreground">팀장</p>
+                  <p className="text-xs text-muted-foreground">Captain</p>
                   <p className="text-sm font-medium">{team.captain.psn_id}</p>
                 </div>
               </div>

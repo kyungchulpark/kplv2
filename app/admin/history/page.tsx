@@ -37,40 +37,45 @@ export default async function AdminHistoryPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>연혁/시상 관리</CardTitle>
-          <CardDescription>기초 데이터가 없습니다.</CardDescription>
+          <CardTitle>Champion / Awards Admin</CardTitle>
+          <CardDescription>Source data is missing.</CardDescription>
         </CardHeader>
       </Card>
     );
   }
+
+  const safeSeasons = seasons ?? [];
+  const safeTeams = teams ?? [];
+  const safePlayers = players ?? [];
+  const safeHistory = recentHistory ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Trophy className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">연혁/시상 관리</h1>
+          <h1 className="text-3xl font-bold">Champion / Awards Admin</h1>
           <p className="text-muted-foreground">
-            시즌별 우승/준우승/MVP 및 시상 데이터 입력
+            Record championships, runner-ups, and MVPs for each season.
           </p>
         </div>
       </div>
 
       <ChampionshipManager
-        seasons={seasons as any}
-        teams={teams as any}
-        players={players as any}
-        defaultSeasonId={seasons[0]?.id}
+        seasons={safeSeasons as any}
+        teams={safeTeams as any}
+        players={safePlayers as any}
+        defaultSeasonId={safeSeasons[0]?.id}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>최근 우승 기록</CardTitle>
-          <CardDescription>상위 5개만 표시됩니다.</CardDescription>
+          <CardTitle>Recent Champions</CardTitle>
+          <CardDescription>Latest five entries</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {recentHistory && recentHistory.length > 0 ? (
-            recentHistory.map((item: any) => (
+          {safeHistory.length > 0 ? (
+            safeHistory.map((item: any) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between rounded border p-3"
@@ -78,18 +83,18 @@ export default async function AdminHistoryPage() {
                 <div>
                   <p className="font-semibold">{item.season_name}</p>
                   <p className="text-sm text-muted-foreground">
-                    챔피언: {item.champion_team_name} / 준우승:{" "}
+                    Champion: {item.champion_team_name} / Runner-up:{" "}
                     {item.runner_up_team_name || "-"}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(item.championship_date).toLocaleDateString("ko-KR")}
+                  {new Date(item.championship_date).toLocaleDateString("en-US")}
                 </span>
               </div>
             ))
           ) : (
             <p className="text-sm text-muted-foreground">
-              아직 입력된 우승 기록이 없습니다.
+              No championship records yet.
             </p>
           )}
         </CardContent>

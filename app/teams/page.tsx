@@ -17,8 +17,8 @@ export default async function TeamsPage() {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>팀 정보</CardTitle>
-            <CardDescription>진행 중인 시즌이 없습니다.</CardDescription>
+            <CardTitle>Teams</CardTitle>
+            <CardDescription>No active season.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -52,28 +52,25 @@ export default async function TeamsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">
-            팀 정보
-          </h1>
+        <div className="space-y-2 text-center">
+          <h1 className="text-4xl font-bold">Teams</h1>
           <p className="text-xl text-muted-foreground">
-            {activeSeason.name} - {teams?.length || 0}개 팀
+            {activeSeason.name} • {teams?.length || 0} teams
           </p>
         </div>
 
-        {/* Conference-based or Unified */}
         {hasConferences ? (
           <div className="space-y-8">
-            {/* Western Conference */}
             {westTeams.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
+                  <div className="h-1 w-12 rounded-full bg-emerald-500"></div>
                   <h2 className="text-2xl font-bold">Western Conference</h2>
-                  <span className="text-muted-foreground">({westTeams.length}팀)</span>
+                  <span className="text-muted-foreground">
+                    ({westTeams.length})
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {westTeams.map((team) => (
                     <TeamCard key={team.id} team={team} />
                   ))}
@@ -81,15 +78,16 @@ export default async function TeamsPage() {
               </div>
             )}
 
-            {/* Eastern Conference */}
             {eastTeams.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <div className="h-1 w-12 bg-red-500 rounded-full"></div>
+                  <div className="h-1 w-12 rounded-full bg-cyan-500"></div>
                   <h2 className="text-2xl font-bold">Eastern Conference</h2>
-                  <span className="text-muted-foreground">({eastTeams.length}팀)</span>
+                  <span className="text-muted-foreground">
+                    ({eastTeams.length})
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {eastTeams.map((team) => (
                     <TeamCard key={team.id} team={team} />
                   ))}
@@ -98,8 +96,7 @@ export default async function TeamsPage() {
             )}
           </div>
         ) : (
-          /* Unified League */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {unifiedTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}
@@ -109,7 +106,7 @@ export default async function TeamsPage() {
         {teams && teams.length === 0 && (
           <Card>
             <CardContent className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">등록된 팀이 없습니다.</p>
+              <p className="text-muted-foreground">No teams yet.</p>
             </CardContent>
           </Card>
         )}

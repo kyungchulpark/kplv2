@@ -80,8 +80,8 @@ export function LeagueLeaders({
         </CardHeader>
         <CardContent>
           {leaders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              데이터가 없습니다
+            <div className="py-8 text-center text-muted-foreground">
+              No stats yet.
             </div>
           ) : (
             <div className="space-y-3">
@@ -128,8 +128,8 @@ export function LeagueLeaders({
                         <p className="font-semibold truncate">
                           {leader.psn_id}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {leader.team_name} · {leader.games_played}경기
+                        <p className="truncate text-xs text-muted-foreground">
+                          {leader.team_name} • {leader.games_played} GP
                         </p>
                       </div>
 
@@ -162,16 +162,16 @@ export function LeagueLeaders({
     <section className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-3xl font-bold">리그 리더</h2>
+          <h2 className="text-3xl font-bold">League Leaders</h2>
           <p className="text-muted-foreground">
-            {seasonName} 주요 기록 상위 5명
+            {seasonName} • Top 5 per category
           </p>
         </div>
         <Link
           href="/stats"
-          className="text-sm text-primary hover:underline flex items-center"
+          className="flex items-center text-sm text-emerald-600 hover:underline"
         >
-          전체 기록 보기
+          View full leaderboard
           <span className="ml-1">→</span>
         </Link>
       </div>
@@ -179,7 +179,7 @@ export function LeagueLeaders({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Scoring Leaders */}
         {renderLeaderCard(
-          "득점왕",
+          "Scoring",
           <Target className="h-5 w-5 text-orange-500" />,
           scoringLeaders,
           "ppg",
@@ -189,7 +189,7 @@ export function LeagueLeaders({
 
         {/* Assist Leaders */}
         {renderLeaderCard(
-          "어시스트왕",
+          "Assists",
           <Users2 className="h-5 w-5 text-blue-500" />,
           assistLeaders,
           "apg",
@@ -199,7 +199,7 @@ export function LeagueLeaders({
 
         {/* Rebound Leaders */}
         {renderLeaderCard(
-          "리바운드왕",
+          "Rebounding",
           <TrendingUp className="h-5 w-5 text-green-500" />,
           reboundLeaders,
           "rpg",

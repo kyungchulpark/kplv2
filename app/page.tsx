@@ -16,10 +16,15 @@ export default async function Home() {
   if (!activeSeason) {
     return (
       <div className="container mx-auto px-4 py-16">
-        <HeroSection seasonName="KPL" teamsCount={0} finishedMatches={0} scheduleDays="Tue/Thu/Sun" />
+        <HeroSection
+          seasonName="KPL"
+          teamsCount={0}
+          finishedMatches={0}
+          scheduleDays="Tue/Thu/Sun"
+        />
         <div className="mt-12 text-center">
           <p className="text-xl text-muted-foreground">
-            진행 중인 시즌이 없습니다.
+            No active season yet. Please check back soon.
           </p>
         </div>
       </div>
@@ -86,7 +91,7 @@ export default async function Home() {
     .eq("status", "finished");
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div className="min-h-screen bg-white text-slate-900">
       <HeroSection
         seasonName={activeSeason.name}
         teamsCount={teamsCount || 0}

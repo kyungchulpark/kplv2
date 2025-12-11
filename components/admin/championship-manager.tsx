@@ -51,7 +51,7 @@ export function ChampionshipManager({
 
   const recordChampion = async () => {
     if (!seasonId || !championId) {
-      toast.error("시즌과 우승팀을 선택하세요.");
+      toast.error("Select a season and champion.");
       return;
     }
 
@@ -66,15 +66,15 @@ export function ChampionshipManager({
       });
 
       if (error) throw error;
-      toast.success("우승 기록이 저장되었습니다.");
+      toast.success("Championship saved.");
     } catch (error: any) {
-      toast.error(error.message || "우승 기록 저장 실패");
+      toast.error(error.message || "Failed to save championship.");
     }
   };
 
   const addAward = async () => {
     if (!awardSeasonId || !awardPlayerId || !awardType) {
-      toast.error("시즌/선수/상을 선택하세요.");
+      toast.error("Select season, award type, and player.");
       return;
     }
 
@@ -86,9 +86,9 @@ export function ChampionshipManager({
         stat_value: awardStat ? Number(awardStat) : null,
       });
       if (error) throw error;
-      toast.success("시상 정보가 저장되었습니다.");
+      toast.success("Award saved.");
     } catch (error: any) {
-      toast.error(error.message || "시상 저장 실패");
+      toast.error(error.message || "Failed to save award.");
     }
   };
 
@@ -98,13 +98,13 @@ export function ChampionshipManager({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
-            시즌 우승 기록
+            Record Championship
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={seasonId} onValueChange={setSeasonId}>
             <SelectTrigger>
-              <SelectValue placeholder="시즌 선택" />
+              <SelectValue placeholder="Select season" />
             </SelectTrigger>
             <SelectContent>
               {seasons.map((s) => (
@@ -117,10 +117,10 @@ export function ChampionshipManager({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">우승팀</span>
+              <span className="text-sm text-muted-foreground">Champion</span>
               <Select value={championId} onValueChange={setChampionId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="우승팀 선택" />
+                  <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
                   {teams.map((t) => (
@@ -132,13 +132,13 @@ export function ChampionshipManager({
               </Select>
             </div>
             <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">준우승팀</span>
+              <span className="text-sm text-muted-foreground">Runner-up</span>
               <Select value={runnerUpId} onValueChange={setRunnerUpId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="준우승팀 선택" />
+                  <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">선택 안함</SelectItem>
+                  <SelectItem value="">None</SelectItem>
                   {teams.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}
@@ -151,13 +151,15 @@ export function ChampionshipManager({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">파이널 MVP</span>
+              <span className="text-sm text-muted-foreground">
+                Finals MVP
+              </span>
               <Select value={finalsMvpId} onValueChange={setFinalsMvpId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="선수 선택" />
+                  <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">선택 안함</SelectItem>
+                  <SelectItem value="">None</SelectItem>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.psn_id}
@@ -168,28 +170,28 @@ export function ChampionshipManager({
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-sm text-muted-foreground">시리즈 승</span>
+                <span className="text-sm text-muted-foreground">Wins</span>
                 <Input
                   type="number"
                   value={wins}
-                  onChange={(e) => setWins(e.target.value)}
                   min={0}
+                  onChange={(e) => setWins(e.target.value)}
                 />
               </div>
               <div>
-                <span className="text-sm text-muted-foreground">시리즈 패</span>
+                <span className="text-sm text-muted-foreground">Losses</span>
                 <Input
                   type="number"
                   value={losses}
-                  onChange={(e) => setLosses(e.target.value)}
                   min={0}
+                  onChange={(e) => setLosses(e.target.value)}
                 />
               </div>
             </div>
           </div>
 
           <Button onClick={recordChampion} className="w-full">
-            우승 기록 저장
+            Save Championship
           </Button>
         </CardContent>
       </Card>
@@ -198,13 +200,13 @@ export function ChampionshipManager({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Award className="h-5 w-5 text-primary" />
-            시즌 시상 추가
+            Add Season Award
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={awardSeasonId} onValueChange={setAwardSeasonId}>
             <SelectTrigger>
-              <SelectValue placeholder="시즌 선택" />
+              <SelectValue placeholder="Select season" />
             </SelectTrigger>
             <SelectContent>
               {seasons.map((s) => (
@@ -220,19 +222,19 @@ export function ChampionshipManager({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="mvp">정규시즌 MVP</SelectItem>
-              <SelectItem value="finals_mvp">파이널 MVP</SelectItem>
-              <SelectItem value="scoring_leader">득점왕</SelectItem>
-              <SelectItem value="assist_leader">어시스트왕</SelectItem>
-              <SelectItem value="rebound_leader">리바운드왕</SelectItem>
-              <SelectItem value="dpoy">수비왕(DPOY)</SelectItem>
-              <SelectItem value="all_star">올스타</SelectItem>
+              <SelectItem value="mvp">Regular Season MVP</SelectItem>
+              <SelectItem value="finals_mvp">Finals MVP</SelectItem>
+              <SelectItem value="scoring_leader">Scoring Leader</SelectItem>
+              <SelectItem value="assist_leader">Assist Leader</SelectItem>
+              <SelectItem value="rebound_leader">Rebound Leader</SelectItem>
+              <SelectItem value="dpoy">Defensive Player (DPOY)</SelectItem>
+              <SelectItem value="all_star">All-Star</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={awardPlayerId} onValueChange={setAwardPlayerId}>
             <SelectTrigger>
-              <SelectValue placeholder="선수를 선택하세요" />
+              <SelectValue placeholder="Select player" />
             </SelectTrigger>
             <SelectContent>
               {players.map((p) => (
@@ -246,13 +248,13 @@ export function ChampionshipManager({
           <Input
             type="number"
             step="0.1"
-            placeholder="관련 스탯 (선택)"
+            placeholder="Stat value (optional)"
             value={awardStat}
             onChange={(e) => setAwardStat(e.target.value)}
           />
 
           <Button variant="secondary" onClick={addAward} className="w-full">
-            시상 저장
+            Save Award
           </Button>
         </CardContent>
       </Card>
