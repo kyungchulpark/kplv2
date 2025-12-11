@@ -48,13 +48,13 @@ export function Navbar({ user, userTeam }: NavbarProps) {
   const isOperator = user && ["admin", "staff"].includes((user.profile as any)?.role);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nba-red font-bold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 font-bold text-white shadow-sm">
                 KPL
               </div>
               <span className="hidden text-xl font-bold sm:inline-block">
@@ -166,7 +166,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 {/* My Team Shortcut */}
                 {userTeam && (
                   <Link href={`/teams/${userTeam.id}`}>
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
                       {userTeam.logo_url ? (
                         <img
                           src={userTeam.logo_url}
@@ -184,7 +184,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 {/* Admin/Staff Links */}
                 {isOperator && (
                   <Link href="/admin">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="border-slate-200 text-slate-700 hover:bg-slate-50">
                       Admin
                     </Button>
                   </Link>
@@ -192,7 +192,11 @@ export function Navbar({ user, userTeam }: NavbarProps) {
 
                 {/* Profile */}
                 <Link href="/profile">
-                  <Button variant="default" size="sm">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
                     <User className="mr-2 h-4 w-4" />
                     {user.profile?.psn_id || "Profile"}
                   </Button>
@@ -200,7 +204,11 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               </div>
             ) : (
               <Link href="/auth/signin" className="hidden md:block">
-                <Button variant="default" size="sm">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                >
                   <LogIn className="mr-2 h-4 w-4" />
                   Sign in
                 </Button>
@@ -342,7 +350,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                     href={`/teams/${userTeam.id}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Button variant="outline" size="sm" className="w-full gap-2">
+                    <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
                       {userTeam.logo_url ? (
                         <img
                           src={userTeam.logo_url}
@@ -359,13 +367,17 @@ export function Navbar({ user, userTeam }: NavbarProps) {
 
                 {isOperator && (
                   <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full">
+                    <Button variant="outline" size="sm" className="w-full border-slate-200 text-slate-700 hover:bg-slate-50">
                       Admin
                     </Button>
                   </Link>
                 )}
                 <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="default" size="sm" className="w-full">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
                     <User className="mr-2 h-4 w-4" />
                     {user.profile?.psn_id || "Profile"}
                   </Button>
@@ -376,7 +388,11 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 href="/auth/signin"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <Button variant="default" size="sm" className="w-full">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                >
                   <LogIn className="mr-2 h-4 w-4" />
                   Sign in
                 </Button>

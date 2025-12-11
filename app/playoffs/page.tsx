@@ -71,11 +71,15 @@ export default async function PlayoffsPage() {
           </TabsList>
 
           <TabsContent value="west" className="mt-6">
-            <BracketView series={westSeries} conference="West" />
+            <div className="flex justify-center">
+              <BracketView series={westSeries} conference="West" />
+            </div>
           </TabsContent>
 
           <TabsContent value="east" className="mt-6">
-            <BracketView series={eastSeries} conference="East" />
+            <div className="flex justify-center">
+              <BracketView series={eastSeries} conference="East" />
+            </div>
           </TabsContent>
         </Tabs>
       ) : (

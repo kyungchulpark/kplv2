@@ -91,23 +91,29 @@ export default async function Home() {
     .eq("status", "finished");
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <HeroSection
-        seasonName={activeSeason.name}
-        teamsCount={teamsCount || 0}
-        finishedMatches={finishedMatches || 0}
-        scheduleDays="Tue/Thu/Sun"
-      />
-
-      <div className="container mx-auto px-4 py-12 space-y-12">
-        <TodayMatches matches={recentMatches || []} />
-
-        <LeagueLeaders
-          scoringLeaders={scoringLeaders || []}
-          assistLeaders={assistLeaders || []}
-          reboundLeaders={reboundLeaders || []}
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <section className="bg-white shadow-[inset_0_-1px_0_0_rgba(15,23,42,0.05)]">
+        <HeroSection
           seasonName={activeSeason.name}
+          teamsCount={teamsCount || 0}
+          finishedMatches={finishedMatches || 0}
+          scheduleDays="Tue/Thu/Sun"
         />
+      </section>
+
+      <div className="container mx-auto px-4 py-16 space-y-12">
+        <section className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-sm">
+          <TodayMatches matches={recentMatches || []} />
+        </section>
+
+        <section className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-sm">
+          <LeagueLeaders
+            scoringLeaders={scoringLeaders || []}
+            assistLeaders={assistLeaders || []}
+            reboundLeaders={reboundLeaders || []}
+            seasonName={activeSeason.name}
+          />
+        </section>
       </div>
     </div>
   );

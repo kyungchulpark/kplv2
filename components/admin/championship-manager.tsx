@@ -133,12 +133,17 @@ export function ChampionshipManager({
             </div>
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Runner-up</span>
-              <Select value={runnerUpId} onValueChange={setRunnerUpId}>
+              <Select
+                value={runnerUpId || "none"}
+                onValueChange={(value) =>
+                  setRunnerUpId(value === "none" ? "" : value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {teams.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}
@@ -154,12 +159,17 @@ export function ChampionshipManager({
               <span className="text-sm text-muted-foreground">
                 Finals MVP
               </span>
-              <Select value={finalsMvpId} onValueChange={setFinalsMvpId}>
+              <Select
+                value={finalsMvpId || "none"}
+                onValueChange={(value) =>
+                  setFinalsMvpId(value === "none" ? "" : value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {players.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.psn_id}
