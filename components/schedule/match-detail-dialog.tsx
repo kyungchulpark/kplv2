@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Clock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
-import { YouTubeEmbed } from "@/components/match/youtube-embed";
+import { MatchStreamEmbed } from "@/components/match/match-stream-embed";
 import Link from "next/link";
 import { formatMatchTimeKST, formatMatchDateLongKST } from "@/utils/date-helpers";
 
@@ -298,9 +298,10 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
                       <h4 className="font-medium text-sm">
                         {match.home_team.name} (Home)
                       </h4>
-                      <YouTubeEmbed
+                      <MatchStreamEmbed
                         url={match.home_stream_url}
                         title={`${match.home_team.name} Stream`}
+                        description="Stream offline or invalid link"
                       />
                     </div>
                   )}
@@ -309,9 +310,10 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
                       <h4 className="font-medium text-sm">
                         {match.away_team.name} (Away)
                       </h4>
-                      <YouTubeEmbed
+                      <MatchStreamEmbed
                         url={match.away_stream_url}
                         title={`${match.away_team.name} Stream`}
+                        description="Stream offline or invalid link"
                       />
                     </div>
                   )}

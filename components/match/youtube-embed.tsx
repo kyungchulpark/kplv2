@@ -40,22 +40,12 @@ export function YouTubeEmbed({ url, title = "Match Stream" }: YouTubeEmbedProps)
   );
 }
 
-/**
- * Extract YouTube video ID from various URL formats
- *
- * Supported formats:
- * - https://www.youtube.com/watch?v=VIDEO_ID
- * - https://youtu.be/VIDEO_ID
- * - https://www.youtube.com/embed/VIDEO_ID
- *
- * @param url - YouTube URL
- * @returns Video ID or null if not found
- */
 export function extractYouTubeVideoId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
     /youtube\.com\/embed\/([^&\n?#]+)/,
     /youtube\.com\/v\/([^&\n?#]+)/,
+    /youtube\.com\/live\/([^&\n?#]+)/,
   ];
 
   for (const pattern of patterns) {
