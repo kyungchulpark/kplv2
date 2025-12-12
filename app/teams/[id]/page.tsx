@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Users, TrendingUp, Calendar, Settings } from "lucide-react";
+import { Users, Calendar, Settings } from "lucide-react";
 
 interface PageProps {
   params: Promise<{
@@ -85,6 +85,20 @@ export default async function TeamDetailPage({ params }: PageProps) {
   // Check if current user is captain
   const isCaptain = user && (team.captain_id === user.id);
 
+  const { data: championships } = await supabase
+    .from("season_champions")
+    .select(
+      `
+      id,
+      championship_date,
+      season:seasons(
+        name
+      )
+    `
+    )
+    .eq("champion_team_id", id)
+    .order("championship_date", { ascending: false });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
@@ -94,7 +108,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
             <Link href={`/teams/${id}/manage`}>
               <Button>
                 <Settings className="mr-2 h-4 w-4" />
-                팀 관리
+                Manage Team
               </Button>
             </Link>
           </div>
@@ -126,8 +140,8 @@ export default async function TeamDetailPage({ params }: PageProps) {
                       variant="outline"
                       className={
                         team.conference === "West"
-                          ? "border-blue-500 text-blue-500"
-                          : "border-red-500 text-red-500"
+                          ? "border-red-500 text-red-500"
+                          : "border-blue-500 text-blue-500"
                       }
                     >
                       {team.conference}
@@ -151,7 +165,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm text-muted-foreground">팀장</p>
+                      <p className="text-sm text-muted-foreground">Captain</p>
                       <p className="font-semibold">{team.captain.psn_id}</p>
                     </div>
                   </div>
@@ -160,23 +174,21 @@ export default async function TeamDetailPage({ params }: PageProps) {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <Trophy className="h-5 w-5 mx-auto mb-1 text-yellow-500" />
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Wins</p>
                   <div className="text-2xl font-bold">{team.wins}</div>
-                  <div className="text-xs text-muted-foreground">승</div>
                 </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Losses</p>
                   <div className="text-2xl font-bold">{team.losses}</div>
-                  <div className="text-xs text-muted-foreground">패</div>
                 </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Win Rate</p>
                   <div className="text-2xl font-bold">{winRate}%</div>
-                  <div className="text-xs text-muted-foreground">승률</div>
                 </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <TrendingUp className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                  <div className="text-2xl font-bold">{margin > 0 ? '+' : ''}{margin}</div>
-                  <div className="text-xs text-muted-foreground">득실차</div>
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Point Margin</p>
+                  <div className="text-2xl font-bold">{margin > 0 ? "+" : ""}{margin}</div>
                 </div>
               </div>
             </div>
@@ -189,10 +201,10 @@ export default async function TeamDetailPage({ params }: PageProps) {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Users className="h-5 w-5" />
-                <span>로스터</span>
+                <span>Roster</span>
               </CardTitle>
               <CardDescription>
-                {roster?.length || 0}명의 선수
+                {roster?.length || 0} active players
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -227,7 +239,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  등록된 선수가 없습니다
+                  No players registered.
                 </p>
               )}
             </CardContent>
@@ -238,29 +250,59 @@ export default async function TeamDetailPage({ params }: PageProps) {
             {/* Team Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>팀 통계</CardTitle>
+                <CardTitle>Season Metrics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">경기 수</span>
+                  <span className="text-muted-foreground">Games Played</span>
                   <span className="font-semibold">{gamesPlayed}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">평균 득점</span>
+                  <span className="text-muted-foreground">Points For (avg)</span>
                   <span className="font-semibold">{avgScored}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">평균 실점</span>
+                  <span className="text-muted-foreground">Points Against (avg)</span>
                   <span className="font-semibold">{avgAgainst}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">총 득점</span>
+                  <span className="text-muted-foreground">Total Points</span>
                   <span className="font-semibold">{team.points_for}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">총 실점</span>
+                  <span className="text-muted-foreground">Total Against</span>
                   <span className="font-semibold">{team.points_against}</span>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Championship History</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {championships && championships.length > 0 ? (
+                  championships.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between rounded-lg border px-3 py-2"
+                    >
+                      <div>
+                        <p className="font-semibold">{entry.season?.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.championship_date
+                            ? new Date(entry.championship_date).toLocaleDateString("en-US")
+                            : "Date TBD"}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">Champion</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No championships recorded for this team yet.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -269,7 +311,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Calendar className="h-5 w-5" />
-                  <span>최근 경기</span>
+                  <span>Recent Results</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -302,7 +344,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-4">
-                    경기 기록이 없습니다
+                    No finished games yet.
                   </p>
                 )}
               </CardContent>

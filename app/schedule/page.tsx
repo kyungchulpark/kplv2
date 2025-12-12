@@ -49,6 +49,32 @@ export default async function SchedulePage() {
     .eq("season_id", activeSeason.id)
     .order("match_date", { ascending: true });
 
+  const { data: teamRecords } = await supabase
+    .from("teams")
+    .select("id, conference, wins, losses")
+    .eq("season_id", activeSeason.id);
+
+  const rankMap = buildConferenceRankMap(teamRecords || []);
+
+  const matchesWithRanks =
+    matches?.map((match) => ({
+      ...match,
+      home_team: match.home_team
+        ? {
+            ...match.home_team,
+            conference: match.home_team.conference ?? rankMap[match.home_team.id]?.conference ?? null,
+            rank: rankMap[match.home_team.id]?.rank ?? null,
+          }
+        : match.home_team,
+      away_team: match.away_team
+        ? {
+            ...match.away_team,
+            conference: match.away_team.conference ?? rankMap[match.away_team.id]?.conference ?? null,
+            rank: rankMap[match.away_team.id]?.rank ?? null,
+          }
+        : match.away_team,
+    })) || [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
@@ -62,7 +88,7 @@ export default async function SchedulePage() {
 
         {/* Schedule View with Tabs */}
         <ScheduleView
-          matches={matches || []}
+          matches={matchesWithRanks}
           initialSelectedDate={getInitialDate(matches || [])}
           leagueEnded={isLeagueEnded(matches || [])}
         />
@@ -93,4 +119,38 @@ function isLeagueEnded(matches: any[]): boolean {
   const today = startOfDay(new Date()).getTime();
   const hasFuture = matches.some((m) => new Date(m.match_date).getTime() >= today);
   return !hasFuture;
+}
+
+type TeamRecord = {
+  id: string;
+  conference: string | null;
+  wins: number;
+  losses: number;
+};
+
+function buildConferenceRankMap(teams: TeamRecord[]) {
+  const map: Record<string, { rank: number; conference: string | null }> = {};
+
+  const grouped = teams.reduce<Record<string, TeamRecord[]>>((acc, team) => {
+    const key = team.conference || "Independent";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(team);
+    return acc;
+  }, {});
+
+  Object.entries(grouped).forEach(([conf, list]) => {
+    const sorted = list.sort((a, b) => {
+      const aGames = a.wins + a.losses;
+      const bGames = b.wins + b.losses;
+      const aRate = aGames > 0 ? a.wins / aGames : 0;
+      const bRate = bGames > 0 ? b.wins / bGames : 0;
+      if (bRate !== aRate) return bRate - aRate;
+      return b.wins - a.wins;
+    });
+    sorted.forEach((team, idx) => {
+      map[team.id] = { rank: idx + 1, conference: conf === "Independent" ? null : conf };
+    });
+  });
+
+  return map;
 }

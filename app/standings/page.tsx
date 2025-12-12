@@ -328,7 +328,7 @@ export default async function StandingsPage() {
 
           {/* All Teams */}
           <TabsContent value="all" className="space-y-4">
-            <Card className="bg-neutral-900/5 dark:bg-white/5">
+            <Card>
               <CardHeader>
                 <CardTitle>Overall Standings</CardTitle>
                 <CardDescription>

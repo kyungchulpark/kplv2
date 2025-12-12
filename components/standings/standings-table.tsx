@@ -96,13 +96,13 @@ export function StandingsTable({ teams, conference, showConferenceHighlight = fa
       ? "bg-red-500/5"
       : conference === "East"
       ? "bg-blue-500/5"
-      : "bg-neutral-900/10";
+      : "";
   const borderClass =
     conference === "West"
       ? "border-red-500/20"
       : conference === "East"
       ? "border-blue-500/20"
-      : "border-neutral-900/20";
+      : "";
   const textClass =
     conference === "West"
       ? "text-red-500"
@@ -114,13 +114,13 @@ export function StandingsTable({ teams, conference, showConferenceHighlight = fa
       ? "border-red-500"
       : conference === "East"
       ? "border-blue-500"
-      : "border-neutral-900/60";
+      : "border-slate-200";
   const bgLightClass =
     conference === "West"
       ? "bg-red-500/10"
       : conference === "East"
       ? "bg-blue-500/10"
-      : "bg-neutral-900/20 text-foreground";
+      : "bg-slate-100 text-slate-900";
 
   return (
     <div className="overflow-x-auto">
@@ -280,7 +280,13 @@ export function StandingsTable({ teams, conference, showConferenceHighlight = fa
                     <span
                       className={cn(
                         "font-semibold",
-                        team.is_withdrawn && "line-through text-muted-foreground"
+                        team.is_withdrawn && "line-through text-muted-foreground",
+                        showConferenceHighlight &&
+                          team.conference === "West" &&
+                          "text-red-700",
+                        showConferenceHighlight &&
+                          team.conference === "East" &&
+                          "text-blue-700"
                       )}
                     >
                       {team.name}

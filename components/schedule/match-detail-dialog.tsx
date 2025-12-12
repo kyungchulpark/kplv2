@@ -31,12 +31,14 @@ interface Match {
     name: string;
     logo_url: string | null;
     conference?: string | null;
+    rank?: number | null;
   };
   away_team: {
     id: string;
     name: string;
     logo_url: string | null;
     conference?: string | null;
+    rank?: number | null;
   };
 }
 
@@ -131,6 +133,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
         {team.conference && (
           <p className="text-xs text-muted-foreground">
             {team.conference} Conference
+            {team.rank ? ` • #${team.rank}` : ""}
           </p>
         )}
       </Link>

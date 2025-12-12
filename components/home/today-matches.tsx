@@ -2,10 +2,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { formatMatchTimeKST, formatMatchDateLongKST } from "@/utils/date-helpers";
+import { MatchDetailDialog } from "@/components/schedule/match-detail-dialog";
 
 type Match = {
   id: string;
@@ -15,17 +15,22 @@ type Match = {
   away_score: number | null;
   is_forfeit?: boolean | null;
   forfeit_winner_id?: string | null;
+  home_stream_url?: string | null;
+  away_stream_url?: string | null;
+  result_screenshot_url?: string | null;
   home_team: {
     id: string;
     name: string;
     logo_url: string | null;
     conference: string | null;
+    rank?: number | null;
   };
   away_team: {
     id: string;
     name: string;
     logo_url: string | null;
     conference: string | null;
+    rank?: number | null;
   };
 };
 
@@ -35,6 +40,7 @@ interface TodayMatchesProps {
 
 export function TodayMatches({ matches }: TodayMatchesProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
   const getStatusBadge = (status: Match["status"]) => {
     switch (status) {
@@ -124,7 +130,12 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
             className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory"
           >
             {sorted.map((match) => (
-              <Link key={match.id} href={`/schedule#${match.id}`} className="snap-start">
+              <button
+                key={match.id}
+                type="button"
+                className="snap-start text-left focus:outline-none"
+                onClick={() => setSelectedMatch(match)}
+              >
                 <Card className="min-w-[280px] w-[300px] border border-slate-100 bg-white text-slate-900 transition-shadow hover:shadow-lg">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -205,10 +216,18 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </button>
             ))}
           </div>
         </div>
+      )}
+
+      {selectedMatch && (
+        <MatchDetailDialog
+          match={selectedMatch}
+          open={!!selectedMatch}
+          onOpenChange={(open) => !open && setSelectedMatch(null)}
+        />
       )}
     </section>
   );

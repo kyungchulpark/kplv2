@@ -163,6 +163,12 @@ function TeamBadge({
     return "border-gray-300";
   };
 
+  const getTextColor = (conference: string | null) => {
+    if (conference === "West") return "text-red-600";
+    if (conference === "East") return "text-blue-600";
+    return "text-foreground";
+  };
+
   return (
     <div
       className={`flex items-center gap-3 ${
@@ -189,7 +195,9 @@ function TeamBadge({
         </div>
       )}
       <div>
-        <p className="text-sm font-semibold">{team.name}</p>
+        <p className={cn("text-sm font-semibold", getTextColor(team.conference))}>
+          {team.name}
+        </p>
         <p className="text-xs text-muted-foreground">
           {align === "right" ? "HOME" : "AWAY"}
         </p>

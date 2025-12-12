@@ -14,17 +14,19 @@ type Match = {
     away_score: number | null;
     match_sequence: string | null;
     game_password: string | null;
-    home_team: {
+  home_team: {
         id: string;
         name: string;
         logo_url: string | null;
         conference?: string | null;
+        rank?: number | null;
     };
     away_team: {
         id: string;
         name: string;
         logo_url: string | null;
         conference?: string | null;
+        rank?: number | null;
     };
 };
 

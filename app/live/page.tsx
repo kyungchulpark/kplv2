@@ -27,43 +27,41 @@ export default async function LivePage() {
   ) || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Radio className="h-8 w-8 text-red-500" />
+    <div className="container mx-auto px-4 py-10 space-y-8">
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <Radio className="h-8 w-8 text-emerald-600" />
           <h1 className="text-3xl font-bold">Live Streams</h1>
         </div>
         <p className="text-muted-foreground">
-          Watch KPL players streaming their games on YouTube
+          Watch KPL players streaming their games on YouTube.
         </p>
       </div>
 
-      <div className="mb-8">
-        <Card className="bg-gradient-to-r from-red-500/10 to-purple-500/10 border-red-500/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className="h-5 w-5 text-red-500" />
-              About Live Streams
-            </CardTitle>
-            <CardDescription>
-              Support your fellow KPL players by watching their streams
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>
-              This page shows all KPL players who have registered their YouTube channels.
-              Click on any streamer card to visit their channel and watch their content.
-            </p>
-            <p className="text-muted-foreground">
-              Want to add your channel? Update your YouTube channel URL in your profile settings.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-emerald-100 bg-gradient-to-r from-emerald-50 to-cyan-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-emerald-700">
+            <Radio className="h-5 w-5" />
+            How it works
+          </CardTitle>
+          <CardDescription>
+            Registered YouTube channels appear below. Add your link in profile settings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-slate-600 space-y-2">
+          <p>
+            Each card renders the most recent YouTube link the player provided. If the channel is not
+            currently live, you still see a preview frame with a quick jump to the channel page.
+          </p>
+          <p>
+            Support your fellow competitors, scout opponents, or enjoy live content directly inside KPL.
+          </p>
+        </CardContent>
+      </Card>
 
-      <div className="mb-4">
+      <div>
         <h2 className="text-xl font-semibold">
-          KPL Streamers ({validStreamers.length})
+          Streamers ({validStreamers.length})
         </h2>
       </div>
 

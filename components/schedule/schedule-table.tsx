@@ -23,11 +23,15 @@ type Match = {
     id: string;
     name: string;
     logo_url: string | null;
+    conference?: string | null;
+    rank?: number | null;
   };
   away_team: {
     id: string;
     name: string;
     logo_url: string | null;
+    conference?: string | null;
+    rank?: number | null;
   };
 };
 

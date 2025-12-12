@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isSameDay } from "date-fns";
-import { ko } from "date-fns/locale";
 
 interface DateSliderProps {
     dates: string[];
@@ -94,13 +93,13 @@ export function DateSlider({ dates, selectedDate, onDateChange }: DateSliderProp
                             )}
                         >
                             <span className="text-xs font-medium">
-                                {format(dateObj, "MMM", { locale: ko })}
+                                {format(dateObj, "MMM")}
                             </span>
                             <span className="text-xl font-bold">
                                 {format(dateObj, "d")}
                             </span>
                             <span className="text-xs opacity-80">
-                                {format(dateObj, "EEE", { locale: ko })}
+                                {format(dateObj, "EEE")}
                             </span>
                         </button>
                     );
