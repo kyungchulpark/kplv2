@@ -4,7 +4,7 @@
 
 -- Relax round_number to include play-in (0) and keep finals (up to 4)
 ALTER TABLE playoff_series
-  DROP CONSTRAINT IF EXISTS playoff_series_round_number_check;
+  DROP CONSTRAINT IF EXISTS playoff_series_round_number_check; b  
 
 ALTER TABLE playoff_series
   ADD CONSTRAINT playoff_series_round_number_check

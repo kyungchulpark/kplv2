@@ -1,12 +1,19 @@
 import { createClient } from "@/utils/supabase/server";
 import { PlayoffManager } from "@/components/admin/playoff-manager";
+import { PlayInSetup } from "@/components/admin/playin-setup";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Trophy } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Trophy, Target } from "lucide-react";
 
 export default async function AdminPlayoffsPage() {
   const supabase = await createClient();
@@ -80,18 +87,43 @@ export default async function AdminPlayoffsPage() {
       <div className="flex items-center gap-2">
         <Trophy className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">Playoffs</h1>
+          <h1 className="text-3xl font-bold">Playoffs Management</h1>
           <p className="text-muted-foreground">{season.name}</p>
         </div>
       </div>
 
-      <PlayoffManager
-        seasonId={season.id}
-        westSeries={westSeries}
-        eastSeries={eastSeries}
-        westBracketId={westBracketId}
-        eastBracketId={eastBracketId}
-      />
+      <Tabs defaultValue="playin" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="playin">
+            <Target className="h-4 w-4 mr-2" />
+            Play-In Tournament
+          </TabsTrigger>
+          <TabsTrigger value="bracket">
+            <Trophy className="h-4 w-4 mr-2" />
+            Full Bracket
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="playin" className="space-y-6 mt-6">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold">Play-In Tournament Setup</h2>
+            <p className="text-muted-foreground">
+              Create Play-In brackets for each conference. The tournament determines the 7th and 8th playoff seeds.
+            </p>
+          </div>
+          <PlayInSetup seasonId={season.id} />
+        </TabsContent>
+
+        <TabsContent value="bracket" className="space-y-6 mt-6">
+          <PlayoffManager
+            seasonId={season.id}
+            westSeries={westSeries}
+            eastSeries={eastSeries}
+            westBracketId={westBracketId}
+            eastBracketId={eastBracketId}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

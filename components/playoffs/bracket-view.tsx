@@ -20,7 +20,7 @@ interface PlayoffSeries {
   team1_wins: number;
   team2_wins: number;
   winner_id: string | null;
-  series_format: "BO1" | "BO3" | "BO5";
+  series_format: "BO1" | "BO3" | "BO5" | "BO7";
   status: "pending" | "ongoing" | "completed";
 }
 
@@ -38,7 +38,13 @@ export function BracketView({ series, conference }: BracketViewProps) {
 
   const SeriesCard = ({ s }: { s: PlayoffSeries }) => {
     const maxWins =
-      s.series_format === "BO5" ? 3 : s.series_format === "BO1" ? 1 : 2;
+      s.series_format === "BO7"
+        ? 4
+        : s.series_format === "BO5"
+        ? 3
+        : s.series_format === "BO1"
+        ? 1
+        : 2;
     const isCompleted = s.status === "completed";
 
     return (
@@ -140,7 +146,7 @@ export function BracketView({ series, conference }: BracketViewProps) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4">
       <div className="flex items-center justify-center space-x-2 py-3 rounded-lg border bg-muted/50">
         <Trophy
           className={cn(

@@ -20,6 +20,7 @@ export interface Database {
           email: string;
           psn_id: string;
           avatar_url: string | null;
+          youtube_channel: string | null;
           role: "admin" | "staff" | "captain" | "user";
           created_at: string;
           updated_at: string;
@@ -29,6 +30,7 @@ export interface Database {
           email: string;
           psn_id: string;
           avatar_url?: string | null;
+          youtube_channel?: string | null;
           role?: "admin" | "staff" | "captain" | "user";
           created_at?: string;
           updated_at?: string;
@@ -38,6 +40,7 @@ export interface Database {
           email?: string;
           psn_id?: string;
           avatar_url?: string | null;
+          youtube_channel?: string | null;
           role?: "admin" | "staff" | "captain" | "user";
           created_at?: string;
           updated_at?: string;

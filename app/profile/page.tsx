@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SignOutButton } from "@/components/auth/signout-button";
-import { User, Mail, Shield, Calendar } from "lucide-react";
+import { ProfileEditForm } from "@/components/profile/profile-edit-form";
+import { User, Mail, Shield, Calendar, Youtube } from "lucide-react";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -18,9 +19,9 @@ export default async function ProfilePage() {
       user: "bg-green-500/10 text-green-500 border-green-500/20",
     };
     const labels = {
-      admin: "관리자",
-      staff: "스태프",
-      user: "사용자",
+      admin: "Admin",
+      staff: "Staff",
+      user: "User",
     };
     return (
       <span
@@ -37,17 +38,17 @@ export default async function ProfilePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">내 프로필</h1>
+          <h1 className="text-3xl font-bold">My Profile</h1>
           <p className="text-muted-foreground">
-            계정 정보 및 설정을 관리합니다
+            Manage your account information and settings
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>계정 정보</CardTitle>
+            <CardTitle>Account Information</CardTitle>
             <CardDescription>
-              KPL에 등록된 회원 정보입니다
+              Your registered member information in KPL
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -75,27 +76,43 @@ export default async function ProfilePage() {
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">이메일:</span>
+                <span className="text-muted-foreground">Email:</span>
                 <span className="font-medium">{user.email}</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">권한:</span>
+                <span className="text-muted-foreground">Role:</span>
                 <span className="font-medium">
                   {user.profile?.role === "admin"
-                    ? "관리자"
+                    ? "Admin"
                     : user.profile?.role === "staff"
-                    ? "스태프"
-                    : "사용자"}
+                    ? "Staff"
+                    : "User"}
                 </span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
+                <Youtube className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">YouTube Channel:</span>
+                {user.profile?.youtube_channel ? (
+                  <a
+                    href={user.profile.youtube_channel}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-nba-red hover:underline"
+                  >
+                    View Channel
+                  </a>
+                ) : (
+                  <span className="font-medium text-muted-foreground">Not set</span>
+                )}
+              </div>
+              <div className="flex items-center space-x-3 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">가입일:</span>
+                <span className="text-muted-foreground">Joined:</span>
                 <span className="font-medium">
                   {user.profile?.created_at
-                    ? new Date(user.profile.created_at).toLocaleDateString("ko-KR")
-                    : "정보 없음"}
+                    ? new Date(user.profile.created_at).toLocaleDateString("en-US")
+                    : "No information"}
                 </span>
               </div>
             </div>
@@ -104,9 +121,25 @@ export default async function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>계정 관리</CardTitle>
+            <CardTitle>Edit Profile</CardTitle>
             <CardDescription>
-              계정 설정 및 로그아웃
+              Update your profile information
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfileEditForm
+              userId={user.id}
+              currentPsnId={user.profile?.psn_id || ""}
+              currentYoutubeChannel={user.profile?.youtube_channel || ""}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Management</CardTitle>
+            <CardDescription>
+              Account settings and sign out
             </CardDescription>
           </CardHeader>
           <CardContent>

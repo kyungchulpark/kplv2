@@ -25,6 +25,7 @@ const navLinks = [
   { href: "/stats", label: "기록실" },
   { href: "/teams", label: "팀" },
   { href: "/history", label: "챔피언십" },
+  { href: "/live", label: "라이브" },
   { href: "/stats/upload", label: "경기결과 업로드" },
   { href: "https://cafe.naver.com/nbakpl", label: "네이버 카페", external: true },
 ];

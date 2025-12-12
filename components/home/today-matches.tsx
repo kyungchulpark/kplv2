@@ -124,7 +124,7 @@ export function TodayMatches({ matches }: TodayMatchesProps) {
             className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory"
           >
             {sorted.map((match) => (
-              <Link key={match.id} href={`/matches/${match.id}`} className="snap-start">
+              <Link key={match.id} href={`/schedule#${match.id}`} className="snap-start">
                 <Card className="min-w-[280px] w-[300px] border border-slate-100 bg-white text-slate-900 transition-shadow hover:shadow-lg">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">

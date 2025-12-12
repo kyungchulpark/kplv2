@@ -15,7 +15,7 @@ import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { YouTubeEmbed } from "@/components/match/youtube-embed";
 import Link from "next/link";
-import { formatMatchTimeKST, formatMatchDateKoreanKST } from "@/utils/date-helpers";
+import { formatMatchTimeKST, formatMatchDateLongKST } from "@/utils/date-helpers";
 
 interface Match {
   id: string;
@@ -105,11 +105,11 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
       case "live":
         return <Badge className="bg-red-500 animate-pulse">LIVE</Badge>;
       case "finished":
-        return <Badge variant="secondary">종료</Badge>;
+        return <Badge variant="secondary">Final</Badge>;
       case "scheduled":
-        return <Badge variant="outline">예정</Badge>;
+        return <Badge variant="outline">Scheduled</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">취소</Badge>;
+        return <Badge variant="destructive">Cancelled</Badge>;
     }
   };
 
@@ -128,6 +128,11 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
           </div>
         )}
         <h3 className="font-bold mt-2">{team.name}</h3>
+        {team.conference && (
+          <p className="text-xs text-muted-foreground">
+            {team.conference} Conference
+          </p>
+        )}
       </Link>
       {match.status === "finished" && (
         <div
@@ -147,7 +152,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
       <table className="w-full text-sm min-w-[600px]">
         <thead>
           <tr className="border-b">
-            <th className="text-left py-2 sticky left-0 bg-background z-10 w-32">선수</th>
+            <th className="text-left py-2 sticky left-0 bg-background z-10 w-32">Player</th>
             <th className="text-center w-12">PTS</th>
             <th className="text-center w-12">REB</th>
             <th className="text-center w-12">AST</th>
@@ -196,14 +201,14 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>경기 상세</span>
+            <span>Match Details</span>
             {getStatusBadge()}
           </DialogTitle>
           <DialogDescription>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-1">
                 <Calendar className="h-4 w-4" />
-                <span>{formatMatchDateKoreanKST(match.match_date)}</span>
+                <span>{formatMatchDateLongKST(match.match_date)}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
@@ -242,14 +247,14 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
         {/* Match Stats (if finished) */}
         {match.status === "finished" && stats && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold">경기 기록</h3>
+            <h3 className="text-lg font-semibold">Match Statistics</h3>
 
             {/* Home Team Stats */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <h4 className="font-semibold">{match.home_team.name}</h4>
                 <Link href={`/teams/${match.home_team.id}`} className="text-xs text-muted-foreground hover:underline">
-                  팀 정보 &rarr;
+                  Team Info &rarr;
                 </Link>
               </div>
               {renderStatsTable(homeStats)}
@@ -260,7 +265,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
               <div className="flex items-center gap-2 mb-2">
                 <h4 className="font-semibold">{match.away_team.name}</h4>
                 <Link href={`/teams/${match.away_team.id}`} className="text-xs text-muted-foreground hover:underline">
-                  팀 정보 &rarr;
+                  Team Info &rarr;
                 </Link>
               </div>
               {renderStatsTable(awayStats)}
@@ -274,7 +279,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
             {/* Screenshot */}
             {match.result_screenshot_url && (
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold">경기 결과 스크린샷</h3>
+                <h3 className="text-lg font-semibold">Match Result Screenshot</h3>
                 <img
                   src={match.result_screenshot_url}
                   alt="Match result screenshot"
@@ -286,12 +291,12 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
             {/* Streaming Videos */}
             {(match.home_stream_url || match.away_stream_url) && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">경기 스트리밍</h3>
+                <h3 className="text-lg font-semibold">Match Streams</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {match.home_stream_url && (
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">
-                        {match.home_team.name} (홈)
+                        {match.home_team.name} (Home)
                       </h4>
                       <YouTubeEmbed
                         url={match.home_stream_url}
@@ -302,7 +307,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
                   {match.away_stream_url && (
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">
-                        {match.away_team.name} (원정)
+                        {match.away_team.name} (Away)
                       </h4>
                       <YouTubeEmbed
                         url={match.away_stream_url}

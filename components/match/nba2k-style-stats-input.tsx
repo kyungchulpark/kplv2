@@ -144,14 +144,14 @@ export function NBA2KStyleStatsInput({
     <div className="space-y-6">
       {/* Swap Button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">경기 결과 입력</h2>
+        <h2 className="text-xl font-bold">Match Stats Input</h2>
         <Button variant="outline" size="sm" onClick={handleSwap}>
           <ArrowUpDown className="mr-2 h-4 w-4" />
-          홈/원정 전환
+          Swap Home/Away
         </Button>
       </div>
 
-      {/* Top Team (원정팀 or 홈팀 depending on swap) */}
+      {/* Top Team (Away or Home depending on swap) */}
       <TeamStatsSection
         team={topTeam}
         roster={topRoster}
@@ -160,10 +160,10 @@ export function NBA2KStyleStatsInput({
         onStatChange={(index, field, value) =>
           updateStat(true, index, field, value)
         }
-        label={topTeamIsAway ? "원정팀 (AWAY)" : "홈팀 (HOME)"}
+        label={topTeamIsAway ? "Away Team (AWAY)" : "Home Team (HOME)"}
       />
 
-      {/* Bottom Team (홈팀 or 원정팀 depending on swap) */}
+      {/* Bottom Team (Home or Away depending on swap) */}
       <TeamStatsSection
         team={bottomTeam}
         roster={bottomRoster}
@@ -172,7 +172,7 @@ export function NBA2KStyleStatsInput({
         onStatChange={(index, field, value) =>
           updateStat(false, index, field, value)
         }
-        label={topTeamIsAway ? "홈팀 (HOME)" : "원정팀 (AWAY)"}
+        label={topTeamIsAway ? "Home Team (HOME)" : "Away Team (AWAY)"}
       />
 
       {/* Submit Button */}
@@ -181,9 +181,9 @@ export function NBA2KStyleStatsInput({
           onClick={handleSubmit}
           disabled={isSubmitting}
           size="lg"
-          className="w-full md:w-auto"
+          className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700"
         >
-          {isSubmitting ? "저장 중..." : "경기 결과 저장"}
+          {isSubmitting ? "Saving..." : "Save Match Results"}
         </Button>
       </div>
     </div>
@@ -220,8 +220,8 @@ function TeamStatsSection({
           <h3 className="text-lg font-bold">{team.name}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground mb-1">팀 점수 (자동 합산)</div>
-          <div className="text-3xl font-bold text-primary">{score}</div>
+          <div className="text-xs text-muted-foreground mb-1">Team Score (Auto-calculated)</div>
+          <div className="text-3xl font-bold text-emerald-600">{score}</div>
         </div>
       </div>
 
@@ -231,7 +231,7 @@ function TeamStatsSection({
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="text-left p-2 font-semibold">#</th>
-              <th className="text-left p-2 font-semibold min-w-[150px]">선수</th>
+              <th className="text-left p-2 font-semibold min-w-[150px]">Player</th>
               <th className="text-center p-2 font-semibold">PTS</th>
               <th className="text-center p-2 font-semibold">REB</th>
               <th className="text-center p-2 font-semibold">AST</th>
@@ -258,7 +258,7 @@ function TeamStatsSection({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="선수 선택" />
+                      <SelectValue placeholder="Select Player" />
                     </SelectTrigger>
                     <SelectContent>
                       {roster.map((player) => (
@@ -387,7 +387,7 @@ function TeamStatsSection({
                 }
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="선수 선택" />
+                  <SelectValue placeholder="Select Player" />
                 </SelectTrigger>
                 <SelectContent>
                   {roster.map((player) => (

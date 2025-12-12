@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { BracketView } from "@/components/playoffs/bracket-view";
+import { FinalsBracket } from "@/components/playoffs/finals-bracket";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy } from "lucide-react";
 
@@ -49,10 +50,31 @@ export default async function PlayoffsPage() {
   const westSeries = await fetchSeries(westBracket?.id);
   const eastSeries = await fetchSeries(eastBracket?.id);
 
+  // Fetch Finals series (round_number = 4)
+  const { data: finalsSeriesData } = await supabase
+    .from("playoff_series")
+    .select(
+      `
+      *,
+      team1:team1_id(id, name, logo_url),
+      team2:team2_id(id, name, logo_url)
+    `
+    )
+    .eq("round_number", 4)
+    .in(
+      "bracket_id",
+      [westBracket?.id, eastBracket?.id].filter(Boolean) as string[]
+    )
+    .maybeSingle();
+
+  const finalsSeries = finalsSeriesData || null;
+
   const hasPlayoffs = westSeries.length > 0 || eastSeries.length > 0;
+  const hasFinals =
+    finalsSeries || westSeries.some((s) => s.round_number === 3 && s.winner_id) || eastSeries.some((s) => s.round_number === 3 && s.winner_id);
 
   return (
-    <div className="container py-8 space-y-8">
+    <div className="container max-w-7xl mx-auto py-8 space-y-8">
       <div className="space-y-2 text-center">
         <div className="flex items-center justify-center space-x-3">
           <Trophy className="h-8 w-8 text-primary" />
@@ -65,9 +87,10 @@ export default async function PlayoffsPage() {
 
       {hasPlayoffs ? (
         <Tabs defaultValue="west" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mx-auto">
+          <TabsList className="grid w-full max-w-3xl grid-cols-3 mx-auto">
             <TabsTrigger value="west">Western Conference</TabsTrigger>
             <TabsTrigger value="east">Eastern Conference</TabsTrigger>
+            <TabsTrigger value="finals">Finals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="west" className="mt-6">
@@ -80,6 +103,14 @@ export default async function PlayoffsPage() {
             <div className="flex justify-center">
               <BracketView series={eastSeries} conference="East" />
             </div>
+          </TabsContent>
+
+          <TabsContent value="finals" className="mt-6">
+            <FinalsBracket
+              westSeries={westSeries}
+              eastSeries={eastSeries}
+              finalsSeries={finalsSeries}
+            />
           </TabsContent>
         </Tabs>
       ) : (

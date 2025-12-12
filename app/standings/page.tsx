@@ -81,7 +81,7 @@ function addHeadToHeadWin(
 export default async function StandingsPage() {
   const supabase = await createClient();
 
-  // 현재 시즌
+  // Get active season
   const { data: activeSeason } = await supabase
     .from("seasons")
     .select("*")
@@ -93,15 +93,15 @@ export default async function StandingsPage() {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>순위표</CardTitle>
-            <CardDescription>진행 중인 시즌이 없습니다.</CardDescription>
+            <CardTitle>Standings</CardTitle>
+            <CardDescription>No active season.</CardDescription>
           </CardHeader>
         </Card>
       </div>
     );
   }
 
-  // 팀 기본 정보 + 벌점
+  // Get team info + penalty points
   const { data: teams } = await supabase
     .from("teams")
     .select(
@@ -110,7 +110,7 @@ export default async function StandingsPage() {
     .eq("season_id", activeSeason.id)
     .order("name", { ascending: true });
 
-  // 완료된 경기 (몰수 포함)
+  // Get finished matches (including forfeits)
   const { data: matches } = await supabase
     .from("matches")
     .select(
@@ -129,14 +129,14 @@ export default async function StandingsPage() {
       new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
   );
 
-  // 경기 단위 집계
+  // Aggregate match data
   sortedMatches.forEach((match) => {
     const homeId = match.home_team_id;
     const awayId = match.away_team_id;
     const isForfeit =
       !!match.is_forfeit && !!match.forfeit_winner_id ? true : false;
 
-    // 승/패 판정
+    // Determine winner/loser
     let winnerId: string | null = null;
     let loserId: string | null = null;
 
@@ -153,7 +153,7 @@ export default async function StandingsPage() {
       }
     }
 
-    // 팀별 기본 구조 보장
+    // Ensure team data structure exists
     const ensureTeam = (teamId: string) => {
       if (!statsMap.has(teamId)) {
         statsMap.set(teamId, { ...DEFAULT_ZERO, id: teamId });
@@ -169,7 +169,7 @@ export default async function StandingsPage() {
     const homeLost = loserId === homeId;
     const awayLost = loserId === awayId;
 
-    // 포인트 규칙: 승(2) / 패(1) / 몰수패(0)
+    // Points rule: Win(2) / Loss(1) / Forfeit Loss(0)
     const homePointsDelta = isForfeit
       ? homeWon
         ? 2
@@ -185,7 +185,7 @@ export default async function StandingsPage() {
       ? 2
       : 1;
 
-    // 승/패 및 포인트
+    // Update wins/losses and points
     statsMap.set(homeId, {
       ...homeStats,
       wins: homeStats.wins + (homeWon ? 1 : 0),
@@ -197,7 +197,7 @@ export default async function StandingsPage() {
       points_against:
         homeStats.points_against +
         (isForfeit ? 0 : match.away_score ? match.away_score : 0),
-      margin: homeStats.margin, // placeholder, 계산은 후처리
+      margin: homeStats.margin, // placeholder, calculated later
     });
 
     statsMap.set(awayId, {
@@ -214,7 +214,7 @@ export default async function StandingsPage() {
       margin: awayStats.margin,
     });
 
-    // Recent form (최근 5경기)
+    // Recent form (last 5 games)
     if (winnerId) {
       if (!recentMap.has(winnerId)) recentMap.set(winnerId, []);
       if (recentMap.get(winnerId)!.length < 5) {
@@ -228,13 +228,13 @@ export default async function StandingsPage() {
       }
     }
 
-    // 승자승 기록
+    // Record head-to-head
     if (winnerId && loserId) {
       addHeadToHeadWin(headToHead, winnerId, loserId);
     }
   });
 
-  // 최종 Team 데이터 결합
+  // Combine final team data
   const withStats: TeamComputed[] =
     teams?.map((team) => {
       const raw = statsMap.get(team.id) || { ...DEFAULT_ZERO, id: team.id };
@@ -314,14 +314,14 @@ export default async function StandingsPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">순위표</h1>
+          <h1 className="text-4xl font-bold">Standings</h1>
           <p className="text-xl text-muted-foreground">{activeSeason.name}</p>
         </div>
 
         {/* Tabs for Conference Selection */}
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="all">전체</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="west">Western</TabsTrigger>
             <TabsTrigger value="east">Eastern</TabsTrigger>
           </TabsList>
@@ -330,11 +330,15 @@ export default async function StandingsPage() {
           <TabsContent value="all" className="space-y-4">
             <Card className="bg-neutral-900/5 dark:bg-white/5">
               <CardHeader>
-                <CardTitle>전체 순위</CardTitle>
-                <CardDescription>승점(벌점 반영) 기준 정렬</CardDescription>
+                <CardTitle>Overall Standings</CardTitle>
+                <CardDescription>
+                  Top 8 from each conference advance to playoffs
+                  <span className="ml-2 text-red-500">West</span> |
+                  <span className="ml-1 text-blue-500">East</span>
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <StandingsTable teams={allTeams} />
+                <StandingsTable teams={allTeams} showConferenceHighlight={true} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -347,10 +351,10 @@ export default async function StandingsPage() {
                   <div className="h-1 w-12 bg-red-500 rounded-full"></div>
                   <span className="text-2xl">Western Conference</span>
                 </CardTitle>
-                <CardDescription>승점 → 승자승 → 평균득점</CardDescription>
+                <CardDescription>Points → Head-to-head → PPG</CardDescription>
               </CardHeader>
               <CardContent>
-                <StandingsTable teams={westTeams} conference="West" />
+                <StandingsTable teams={westTeams} conference="West" showConferenceHighlight={true} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -363,10 +367,10 @@ export default async function StandingsPage() {
                   <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
                   <span className="text-2xl">Eastern Conference</span>
                 </CardTitle>
-                <CardDescription>승점 → 승자승 → 평균득점</CardDescription>
+                <CardDescription>Points → Head-to-head → PPG</CardDescription>
               </CardHeader>
               <CardContent>
-                <StandingsTable teams={eastTeams} conference="East" />
+                <StandingsTable teams={eastTeams} conference="East" showConferenceHighlight={true} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -378,17 +382,17 @@ export default async function StandingsPage() {
             <div className="flex flex-wrap gap-6 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <span>승리 (W)</span>
+                <span>Win (W)</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                <span>패배 (L)</span>
+                <span>Loss (L)</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="h-6 w-6 rounded bg-primary/10 border border-primary flex items-center justify-center text-xs font-bold">
                   1-8
                 </div>
-                <span>플레이오프 진출권</span>
+                <span>Playoff Qualification</span>
               </div>
             </div>
           </CardContent>

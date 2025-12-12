@@ -1,12 +1,14 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Trophy } from "lucide-react";
+import { Trophy, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useState } from "react";
 
 interface Team {
   id: string;
   name: string;
   logo_url: string | null;
+  conference?: "West" | "East" | null;
   wins: number;
   losses: number;
   gamesPlayed: number;
@@ -26,9 +28,69 @@ interface Team {
 interface StandingsTableProps {
   teams: Team[];
   conference?: "West" | "East";
+  showConferenceHighlight?: boolean;
 }
 
-export function StandingsTable({ teams, conference }: StandingsTableProps) {
+type SortField = "gamesPlayed" | "wins" | "losses" | "winRate" | "pointsNet" | "penalty_points" | "ppg" | "papg" | "margin";
+type SortDirection = "asc" | "desc" | null;
+
+export function StandingsTable({ teams, conference, showConferenceHighlight = false }: StandingsTableProps) {
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === "desc") {
+        setSortDirection("asc");
+      } else if (sortDirection === "asc") {
+        setSortDirection(null);
+        setSortField(null);
+      }
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />;
+    }
+    if (sortDirection === "desc") {
+      return <ArrowDown className="h-3 w-3 ml-1" />;
+    }
+    return <ArrowUp className="h-3 w-3 ml-1" />;
+  };
+
+  const sortedTeams = [...teams].sort((a, b) => {
+    if (!sortField || !sortDirection) return 0;
+
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+
+    if (sortField === "penalty_points") {
+      aValue = a.penalty_points ?? 0;
+      bValue = b.penalty_points ?? 0;
+    }
+
+    if (sortDirection === "asc") {
+      return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+    } else {
+      return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+    }
+  });
+
+  const displayTeams = sortField && sortDirection ? sortedTeams : teams;
+
+  const getConferenceBgClass = (team: Team) => {
+    if (!showConferenceHighlight) return "";
+    return team.conference === "West"
+      ? "bg-red-500/5"
+      : team.conference === "East"
+      ? "bg-blue-500/5"
+      : "";
+  };
+
   const bgClass =
     conference === "West"
       ? "bg-red-500/5"
@@ -67,29 +129,108 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
           <tr className="border-b text-xs uppercase tracking-wider text-muted-foreground">
             <th className="text-left py-3 px-2">Rank</th>
             <th className="text-left py-3 px-2">Team</th>
-            <th className="text-center py-3 px-2">GP</th>
-            <th className="text-center py-3 px-2">W</th>
-            <th className="text-center py-3 px-2">L</th>
-            <th className="text-center py-3 px-2">Win%</th>
-            <th className="text-center py-3 px-2">Pts</th>
-            <th className="text-center py-3 px-2">Penalty</th>
-            <th className="text-center py-3 px-2">PPG</th>
-            <th className="text-center py-3 px-2">PAPG</th>
-            <th className="text-center py-3 px-2">Margin</th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("gamesPlayed")}
+            >
+              <div className="flex items-center justify-center">
+                GP
+                {getSortIcon("gamesPlayed")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("wins")}
+            >
+              <div className="flex items-center justify-center">
+                W
+                {getSortIcon("wins")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("losses")}
+            >
+              <div className="flex items-center justify-center">
+                L
+                {getSortIcon("losses")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("winRate")}
+            >
+              <div className="flex items-center justify-center">
+                Win%
+                {getSortIcon("winRate")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("pointsNet")}
+            >
+              <div className="flex items-center justify-center">
+                Pts
+                {getSortIcon("pointsNet")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("penalty_points")}
+            >
+              <div className="flex items-center justify-center">
+                Penalty
+                {getSortIcon("penalty_points")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("ppg")}
+            >
+              <div className="flex items-center justify-center">
+                PPG
+                {getSortIcon("ppg")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("papg")}
+            >
+              <div className="flex items-center justify-center">
+                PAPG
+                {getSortIcon("papg")}
+              </div>
+            </th>
+            <th
+              className="text-center py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+              onClick={() => handleSort("margin")}
+            >
+              <div className="flex items-center justify-center">
+                Margin
+                {getSortIcon("margin")}
+              </div>
+            </th>
             <th className="text-left py-3 px-2">Last 5</th>
           </tr>
         </thead>
         <tbody>
-          {teams.map((team, index) => {
+          {displayTeams.map((team, index) => {
             const rank = index + 1;
             const isPlayoffTeam = rank <= 8;
+
+            const teamConferenceBg = getConferenceBgClass(team);
+            const isWestPlayoff = showConferenceHighlight && team.conference === "West" && isPlayoffTeam;
+            const isEastPlayoff = showConferenceHighlight && team.conference === "East" && isPlayoffTeam;
 
             return (
               <tr
                 key={team.id}
                 className={cn(
                   "border-b transition-colors hover:bg-muted/50",
-                  isPlayoffTeam && `${bgClass} ${borderClass}`
+                  teamConferenceBg,
+                  isPlayoffTeam && !showConferenceHighlight && `${bgClass} ${borderClass}`,
+                  isWestPlayoff && "bg-red-500/5 border-red-500/20",
+                  isEastPlayoff && "bg-blue-500/5 border-blue-500/20"
                 )}
               >
                 {/* Rank */}
@@ -120,11 +261,17 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
                 <td className="py-4 px-2">
                   <div className="flex items-center space-x-3">
                     {team.logo_url ? (
-                      <img
-                        src={team.logo_url}
-                        alt={team.name}
-                        className="h-8 w-8 object-contain"
-                      />
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center",
+                        showConferenceHighlight && team.conference === "West" && isPlayoffTeam && "ring-2 ring-red-500",
+                        showConferenceHighlight && team.conference === "East" && isPlayoffTeam && "ring-2 ring-blue-500"
+                      )}>
+                        <img
+                          src={team.logo_url}
+                          alt={team.name}
+                          className="h-8 w-8 object-contain"
+                        />
+                      </div>
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold">
                         {team.name.substring(0, 2).toUpperCase()}
@@ -250,7 +397,7 @@ export function StandingsTable({ teams, conference }: StandingsTableProps) {
         </tbody>
       </table>
 
-      {teams.length === 0 && (
+      {displayTeams.length === 0 && (
         <div className="py-12 text-center text-muted-foreground">
           No standings data yet.
         </div>

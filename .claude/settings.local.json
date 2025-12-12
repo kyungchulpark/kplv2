@@ -20,7 +20,12 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git --no-pager diff --color=never app/page.tsx)",
+      "Bash(git --no-pager diff --color=never app/standings/page.tsx)",
+      "Bash(git --no-pager diff --color=never components/schedule/match-detail-dialog.tsx)",
+      "Bash(wait)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
     "ask": []

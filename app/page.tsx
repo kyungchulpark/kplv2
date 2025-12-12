@@ -31,7 +31,7 @@ export default async function Home() {
     );
   }
 
-  // 최근 20경기 (NBA 스타일 슬라이드용)
+  // Get recent 20 matches (for NBA-style slider)
   const { data: recentMatches } = await supabase
     .from("matches")
     .select(

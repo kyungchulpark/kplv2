@@ -7,70 +7,71 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/utils/supabase/client";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-interface ProfileSetupFormProps {
+interface ProfileEditFormProps {
   userId: string;
-  email: string;
+  currentPsnId: string;
+  currentYoutubeChannel: string;
 }
 
-export function ProfileSetupForm({ userId, email }: ProfileSetupFormProps) {
+export function ProfileEditForm({
+  userId,
+  currentPsnId,
+  currentYoutubeChannel,
+}: ProfileEditFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [psnId, setPsnId] = useState("");
-  const [youtubeChannel, setYoutubeChannel] = useState("");
+  const [psnId, setPsnId] = useState(currentPsnId);
+  const [youtubeChannel, setYoutubeChannel] = useState(currentYoutubeChannel);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
       const supabase = createClient();
 
-      // Create profile
-      const { error: insertError } = await supabase.from("profiles").insert({
-        id: userId,
-        email,
-        psn_id: psnId,
-        youtube_channel: youtubeChannel || null,
-        role: "user",
-      });
+      // Update profile
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          psn_id: psnId,
+          youtube_channel: youtubeChannel || null,
+        })
+        .eq("id", userId);
 
-      if (insertError) {
-        if (insertError.code === "23505") {
-          // Unique constraint violation
-          setError("PSN ID is already in use.");
+      if (updateError) {
+        if (updateError.code === "23505") {
+          toast.error("PSN ID is already in use.");
         } else {
-          setError("An error occurred while creating profile.");
+          toast.error("An error occurred while updating profile.");
         }
         setIsLoading(false);
         return;
       }
 
-      // Success - redirect to home
-      router.push("/");
+      toast.success("Profile updated successfully!");
       router.refresh();
     } catch (err) {
-      console.error("Profile setup error:", err);
-      setError("An error occurred while creating profile.");
+      console.error("Profile update error:", err);
+      toast.error("An error occurred while updating profile.");
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const hasChanges =
+    psnId !== currentPsnId || youtubeChannel !== currentYoutubeChannel;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" value={email} disabled />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="psn_id">
+        <Label htmlFor="edit_psn_id">
           PSN ID <span className="text-destructive">*</span>
         </Label>
         <Input
-          id="psn_id"
+          id="edit_psn_id"
           type="text"
           placeholder="Enter your PlayStation Network ID"
           value={psnId}
@@ -86,11 +87,11 @@ export function ProfileSetupForm({ userId, email }: ProfileSetupFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="youtube_channel">
+        <Label htmlFor="edit_youtube_channel">
           YouTube Channel <span className="text-muted-foreground">(Optional)</span>
         </Label>
         <Input
-          id="youtube_channel"
+          id="edit_youtube_channel"
           type="url"
           placeholder="Enter your YouTube channel URL"
           value={youtubeChannel}
@@ -102,20 +103,18 @@ export function ProfileSetupForm({ userId, email }: ProfileSetupFormProps) {
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      <Button type="submit" className="w-full" disabled={isLoading || !psnId}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading || !psnId || !hasChanges}
+      >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating...
+            Updating...
           </>
         ) : (
-          "Create Profile"
+          "Update Profile"
         )}
       </Button>
     </form>

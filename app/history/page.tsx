@@ -61,7 +61,7 @@ export default async function HistoryPage() {
   };
 
   return (
-    <div className="container space-y-8 py-8">
+    <div className="container max-w-7xl mx-auto space-y-8 py-8">
       <div className="space-y-2 text-center">
         <div className="flex items-center justify-center space-x-3">
           <Trophy className="h-8 w-8 text-yellow-500" />

@@ -42,15 +42,15 @@ export function StreamUrlInputs({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Youtube className="h-5 w-5 text-red-600" />
-          스트리밍 링크 <span className="text-red-600 text-sm">(필수)</span>
+          <Youtube className="h-5 w-5 text-emerald-600" />
+          Streaming Links <span className="text-emerald-600 text-sm">(Required)</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Home Team Stream */}
         <div className="space-y-2">
           <Label htmlFor="home-stream" className="text-sm font-medium">
-            {homeTeamName} (홈팀) 스트리밍 URL
+            {homeTeamName} (Home) Streaming URL
           </Label>
           <Input
             id="home-stream"
@@ -66,7 +66,7 @@ export function StreamUrlInputs({
         {/* Away Team Stream */}
         <div className="space-y-2">
           <Label htmlFor="away-stream" className="text-sm font-medium">
-            {awayTeamName} (원정팀) 스트리밍 URL
+            {awayTeamName} (Away) Streaming URL
           </Label>
           <Input
             id="away-stream"
@@ -80,7 +80,7 @@ export function StreamUrlInputs({
         </div>
 
         <p className="text-xs text-muted-foreground">
-          YouTube, Twitch, AfreecaTV 등 스트리밍 플랫폼 링크를 입력하세요. 양팀 모두 입력 필수입니다.
+          Enter streaming platform links (YouTube, Twitch, AfreecaTV, etc.). Both teams must provide URLs.
         </p>
       </CardContent>
     </Card>

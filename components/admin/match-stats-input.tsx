@@ -94,10 +94,10 @@ export function MatchStatsInput({
     const validationErrors: string[] = [];
 
     if (homeRoster.length < 5) {
-      validationErrors.push("홈 팀 활성 로스터가 5명 이상 등록되어 있어야 합니다.");
+      validationErrors.push("Home team must have at least 5 active roster players.");
     }
     if (awayRoster.length < 5) {
-      validationErrors.push("원정 팀 활성 로스터가 5명 이상 등록되어 있어야 합니다.");
+      validationErrors.push("Away team must have at least 5 active roster players.");
     }
 
     // Check if all players are selected
@@ -105,10 +105,10 @@ export function MatchStatsInput({
     const allAwaySelected = awayStats.every((s) => s.player_id !== "");
 
     if (!allHomeSelected) {
-      validationErrors.push("홈 팀 5명의 선수를 모두 선택해주세요.");
+      validationErrors.push("Please select all 5 home team players.");
     }
     if (!allAwaySelected) {
-      validationErrors.push("원정 팀 5명의 선수를 모두 선택해주세요.");
+      validationErrors.push("Please select all 5 away team players.");
     }
 
     // Check for duplicate players
@@ -116,48 +116,48 @@ export function MatchStatsInput({
     const awayPlayerIds = awayStats.map((s) => s.player_id).filter(Boolean);
 
     if (new Set(homePlayerIds).size !== homePlayerIds.length) {
-      validationErrors.push("홈 팀에 중복된 선수가 있습니다.");
+      validationErrors.push("Duplicate players found in home team.");
     }
     if (new Set(awayPlayerIds).size !== awayPlayerIds.length) {
-      validationErrors.push("원정 팀에 중복된 선수가 있습니다.");
+      validationErrors.push("Duplicate players found in away team.");
     }
     const allPlayers = [...homePlayerIds, ...awayPlayerIds];
     if (new Set(allPlayers).size !== allPlayers.length) {
-      validationErrors.push("같은 선수가 양 팀에 중복 배치되었습니다.");
+      validationErrors.push("Same player appears on both teams.");
     }
 
     // Validate stats for each player
     [...homeStats, ...awayStats].forEach((stats, idx) => {
       if (!stats.player_id) return;
 
-      const team = idx < 5 ? "홈 팀" : "원정 팀";
+      const team = idx < 5 ? "Home" : "Away";
       const playerNum = (idx % 5) + 1;
 
       if (stats.fgm > stats.fga) {
         validationErrors.push(
-          `${team} ${playerNum}번 야투 성공(${stats.fgm})이 시도(${stats.fga})보다 많습니다.`
+          `${team} P${playerNum}: FGM (${stats.fgm}) exceeds FGA (${stats.fga}).`
         );
       }
       if (stats.three_pm > stats.three_pa) {
         validationErrors.push(
-          `${team} ${playerNum}번 3점슛 성공(${stats.three_pm})이 시도(${stats.three_pa})보다 많습니다.`
+          `${team} P${playerNum}: 3PM (${stats.three_pm}) exceeds 3PA (${stats.three_pa}).`
         );
       }
       if (stats.ftm > stats.fta) {
         validationErrors.push(
-          `${team} ${playerNum}번 자유투 성공(${stats.ftm})이 시도(${stats.fta})보다 많습니다.`
+          `${team} P${playerNum}: FTM (${stats.ftm}) exceeds FTA (${stats.fta}).`
         );
       }
       if (stats.three_pm > stats.fgm) {
         validationErrors.push(
-          `${team} ${playerNum}번 3점슛 성공(${stats.three_pm})이 야투 성공(${stats.fgm})보다 많습니다.`
+          `${team} P${playerNum}: 3PM (${stats.three_pm}) exceeds total FGM (${stats.fgm}).`
         );
       }
 
       const calculatedPts = calculatePoints(stats);
       if (stats.pts !== calculatedPts) {
         validationErrors.push(
-          `${team} ${playerNum}번 득점(${stats.pts})이 계산값(${calculatedPts})과 다릅니다. 자동으로 보정됩니다.`
+          `${team} P${playerNum}: Points (${stats.pts}) don't match calculated value (${calculatedPts}). Will be auto-corrected.`
         );
       }
     });
@@ -173,15 +173,15 @@ export function MatchStatsInput({
   }) => {
     // Validate streaming URLs
     if (!homeStreamUrl || !awayStreamUrl) {
-      setErrors(["홈팀과 원정팀 스트리밍 URL을 모두 입력해주세요."]);
-      toast.error("스트리밍 URL은 필수 입력입니다");
+      setErrors(["Please provide streaming URLs for both home and away teams."]);
+      toast.error("Streaming URLs are required");
       return;
     }
 
     const validationErrors = validateStats(data.homeStats, data.awayStats);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
-      toast.error("입력값을 확인해주세요");
+      toast.error("Please check your input");
       return;
     }
 
@@ -242,14 +242,14 @@ export function MatchStatsInput({
 
       if (matchError) throw matchError;
 
-      toast.success("경기 결과가 저장되었습니다.");
+      toast.success("Match results saved successfully.");
       router.push(onSuccessRedirect);
       router.refresh();
     } catch (error: unknown) {
       console.error("Error saving match stats:", error);
       console.error("Error JSON:", JSON.stringify(error, null, 2));
 
-      let errorMessage = "경기 결과 저장 중 오류가 발생했습니다.";
+      let errorMessage = "An error occurred while saving match results.";
       if (error && typeof error === "object") {
         const err = error as {
           message?: string;
@@ -258,10 +258,10 @@ export function MatchStatsInput({
           code?: string;
         };
         if (err.message) {
-          errorMessage = `오류: ${err.message}`;
+          errorMessage = `Error: ${err.message}`;
           if (err.details) errorMessage += ` (${err.details})`;
-          if (err.hint) errorMessage += ` - 힌트: ${err.hint}`;
-          if (err.code) errorMessage += ` [코드: ${err.code}]`;
+          if (err.hint) errorMessage += ` - Hint: ${err.hint}`;
+          if (err.code) errorMessage += ` [Code: ${err.code}]`;
         }
       }
 
@@ -275,9 +275,9 @@ export function MatchStatsInput({
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">경기 결과 입력</h1>
+        <h1 className="text-3xl font-bold">Submit Match Results</h1>
         <p className="text-muted-foreground">
-          {match.season.name} - {new Date(match.match_date).toLocaleDateString("ko-KR")}
+          {match.season.name} - {new Date(match.match_date).toLocaleDateString("en-US")}
         </p>
         <p className="text-sm text-muted-foreground">
           {match.home_team.name} vs {match.away_team.name}
@@ -299,7 +299,7 @@ export function MatchStatsInput({
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
               <div className="flex-1">
-                <h3 className="font-semibold text-destructive mb-2">검증 오류</h3>
+                <h3 className="font-semibold text-destructive mb-2">Validation Errors</h3>
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   {errors.map((error, idx) => (
                     <li key={idx}>{error}</li>
@@ -333,7 +333,7 @@ export function MatchStatsInput({
           onClick={() => router.back()}
           disabled={isLoading}
         >
-          취소
+          Cancel
         </Button>
       </div>
 
@@ -343,7 +343,7 @@ export function MatchStatsInput({
           <Card className="p-6">
             <div className="flex items-center gap-3">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-lg font-semibold">저장 중...</span>
+              <span className="text-lg font-semibold">Saving...</span>
             </div>
           </Card>
         </div>

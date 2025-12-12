@@ -57,7 +57,7 @@ export function HeroSection({
               <Button
                 size="lg"
                 variant="outline"
-                className="min-w-[200px] border-slate-200 text-slate-900 hover:bg-slate-50"
+                className="min-w-[200px] border-slate-200 text-slate-900 hover:bg-slate-50 hover:text-slate-900"
               >
                 <Calendar className="mr-2 h-5 w-5" />
                 Schedule

@@ -63,12 +63,12 @@ export default async function MatchResultUploadPage({ params }: PageProps) {
       <div className="container mx-auto px-4 py-10">
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle>권한이 없습니다</CardTitle>
+            <CardTitle>Access Denied</CardTitle>
             <CardDescription>{permission.reason}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              이 경기의 결과를 입력할 권한이 없습니다. 경기에 참가하는 팀의 선수만 결과를 입력할 수 있습니다.
+              You do not have permission to upload results for this match. Only players on the participating teams can submit results.
             </p>
           </CardContent>
         </Card>
@@ -93,17 +93,17 @@ export default async function MatchResultUploadPage({ params }: PageProps) {
       <div className="container mx-auto px-4 py-10">
         <Card className="border-amber-500">
           <CardHeader>
-            <CardTitle>이미 입력된 경기입니다</CardTitle>
+            <CardTitle>Results Already Submitted</CardTitle>
             <CardDescription>
-              이 경기의 결과는 이미 입력되었습니다.
+              Match results have already been submitted for this game.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              경기 결과를 수정해야 하는 경우 관리자에게 문의하세요.
+              If you need to modify the results, please contact an admin.
             </p>
             <a href="/schedule" className="text-primary hover:underline">
-              일정표로 돌아가기 →
+              Return to Schedule →
             </a>
           </CardContent>
         </Card>
