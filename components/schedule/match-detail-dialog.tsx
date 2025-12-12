@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -74,13 +74,7 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
   const [stats, setStats] = useState<MatchStats[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open && match.status === "finished") {
-      loadMatchStats();
-    }
-  }, [open, match.id]);
-
-  const loadMatchStats = async () => {
+  const loadMatchStats = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
     const { data } = await supabase
@@ -96,7 +90,13 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
 
     setStats(data as unknown as MatchStats[]);
     setLoading(false);
-  };
+  }, [match.id]);
+
+  useEffect(() => {
+    if (open && match.status === "finished") {
+      loadMatchStats();
+    }
+  }, [open, match.status, loadMatchStats]);
 
   const matchDate = new Date(match.match_date);
   const homeStats = stats?.filter((s) => s.team_id === match.home_team.id) || [];
@@ -276,11 +276,9 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
           </div>
         )}
 
-        {/* Streaming & Screenshot (if finished) */}
-        {match.status === "finished" && (match.home_stream_url || match.away_stream_url || match.result_screenshot_url) && (
+        {(match.result_screenshot_url || match.home_stream_url || match.away_stream_url) && (
           <div className="space-y-6 mt-6 border-t pt-6">
-            {/* Screenshot */}
-            {match.result_screenshot_url && (
+            {match.status === "finished" && match.result_screenshot_url && (
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Match Result Screenshot</h3>
                 <img
@@ -291,10 +289,9 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
               </div>
             )}
 
-            {/* Streaming Videos */}
             {(match.home_stream_url || match.away_stream_url) && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Match Streams</h3>
+                <h3 className="text-lg font-semibold">Team Streams</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {match.home_stream_url && (
                     <div className="space-y-2">

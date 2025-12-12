@@ -8,25 +8,25 @@ interface YouTubeEmbedProps {
 }
 
 export function YouTubeEmbed({ url, title = "Match Stream" }: YouTubeEmbedProps) {
-  // Extract video ID from URL
   const videoId = extractYouTubeVideoId(url);
 
   if (!videoId) {
-    // Not a YouTube URL - show link instead
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 text-blue-600 hover:underline dark:text-blue-400"
-      >
-        <Youtube className="h-4 w-4" />
-        스트리밍 보기
-      </a>
+      <div className="aspect-video w-full rounded-lg border border-dashed flex flex-col items-center justify-center gap-3 bg-slate-900 text-white text-sm">
+        <Youtube className="h-6 w-6" />
+        <div>Stream offline or invalid link</div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs underline"
+        >
+          Open on YouTube
+        </a>
+      </div>
     );
   }
 
-  // Embed YouTube player
   return (
     <div className="aspect-video w-full rounded-lg overflow-hidden border">
       <iframe
@@ -51,7 +51,7 @@ export function YouTubeEmbed({ url, title = "Match Stream" }: YouTubeEmbedProps)
  * @param url - YouTube URL
  * @returns Video ID or null if not found
  */
-function extractYouTubeVideoId(url: string): string | null {
+export function extractYouTubeVideoId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
     /youtube\.com\/embed\/([^&\n?#]+)/,

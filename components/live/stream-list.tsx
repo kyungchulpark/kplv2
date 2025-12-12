@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ExternalLink, User, Youtube } from "lucide-react";
+import { extractYouTubeVideoId } from "@/components/match/youtube-embed";
 
 interface Streamer {
   id: string;
@@ -20,7 +22,18 @@ const PAGE_SIZE = 6;
 
 export function StreamList({ streamers }: StreamListProps) {
   const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(streamers.length / PAGE_SIZE));
+
+  const sortedStreamers = useMemo(() => {
+    return [...streamers].sort((a, b) => {
+      const liveDiff =
+        Number(isProbablyLive(b.youtube_channel)) -
+        Number(isProbablyLive(a.youtube_channel));
+      if (liveDiff !== 0) return liveDiff;
+      return a.psn_id.localeCompare(b.psn_id);
+    });
+  }, [streamers]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedStreamers.length / PAGE_SIZE));
 
   useEffect(() => {
     if (page > totalPages) {
@@ -30,8 +43,8 @@ export function StreamList({ streamers }: StreamListProps) {
 
   const visibleStreamers = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return streamers.slice(start, start + PAGE_SIZE);
-  }, [page, streamers]);
+    return sortedStreamers.slice(start, start + PAGE_SIZE);
+  }, [page, sortedStreamers]);
 
   if (streamers.length === 0) {
     return (
@@ -53,11 +66,11 @@ export function StreamList({ streamers }: StreamListProps) {
         {visibleStreamers.map((streamer) => (
           <Card key={streamer.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="flex items-center space-x-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white overflow-hidden">
-                  {streamer.avatar_url ? (
-                    <img
-                      src={streamer.avatar_url}
+                <div className="flex items-center space-x-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white overflow-hidden">
+                    {streamer.avatar_url ? (
+                      <img
+                        src={streamer.avatar_url}
                       alt={streamer.psn_id}
                       className="h-12 w-12 object-cover"
                     />
@@ -65,8 +78,15 @@ export function StreamList({ streamers }: StreamListProps) {
                     <User className="h-6 w-6" />
                   )}
                 </div>
-                <CardTitle className="text-lg">{streamer.psn_id}</CardTitle>
-              </div>
+                  <div className="flex flex-col gap-1">
+                    <CardTitle className="text-lg">{streamer.psn_id}</CardTitle>
+                    {isProbablyLive(streamer.youtube_channel) && (
+                      <Badge variant="destructive" className="w-fit text-xs">
+                        LIVE
+                      </Badge>
+                    )}
+                  </div>
+                </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <LivePreview url={streamer.youtube_channel} />
@@ -134,19 +154,12 @@ function LivePreview({ url }: { url: string }) {
   );
 }
 
-function extractYouTubeVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
-    /youtube\.com\/embed\/([^&\n?#]+)/,
-    /youtube\.com\/v\/([^&\n?#]+)/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-
-  return null;
+function isProbablyLive(url: string) {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("/live") ||
+    lower.includes("live_stream") ||
+    lower.includes("=live") ||
+    lower.endsWith("/stream")
+  );
 }
