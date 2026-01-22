@@ -37,8 +37,15 @@ export default async function TeamManagePage() {
     );
   }
 
-  // Get team that user is captain of
-  const { data: team } = await supabase
+  // Get active season
+  const { data: activeSeason } = await supabase
+    .from("seasons")
+    .select("id, name, is_active")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  // Get team that user is captain of (prefer active season)
+  const { data: teams } = await supabase
     .from("teams")
     .select(
       `
@@ -47,7 +54,18 @@ export default async function TeamManagePage() {
     `
     )
     .eq("captain_id", user.id)
-    .single();
+    .order("created_at", { ascending: false });
+
+  let team = null;
+  if (teams && teams.length > 0) {
+    team = teams[0];
+    if (activeSeason?.id) {
+      const activeTeam = teams.find((t) => t.season_id === activeSeason.id);
+      if (activeTeam) {
+        team = activeTeam;
+      }
+    }
+  }
 
   if (!team) {
     return (

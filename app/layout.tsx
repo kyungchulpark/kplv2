@@ -44,19 +44,28 @@ export default async function RootLayout({
 
       // Check if captain (시즌과 관계없이 팀장인 팀 조회)
       console.log("[Layout] Checking captain team for user:", user.id);
-      const { data: captainTeam, error: captainError } = await supabase
+      const { data: captainTeams, error: captainError } = await supabase
         .from("teams")
-        .select("id, name, logo_url, captain_id")
+        .select("id, name, logo_url, captain_id, season_id, created_at")
         .eq("captain_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
 
-      console.log("[Layout] Captain team result:", { captainTeam, captainError });
+      console.log("[Layout] Captain team result:", { captainTeams, captainError });
 
       if (captainError) {
         console.error("Error fetching captain team:", captainError);
       }
 
-      if (captainTeam) {
+      if (captainTeams && captainTeams.length > 0) {
+        let captainTeam = captainTeams[0];
+        if (activeSeason?.id) {
+          const activeCaptainTeam = captainTeams.find(
+            (team) => team.season_id === activeSeason.id
+          );
+          if (activeCaptainTeam) {
+            captainTeam = activeCaptainTeam;
+          }
+        }
         console.log("[Layout] Found captain team:", captainTeam.name);
         userTeam = captainTeam;
       } else {
