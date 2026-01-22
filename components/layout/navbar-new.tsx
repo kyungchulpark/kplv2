@@ -47,8 +47,8 @@ export function Navbar({ user, userTeam }: NavbarProps) {
 
   const userRole = (user?.profile as any)?.role;
   const isOperator = user && ["admin", "staff"].includes(userRole);
-  const canManageTeam =
-    !!userTeam && !!user && (userRole === "captain" || isOperator);
+  const isCaptain = userRole === "captain";
+  const canManageTeam = !!user && (isCaptain || isOperator);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
