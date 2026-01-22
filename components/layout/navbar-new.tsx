@@ -45,7 +45,10 @@ export function Navbar({ user, userTeam }: NavbarProps) {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  const isOperator = user && ["admin", "staff"].includes((user.profile as any)?.role);
+  const userRole = (user?.profile as any)?.role;
+  const isOperator = user && ["admin", "staff"].includes(userRole);
+  const canManageTeam =
+    !!userTeam && !!user && (userRole === "captain" || isOperator);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
@@ -184,6 +187,19 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                         <Shield className="h-4 w-4" />
                       )}
                       <span className="max-w-[100px] truncate">{userTeam.name}</span>
+                    </Button>
+                  </Link>
+                )}
+
+                {/* Team Management */}
+                {canManageTeam && (
+                  <Link href="/team/manage">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                    >
+                      Team Manage
                     </Button>
                   </Link>
                 )}
@@ -376,6 +392,14 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                         <Shield className="h-4 w-4" />
                       )}
                       My team: {userTeam.name}
+                    </Button>
+                  </Link>
+                )}
+
+                {canManageTeam && (
+                  <Link href="/team/manage" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full border-slate-200 text-slate-700 hover:bg-slate-50">
+                      Team Manage
                     </Button>
                   </Link>
                 )}

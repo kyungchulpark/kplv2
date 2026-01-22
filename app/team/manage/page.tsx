@@ -22,7 +22,7 @@ export default async function TeamManagePage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "captain") {
+  if (!profile || (profile.role !== "captain" && profile.role !== "admin")) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
