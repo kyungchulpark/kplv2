@@ -103,8 +103,7 @@ export default async function TeamManagePage() {
   // Get all available players (users who are not in any active roster for this season)
   const { data: allPlayers } = await supabase
     .from("profiles")
-    .select("id, psn_id, email, avatar_url")
-    .neq("id", user.id); // Exclude captain
+    .select("id, psn_id, email, avatar_url");
 
   // Filter out players who are already in an active roster for this season
   const { data: activeRosters } = await supabase
@@ -119,11 +118,13 @@ export default async function TeamManagePage() {
   );
 
   const availablePlayers =
-    allPlayers?.filter((p) => !playersInSeason.has(p.id)).sort((a, b) =>
-      (a.psn_id || "").localeCompare(b.psn_id || "", undefined, {
-        sensitivity: "base",
-      })
-    ) || [];
+    (allPlayers || [])
+      .filter((p) => !playersInSeason.has(p.id))
+      .sort((a, b) =>
+        (a.psn_id || "").localeCompare(b.psn_id || "", undefined, {
+          sensitivity: "base",
+        })
+      );
 
   return (
     <div className="container mx-auto px-4 py-8">
