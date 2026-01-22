@@ -149,8 +149,7 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
 
       const { data: allPlayers } = await supabase
         .from("profiles")
-        .select("id, psn_id, avatar_url")
-        .eq("role", "user");
+        .select("id, psn_id, avatar_url");
 
       // Filter out players already in ANY team (regardless of season)
       const { data: allRosters } = await supabase
