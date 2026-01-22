@@ -144,22 +144,29 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
 
       setRoster(rosterData || []);
 
-      // Get available players (not in any team, regardless of season)
+      // Get available players (not in any roster)
       const rosterPlayerIds = rosterData?.map((r) => r.player_id) || [];
 
       const { data: allPlayers } = await supabase
         .from("profiles")
         .select("id, psn_id, avatar_url");
 
-      // Filter out players already in ANY team (regardless of season)
+      // Filter out players already in ANY team roster
       const { data: allRosters } = await supabase
         .from("team_rosters")
         .select("player_id")
         .eq("is_active", true);
 
       const takenPlayerIds = allRosters?.map((r) => r.player_id) || [];
+
+      // Available players: not in any active roster
       const available =
         allPlayers?.filter((p) => !takenPlayerIds.includes(p.id)) || [];
+
+      // Sort alphabetically by psn_id (대소문자 구분 없이)
+      available.sort((a, b) =>
+        a.psn_id.toLowerCase().localeCompare(b.psn_id.toLowerCase())
+      );
 
       setAvailablePlayers(available);
     } catch (err: any) {
