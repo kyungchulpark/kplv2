@@ -32,37 +32,48 @@ export default async function RootLayout({
   // Get user's team if logged in
   let userTeam = null;
   if (user) {
-    const supabase = await createClient();
+    try {
+      const supabase = await createClient();
 
-    // Get active season (optional)
-    const { data: activeSeason } = await supabase
-      .from("seasons")
-      .select("id")
-      .eq("is_active", true)
-      .single();
-
-    // Check if captain (시즌과 관계없이 팀장인 팀 조회)
-    const { data: captainTeam } = await supabase
-      .from("teams")
-      .select("id, name, logo_url")
-      .eq("captain_id", user.id)
-      .maybeSingle();
-
-    if (captainTeam) {
-      userTeam = captainTeam;
-    } else if (activeSeason) {
-      // Check if roster member (활성 시즌이 있을 때만)
-      const { data: rosterTeam } = await supabase
-        .from("team_rosters")
-        .select("team:teams(id, name, logo_url)")
-        .eq("player_id", user.id)
-        .eq("season_id", activeSeason.id)
+      // Get active season (optional)
+      const { data: activeSeason } = await supabase
+        .from("seasons")
+        .select("id")
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
-      if (rosterTeam && (rosterTeam as any).team) {
-        userTeam = (rosterTeam as any).team;
+      // Check if captain (시즌과 관계없이 팀장인 팀 조회)
+      const { data: captainTeam, error: captainError } = await supabase
+        .from("teams")
+        .select("id, name, logo_url")
+        .eq("captain_id", user.id)
+        .maybeSingle();
+
+      if (captainError) {
+        console.error("Error fetching captain team:", captainError);
       }
+
+      if (captainTeam) {
+        userTeam = captainTeam;
+      } else {
+        // Check if roster member (시즌과 관계없이)
+        const { data: rosterTeam, error: rosterError } = await supabase
+          .from("team_rosters")
+          .select("team:teams(id, name, logo_url)")
+          .eq("player_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (rosterError) {
+          console.error("Error fetching roster team:", rosterError);
+        }
+
+        if (rosterTeam && (rosterTeam as any).team) {
+          userTeam = (rosterTeam as any).team;
+        }
+      }
+    } catch (error) {
+      console.error("Error in layout team fetch:", error);
     }
   }
 
