@@ -20,7 +20,7 @@ import { CheckCircle, XCircle } from "lucide-react";
 type TeamRequestActionsProps = {
   requestId: string;
   teamName: string;
-  seasonId: string;
+  seasonId: string | null;
   requesterId: string;
   conference: string;
   logoUrl: string | null;
@@ -69,7 +69,15 @@ export function TeamRequestActions({
         .select()
         .single();
 
-      if (teamError) throw teamError;
+      if (teamError) {
+        // Translate common database errors to Korean
+        const errorMsg = teamError.message.includes("violates not-null constraint")
+          ? "데이터베이스 제약 조건 오류: 필수 값이 누락되었습니다. 관리자에게 문의하세요."
+          : teamError.message.includes("duplicate key")
+          ? "이미 같은 이름의 팀이 존재합니다."
+          : teamError.message;
+        throw new Error(errorMsg);
+      }
 
       // Update request status
       const { error: updateError } = await supabase
@@ -81,7 +89,7 @@ export function TeamRequestActions({
         })
         .eq("id", requestId);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error("요청 상태 업데이트 실패: " + updateError.message);
 
       toast.success(`${teamName} 팀이 승인되었습니다`);
       setApproveOpen(false);
