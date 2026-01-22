@@ -52,15 +52,16 @@ export function TeamRequestActions({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("인증이 필요합니다");
 
-      // Create team
+      // Create team (리그 참가 대기 상태로 생성)
       const { data: newTeam, error: teamError } = await supabase
         .from("teams")
         .insert({
           season_id: seasonId,
           name: teamName,
-          conference: conference,
+          conference: null, // 관리자가 컨퍼런스 추첨으로 배정
           logo_url: logoUrl,
           captain_id: requesterId,
+          is_active: false, // 리그 참가 대기 상태
           wins: 0,
           losses: 0,
           points_for: 0,

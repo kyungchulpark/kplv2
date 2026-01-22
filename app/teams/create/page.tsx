@@ -167,7 +167,7 @@ export default function CreateTeamPage() {
           season_id: activeSeason?.id || null, // null if no active season
           requester_id: user.id,
           team_name: teamName,
-          conference: "West", // Default value, will be changed by admin conference draw
+          conference: null, // Will be assigned by admin through conference draw
           logo_url: logoUrl,
           status: "pending",
         });
