@@ -35,19 +35,41 @@ export async function signInWithGoogle() {
 /**
  * Sign up with email and password
  */
-export async function signUpWithEmail(email: string, password: string) {
+export async function signUpWithEmail(email: string, password: string, psnId: string) {
   const supabase = createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/callback`,
+      data: {
+        psn_id: psnId,
+      },
     },
   });
 
   if (error) {
     console.error("Error signing up with email:", error);
     throw error;
+  }
+
+  // After successful signup, create profile with PSN ID
+  if (data.user) {
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: data.user.id,
+      email: email,
+      psn_id: psnId,
+      role: "user",
+    });
+
+    if (profileError) {
+      console.error("Error creating profile:", profileError);
+      // Check if it's a duplicate PSN ID error
+      if (profileError.code === "23505") {
+        throw new Error("PSN ID is already in use.");
+      }
+      throw new Error("Failed to create profile. Please contact support.");
+    }
   }
 
   return data;

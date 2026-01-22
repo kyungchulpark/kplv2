@@ -72,11 +72,12 @@ export function ConferenceDrawClient({
     try {
       const supabase = createClient();
 
-      // 모든 팀 업데이트
+      // 모든 팀 업데이트 (시즌 ID도 함께 업데이트하여 팀을 현재 시즌에 할당)
       const updates = teams.map((team) =>
         supabase
           .from("teams")
           .update({
+            season_id: seasonId,
             conference: team.conference,
             is_active: team.is_active
           })

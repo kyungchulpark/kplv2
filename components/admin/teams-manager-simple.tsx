@@ -159,8 +159,14 @@ export function TeamsManagerSimple({ teams, activeSeason }: TeamsManagerSimplePr
                                             >
                                                 {formatConference(team)}
                                             </Badge>
+                                        ) : team.is_current_season && !team.conference ? (
+                                            <Badge variant="outline" className="text-orange-500 border-orange-500">
+                                                No Conference
+                                            </Badge>
                                         ) : (
-                                            <span className="text-muted-foreground">-</span>
+                                            <Badge variant="secondary" className="text-xs">
+                                                Not Participating
+                                            </Badge>
                                         )}
                                     </td>
                                     <td className="py-4 px-2 text-center font-medium">

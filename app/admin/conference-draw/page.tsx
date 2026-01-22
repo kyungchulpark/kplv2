@@ -34,11 +34,10 @@ export default async function ConferenceDrawPage() {
     );
   }
 
-  // Get all teams for active season
+  // Get all teams (not filtered by season) so existing teams can be assigned to new seasons
   const { data: allTeams } = await supabase
     .from("teams")
     .select("*")
-    .eq("season_id", activeSeason.id)
     .order("name", { ascending: true });
 
   // Separate active and inactive teams

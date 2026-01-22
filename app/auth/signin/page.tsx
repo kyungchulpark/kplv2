@@ -21,21 +21,23 @@ export default async function SignInPage() {
           </div>
           <CardTitle className="text-2xl">Korea Proam League</CardTitle>
           <CardDescription>
-            NBA 2K 온라인 리그에 오신 것을 환영합니다
+            Welcome to the NBA 2K Online League
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs defaultValue="email" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email">이메일</TabsTrigger>
-              <TabsTrigger value="google">Google</TabsTrigger>
+              <TabsTrigger value="email">Email</TabsTrigger>
+              {/* Google OAuth - Hidden but not deleted */}
+              <TabsTrigger value="google" className="hidden">Google</TabsTrigger>
             </TabsList>
 
             <TabsContent value="email" className="space-y-4 mt-4">
               <EmailSignInForm />
             </TabsContent>
 
-            <TabsContent value="google" className="space-y-4 mt-4">
+            {/* Google OAuth - Hidden but not deleted */}
+            <TabsContent value="google" className="space-y-4 mt-4 hidden">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground text-center">
                   Google 계정으로 간편하게 로그인하세요
@@ -51,7 +53,7 @@ export default async function SignInPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">
-                로그인 후 이용 가능한 기능
+                Features after sign in
               </span>
             </div>
           </div>
@@ -59,19 +61,19 @@ export default async function SignInPage() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-center">
               <span className="mr-2">✓</span>
-              경기 일정 및 결과 확인
+              View match schedules and results
             </li>
             <li className="flex items-center">
               <span className="mr-2">✓</span>
-              선수 및 팀 통계 조회
+              Access player and team statistics
             </li>
             <li className="flex items-center">
               <span className="mr-2">✓</span>
-              개인 프로필 및 기록 관리
+              Manage your profile and records
             </li>
             <li className="flex items-center">
               <span className="mr-2">✓</span>
-              커뮤니티 활동 참여
+              Participate in community activities
             </li>
           </ul>
         </CardContent>

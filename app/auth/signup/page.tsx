@@ -17,9 +17,9 @@ export default async function SignUpPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-nba-red font-bold text-white text-2xl">
             KPL
           </div>
-          <CardTitle className="text-2xl">회원가입</CardTitle>
+          <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>
-            Korea Proam League에 가입하고 리그에 참여하세요
+            Join the Korea Proam League and participate in the competition
           </CardDescription>
         </CardHeader>
         <CardContent>

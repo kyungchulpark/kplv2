@@ -28,7 +28,7 @@ export function EmailSignInForm() {
       router.push("/"); // Redirect to home after successful login
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "이메일 또는 비밀번호가 올바르지 않습니다.");
+      setError(err.message || "Invalid email or password.");
     } finally {
       setIsLoading(false);
     }
@@ -43,7 +43,7 @@ export function EmailSignInForm() {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">이메일</Label>
+        <Label htmlFor="email">Email</Label>
         <div className="relative">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -60,7 +60,7 @@ export function EmailSignInForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">비밀번호</Label>
+        <Label htmlFor="password">Password</Label>
         <div className="relative">
           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -93,18 +93,18 @@ export function EmailSignInForm() {
           href="/auth/forgot-password"
           className="text-primary hover:underline"
         >
-          비밀번호를 잊으셨나요?
+          Forgot password?
         </Link>
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "로그인 중..." : "로그인"}
+        {isLoading ? "Signing in..." : "Sign In"}
       </Button>
 
       <div className="text-center text-sm text-muted-foreground">
-        계정이 없으신가요?{" "}
+        Don't have an account?{" "}
         <Link href="/auth/signup" className="text-primary hover:underline">
-          회원가입
+          Sign Up
         </Link>
       </div>
     </form>

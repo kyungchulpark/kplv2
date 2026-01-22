@@ -15,6 +15,7 @@ export function EmailSignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [psnId, setPsnId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,23 +37,28 @@ export function EmailSignUpForm() {
     setError(null);
 
     // Validation
+    if (!psnId || psnId.length < 3 || psnId.length > 16) {
+      setError("PSN ID must be between 3-16 characters.");
+      return;
+    }
+
     if (!isPasswordValid) {
-      setError("비밀번호가 요구사항을 충족하지 않습니다.");
+      setError("Password does not meet requirements.");
       return;
     }
 
     if (!passwordsMatch) {
-      setError("비밀번호가 일치하지 않습니다.");
+      setError("Passwords do not match.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await signUpWithEmail(email, password);
+      await signUpWithEmail(email, password, psnId);
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || "회원가입 중 오류가 발생했습니다.");
+      setError(err.message || "An error occurred during registration.");
     } finally {
       setIsLoading(false);
     }
@@ -65,15 +71,15 @@ export function EmailSignUpForm() {
           <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">이메일을 확인해주세요</h3>
+          <h3 className="text-lg font-semibold">Check your email</h3>
           <p className="text-sm text-muted-foreground">
-            <strong>{email}</strong>로 인증 이메일을 보냈습니다.
+            We sent a verification email to <strong>{email}</strong>.
             <br />
-            이메일의 링크를 클릭하여 회원가입을 완료해주세요.
+            Click the link in the email to complete your registration.
           </p>
         </div>
         <Button onClick={() => router.push("/auth/signin")} variant="outline" className="w-full">
-          로그인 페이지로 이동
+          Go to Sign In
         </Button>
       </div>
     );
@@ -88,7 +94,7 @@ export function EmailSignUpForm() {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">이메일</Label>
+        <Label htmlFor="email">Email</Label>
         <div className="relative">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -105,7 +111,27 @@ export function EmailSignUpForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">비밀번호</Label>
+        <Label htmlFor="psn_id">
+          PSN ID <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="psn_id"
+          type="text"
+          placeholder="PlayStation Network ID"
+          value={psnId}
+          onChange={(e) => setPsnId(e.target.value)}
+          required
+          minLength={3}
+          maxLength={16}
+          disabled={isLoading}
+        />
+        <p className="text-xs text-muted-foreground">
+          Enter your in-game PSN ID (3-16 characters)
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
         <div className="relative">
           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -135,16 +161,16 @@ export function EmailSignUpForm() {
         {/* Password strength indicator */}
         {password && (
           <div className="space-y-1 text-xs">
-            <PasswordCheck label="최소 8자 이상" checked={passwordChecks.length} />
-            <PasswordCheck label="소문자 포함" checked={passwordChecks.hasLower} />
-            <PasswordCheck label="대문자 포함" checked={passwordChecks.hasUpper} />
-            <PasswordCheck label="숫자 포함" checked={passwordChecks.hasNumber} />
+            <PasswordCheck label="At least 8 characters" checked={passwordChecks.length} />
+            <PasswordCheck label="Contains lowercase" checked={passwordChecks.hasLower} />
+            <PasswordCheck label="Contains uppercase" checked={passwordChecks.hasUpper} />
+            <PasswordCheck label="Contains number" checked={passwordChecks.hasNumber} />
           </div>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
         <div className="relative">
           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -160,7 +186,7 @@ export function EmailSignUpForm() {
         </div>
         {confirmPassword && (
           <PasswordCheck
-            label={passwordsMatch ? "비밀번호가 일치합니다" : "비밀번호가 일치하지 않습니다"}
+            label={passwordsMatch ? "Passwords match" : "Passwords do not match"}
             checked={passwordsMatch}
           />
         )}
@@ -169,15 +195,15 @@ export function EmailSignUpForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || !isPasswordValid || !passwordsMatch}
+        disabled={isLoading || !isPasswordValid || !passwordsMatch || !psnId}
       >
-        {isLoading ? "회원가입 중..." : "회원가입"}
+        {isLoading ? "Signing up..." : "Sign Up"}
       </Button>
 
       <div className="text-center text-sm text-muted-foreground">
-        이미 계정이 있으신가요?{" "}
+        Already have an account?{" "}
         <Link href="/auth/signin" className="text-primary hover:underline">
-          로그인
+          Sign In
         </Link>
       </div>
     </form>

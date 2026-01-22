@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Trophy, Activity, Calendar } from "lucide-react";
 import Link from "next/link";
+import { PlayerStatsBySeason } from "@/components/players/player-stats-by-season";
 
 interface PageProps {
     params: Promise<{
@@ -33,6 +34,12 @@ export default async function PlayerProfilePage({ params }: PageProps) {
         .select("*")
         .eq("is_active", true)
         .single();
+
+    // Get all seasons for season selector
+    const { data: allSeasons } = await supabase
+        .from("seasons")
+        .select("id, name")
+        .order("start_date", { ascending: false });
 
     // Get team info
     let team = null;
@@ -66,7 +73,7 @@ export default async function PlayerProfilePage({ params }: PageProps) {
         }
     }
 
-    // Get player stats for active season
+    // Get player stats (all seasons) with season info
     const { data: stats } = await supabase
         .from("match_stats")
         .select(`
@@ -74,8 +81,9 @@ export default async function PlayerProfilePage({ params }: PageProps) {
       match:matches!match_stats_match_id_fkey(
         id,
         match_date,
-        home_team:teams!matches_home_team_id_fkey(name),
-        away_team:teams!matches_away_team_id_fkey(name)
+        season_id,
+        home_team:teams!matches_home_team_id_fkey(name, id),
+        away_team:teams!matches_away_team_id_fkey(name, id)
       )
     `)
         .eq("player_id", id)
@@ -162,79 +170,13 @@ export default async function PlayerProfilePage({ params }: PageProps) {
                     </CardContent>
                 </Card>
 
-                {/* Detailed Stats */}
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Recent Games */}
-                    <Card className="md:col-span-2">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Activity className="h-5 w-5" />
-                                최근 경기 기록
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {totalGames === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    경기 기록이 없습니다.
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b">
-                                                <th className="text-left py-3 px-2">날짜/상대</th>
-                                                <th className="text-center px-2">PTS</th>
-                                                <th className="text-center px-2">REB</th>
-                                                <th className="text-center px-2">AST</th>
-                                                <th className="text-center px-2">STL</th>
-                                                <th className="text-center px-2">BLK</th>
-                                                <th className="text-center px-2">FG</th>
-                                                <th className="text-center px-2">3P</th>
-                                                <th className="text-center px-2">평점</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {stats?.map((stat: any) => (
-                                                <tr key={stat.id} className="border-b hover:bg-muted/50">
-                                                    <td className="py-3 px-2">
-                                                        <div className="font-medium">
-                                                            {new Date(stat.match.match_date).toLocaleDateString()}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            vs {stat.match.home_team.name === team?.name
-                                                                ? stat.match.away_team.name
-                                                                : stat.match.home_team.name}
-                                                        </div>
-                                                    </td>
-                                                    <td className="text-center font-bold">{stat.pts}</td>
-                                                    <td className="text-center">{stat.reb}</td>
-                                                    <td className="text-center">{stat.ast}</td>
-                                                    <td className="text-center">{stat.stl}</td>
-                                                    <td className="text-center">{stat.blk}</td>
-                                                    <td className="text-center text-xs">
-                                                        {stat.fgm}/{stat.fga}
-                                                    </td>
-                                                    <td className="text-center text-xs">
-                                                        {stat.three_pm}/{stat.three_pa}
-                                                    </td>
-                                                    <td className="text-center">
-                                                        {stat.grade ? (
-                                                            <Badge variant="outline" className="text-xs">
-                                                                {stat.grade}
-                                                            </Badge>
-                                                        ) : (
-                                                            "-"
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                {/* Detailed Stats with Season Filter */}
+                <PlayerStatsBySeason
+                    seasons={allSeasons || []}
+                    stats={stats as any || []}
+                    teamId={team?.id}
+                    teamName={team?.name}
+                />
             </div>
         </div>
     );

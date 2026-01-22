@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, Trophy } from "lucide-react";
+import { Plus, Calendar, Trophy, Trash2, RotateCcw } from "lucide-react";
 import { SeasonFormDialog } from "./season-form-dialog";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
@@ -69,6 +69,95 @@ export function SeasonsManager({ seasons }: SeasonsManagerProps) {
     }
   };
 
+  const handleDelete = async (season: Season) => {
+    // Prevent deleting active season
+    if (season.is_active) {
+      toast.error("활성 시즌은 삭제할 수 없습니다. 먼저 다른 시즌을 활성화하세요.");
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = window.confirm(
+      `정말로 "${season.name}" 시즌을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 해당 시즌의 모든 경기, 통계, 팀 데이터가 삭제됩니다.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from("seasons")
+        .delete()
+        .eq("id", season.id);
+
+      if (error) throw error;
+
+      toast.success(`${season.name} 시즌이 삭제되었습니다`);
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || "시즌 삭제 실패");
+    }
+  };
+
+  const handleReset = async (season: Season) => {
+    // Confirm reset
+    const confirmed = window.confirm(
+      `"${season.name}" 시즌의 모든 경기 결과를 초기화하시겠습니까?\n\n삭제될 데이터:\n- 모든 경기 일정 및 결과\n- 모든 선수 경기 기록 (match_stats)\n- 팀 전적 (승/패, 득실점)\n\n유지되는 데이터:\n- 팀 정보\n- 로스터 정보\n- 컨퍼런스 배정\n\n이 작업은 되돌릴 수 없습니다.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const supabase = createClient();
+
+      // 1. 해당 시즌의 모든 경기 ID 가져오기
+      const { data: matches, error: matchesError } = await supabase
+        .from("matches")
+        .select("id")
+        .eq("season_id", season.id);
+
+      if (matchesError) throw matchesError;
+
+      // 2. match_stats 삭제 (경기 기록)
+      if (matches && matches.length > 0) {
+        const matchIds = matches.map(m => m.id);
+        const { error: statsError } = await supabase
+          .from("match_stats")
+          .delete()
+          .in("match_id", matchIds);
+
+        if (statsError) throw statsError;
+      }
+
+      // 3. matches 삭제 (경기 일정)
+      const { error: matchDeleteError } = await supabase
+        .from("matches")
+        .delete()
+        .eq("season_id", season.id);
+
+      if (matchDeleteError) throw matchDeleteError;
+
+      // 4. 팀 전적 초기화
+      const { error: teamsResetError } = await supabase
+        .from("teams")
+        .update({
+          wins: 0,
+          losses: 0,
+          points_for: 0,
+          points_against: 0
+        })
+        .eq("season_id", season.id);
+
+      if (teamsResetError) throw teamsResetError;
+
+      toast.success(`${season.name} 시즌이 초기화되었습니다`);
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || "시즌 초기화 실패");
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -119,25 +208,49 @@ export function SeasonsManager({ seasons }: SeasonsManagerProps) {
                   <span className="font-semibold">Top {season.playoff_cutoff}</span>
                 </div>
 
-                <div className="flex space-x-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(season)}
-                  >
-                    Edit
-                  </Button>
-                  {!season.is_active && (
+                <div className="flex flex-col space-y-2 pt-2">
+                  <div className="flex space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => handleActivate(season.id)}
+                      onClick={() => handleEdit(season)}
                     >
-                      Activate
+                      Edit
                     </Button>
-                  )}
+                    {!season.is_active && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleActivate(season.id)}
+                      >
+                        Activate
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-orange-500 hover:bg-orange-500 hover:text-white"
+                      onClick={() => handleReset(season)}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Reset
+                    </Button>
+                    {!season.is_active && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => handleDelete(season)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

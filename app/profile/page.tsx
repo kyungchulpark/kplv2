@@ -3,7 +3,8 @@ import { getCurrentUser } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SignOutButton } from "@/components/auth/signout-button";
 import { ProfileEditForm } from "@/components/profile/profile-edit-form";
-import { User, Mail, Shield, Calendar, Youtube } from "lucide-react";
+import { User, Mail, Shield, Calendar, Youtube, BarChart3 } from "lucide-react";
+import Link from "next/link";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -116,6 +117,31 @@ export default async function ProfilePage() {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>My Stats</CardTitle>
+            <CardDescription>
+              View your game performance and statistics
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href={`/players/${user.id}`}>
+              <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="h-5 w-5 text-nba-red" />
+                  <div>
+                    <p className="font-medium">View Performance Stats</p>
+                    <p className="text-sm text-muted-foreground">
+                      Check your season averages and recent games
+                    </p>
+                  </div>
+                </div>
+                <span className="text-nba-red">→</span>
+              </div>
+            </Link>
           </CardContent>
         </Card>
 
