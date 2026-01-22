@@ -119,7 +119,11 @@ export default async function TeamManagePage() {
   );
 
   const availablePlayers =
-    allPlayers?.filter((p) => !playersInSeason.has(p.id)) || [];
+    allPlayers?.filter((p) => !playersInSeason.has(p.id)).sort((a, b) =>
+      (a.psn_id || "").localeCompare(b.psn_id || "", undefined, {
+        sensitivity: "base",
+      })
+    ) || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
