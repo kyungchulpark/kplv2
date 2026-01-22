@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Trophy, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useState } from "react";
@@ -259,7 +260,10 @@ export function StandingsTable({ teams, conference, showConferenceHighlight = fa
 
                 {/* Team */}
                 <td className="py-4 px-2">
-                  <div className="flex items-center space-x-3">
+                  <Link
+                    href={`/teams/${team.id}`}
+                    className="flex items-center space-x-3 hover:text-primary transition-colors"
+                  >
                     {team.logo_url ? (
                       <div className={cn(
                         "h-8 w-8 rounded-full flex items-center justify-center",
@@ -296,7 +300,7 @@ export function StandingsTable({ teams, conference, showConferenceHighlight = fa
                         (Withdrawn)
                       </span>
                     )}
-                  </div>
+                  </Link>
                 </td>
 
                 {/* Games Played */}
