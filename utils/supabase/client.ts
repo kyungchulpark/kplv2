@@ -80,21 +80,6 @@ export async function signUpWithEmail(email: string, password: string, psnId: st
     throw error;
   }
 
-  // After successful signup, create profile with PSN ID
-  if (data.user) {
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: data.user.id,
-      email: email,
-      psn_id: psnId,
-      role: "user",
-    });
-
-    if (profileError) {
-      console.error("Error creating profile:", profileError);
-      throw new Error("Failed to create profile. Please contact support.");
-    }
-  }
-
   return data;
 }
 
