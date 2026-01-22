@@ -34,37 +34,34 @@ export default async function RootLayout({
   if (user) {
     const supabase = await createClient();
 
-    // Get active season
+    // Get active season (optional)
     const { data: activeSeason } = await supabase
       .from("seasons")
       .select("id")
       .eq("is_active", true)
       .single();
 
-    if (activeSeason) {
-      // Check if captain
-      const { data: captainTeam } = await supabase
-        .from("teams")
-        .select("id, name, logo_url")
-        .eq("captain_id", user.id)
+    // Check if captain (시즌과 관계없이 팀장인 팀 조회)
+    const { data: captainTeam } = await supabase
+      .from("teams")
+      .select("id, name, logo_url")
+      .eq("captain_id", user.id)
+      .maybeSingle();
+
+    if (captainTeam) {
+      userTeam = captainTeam;
+    } else if (activeSeason) {
+      // Check if roster member (활성 시즌이 있을 때만)
+      const { data: rosterTeam } = await supabase
+        .from("team_rosters")
+        .select("team:teams(id, name, logo_url)")
+        .eq("player_id", user.id)
         .eq("season_id", activeSeason.id)
+        .eq("is_active", true)
         .single();
 
-      if (captainTeam) {
-        userTeam = captainTeam;
-      } else {
-        // Check if roster member
-        const { data: rosterTeam } = await supabase
-          .from("team_rosters")
-          .select("team:teams(id, name, logo_url)")
-          .eq("player_id", user.id)
-          .eq("season_id", activeSeason.id)
-          .eq("is_active", true)
-          .single();
-
-        if (rosterTeam && (rosterTeam as any).team) {
-          userTeam = (rosterTeam as any).team;
-        }
+      if (rosterTeam && (rosterTeam as any).team) {
+        userTeam = (rosterTeam as any).team;
       }
     }
   }
