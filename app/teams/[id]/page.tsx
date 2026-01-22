@@ -60,21 +60,25 @@ export default async function TeamDetailPage({ params }: PageProps) {
     .eq("is_active", true)
     .order("jersey_number", { ascending: true });
 
-  // Get recent matches
-  const { data: recentMatches } = await supabase
-    .from("matches")
-    .select(
+  // Get recent matches (시즌이 배정된 경우만)
+  let recentMatches = null;
+  if (team.season_id) {
+    const { data } = await supabase
+      .from("matches")
+      .select(
+        `
+        *,
+        home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+        away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
       `
-      *,
-      home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
-      away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
-    `
-    )
-    .eq("season_id", team.season_id)
-    .or(`home_team_id.eq.${id},away_team_id.eq.${id}`)
-    .eq("status", "finished")
-    .order("match_date", { ascending: false })
-    .limit(5);
+      )
+      .eq("season_id", team.season_id)
+      .or(`home_team_id.eq.${id},away_team_id.eq.${id}`)
+      .eq("status", "finished")
+      .order("match_date", { ascending: false })
+      .limit(5);
+    recentMatches = data;
+  }
 
   const gamesPlayed = team.wins + team.losses;
   const winRate = gamesPlayed > 0 ? ((team.wins / gamesPlayed) * 100).toFixed(1) : "0.0";
@@ -133,9 +137,9 @@ export default async function TeamDetailPage({ params }: PageProps) {
 
               {/* Team Info */}
               <div className="flex-1 space-y-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <h1 className="text-4xl font-bold">{team.name}</h1>
-                  {team.conference && (
+                  {team.conference ? (
                     <Badge
                       variant="outline"
                       className={
@@ -146,13 +150,17 @@ export default async function TeamDetailPage({ params }: PageProps) {
                     >
                       {team.conference}
                     </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-orange-500 text-orange-500">
+                      리그 참가 대기
+                    </Badge>
                   )}
                 </div>
                 {team.region && (
                   <p className="text-muted-foreground">{team.region}</p>
                 )}
                 <p className="text-lg text-muted-foreground">
-                  {team.season.name}
+                  {team.season?.name || "리그 참가 대기"}
                 </p>
 
                 {/* Captain */}
