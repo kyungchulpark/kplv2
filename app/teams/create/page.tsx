@@ -37,7 +37,7 @@ export default function CreateTeamPage() {
     }
     setUser(currentUser);
 
-    // Get active season
+    // Get active season (optional - teams can be created without a season)
     const { data: season } = await supabase
       .from("seasons")
       .select("*")
@@ -45,10 +45,6 @@ export default function CreateTeamPage() {
       .single();
 
     setActiveSeason(season);
-
-    if (!season) {
-      setError("현재 활성화된 시즌이 없습니다. 관리자에게 문의하세요.");
-    }
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,11 +82,10 @@ export default function CreateTeamPage() {
     try {
       const supabase = createClient();
 
-      // Check if team name already exists
+      // Check if team name already exists (globally, not just in current season)
       const { data: existingTeam } = await supabase
         .from("teams")
         .select("id")
-        .eq("season_id", activeSeason.id)
         .eq("name", teamName)
         .single();
 
@@ -104,7 +99,6 @@ export default function CreateTeamPage() {
       const { data: existingRequest } = await supabase
         .from("team_requests")
         .select("id")
-        .eq("season_id", activeSeason.id)
         .eq("requester_id", user.id)
         .eq("status", "pending")
         .single();
@@ -115,11 +109,10 @@ export default function CreateTeamPage() {
         return;
       }
 
-      // Check if user is already a captain of a team
+      // Check if user is already a captain of ANY team
       const { data: captainTeam } = await supabase
         .from("teams")
         .select("id, name")
-        .eq("season_id", activeSeason.id)
         .eq("captain_id", user.id)
         .single();
 
@@ -129,11 +122,10 @@ export default function CreateTeamPage() {
         return;
       }
 
-      // Check if user is already in a team roster
+      // Check if user is already in ANY team roster
       const { data: rosterEntry } = await supabase
         .from("team_rosters")
         .select("team:teams(id, name)")
-        .eq("season_id", activeSeason.id)
         .eq("player_id", user.id)
         .eq("is_active", true)
         .single();
@@ -168,11 +160,11 @@ export default function CreateTeamPage() {
         logoUrl = publicUrlData.publicUrl;
       }
 
-      // Create team request (conference will be assigned by admin draw)
+      // Create team request (season and conference will be assigned by admin)
       const { error: insertError } = await supabase
         .from("team_requests")
         .insert({
-          season_id: activeSeason.id,
+          season_id: activeSeason?.id || null, // null if no active season
           requester_id: user.id,
           team_name: teamName,
           conference: "West", // Default value, will be changed by admin conference draw
@@ -219,28 +211,27 @@ export default function CreateTeamPage() {
     );
   }
 
-  if (!activeSeason) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            현재 활성화된 시즌이 없습니다. 관리자에게 문의하세요.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">팀 생성 신청</h1>
           <p className="text-muted-foreground">
-            {activeSeason.name} - 새로운 팀을 생성하려면 아래 정보를 입력하세요
+            {activeSeason
+              ? `${activeSeason.name} - 새로운 팀을 생성하려면 아래 정보를 입력하세요`
+              : "새로운 팀을 생성하려면 아래 정보를 입력하세요"}
           </p>
         </div>
+
+        {!activeSeason && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              현재 활성화된 시즌이 없습니다. 팀을 생성하면 리그 참가 대기 상태로 등록되며,
+              관리자가 새 시즌을 생성하고 컨퍼런스를 배정하면 리그에 참가하게 됩니다.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card>
           <CardHeader>
@@ -278,7 +269,9 @@ export default function CreateTeamPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  컨퍼런스(Western/Eastern)는 시즌 시작 전 관리자의 조 추첨을 통해 자동 배정됩니다.
+                  {activeSeason
+                    ? "컨퍼런스(Western/Eastern)는 시즌 시작 전 관리자의 조 추첨을 통해 자동 배정됩니다."
+                    : "팀 생성 후 관리자가 시즌을 배정하고 컨퍼런스(Western/Eastern)를 추첨을 통해 배정합니다."}
                 </AlertDescription>
               </Alert>
 
