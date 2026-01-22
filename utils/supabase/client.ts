@@ -33,10 +33,37 @@ export async function signInWithGoogle() {
 }
 
 /**
+ * Check if PSN ID is already taken
+ */
+export async function checkPsnIdAvailability(psnId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("psn_id")
+    .eq("psn_id", psnId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error checking PSN ID:", error);
+    throw new Error("Failed to check PSN ID availability.");
+  }
+
+  // Returns true if available (no data found), false if taken
+  return !data;
+}
+
+/**
  * Sign up with email and password
  */
 export async function signUpWithEmail(email: string, password: string, psnId: string) {
   const supabase = createClient();
+
+  // Check PSN ID availability BEFORE creating auth account
+  const isAvailable = await checkPsnIdAvailability(psnId);
+  if (!isAvailable) {
+    throw new Error("PSN ID is already in use.");
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -64,10 +91,6 @@ export async function signUpWithEmail(email: string, password: string, psnId: st
 
     if (profileError) {
       console.error("Error creating profile:", profileError);
-      // Check if it's a duplicate PSN ID error
-      if (profileError.code === "23505") {
-        throw new Error("PSN ID is already in use.");
-      }
       throw new Error("Failed to create profile. Please contact support.");
     }
   }

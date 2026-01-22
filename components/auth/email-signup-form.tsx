@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signUpWithEmail } from "@/utils/supabase/client";
+import { signUpWithEmail, checkPsnIdAvailability } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, Mail, Lock, Check, X } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Check, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export function EmailSignUpForm() {
@@ -20,6 +20,31 @@ export function EmailSignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [checkingPsnId, setCheckingPsnId] = useState(false);
+  const [psnIdAvailable, setPsnIdAvailable] = useState<boolean | null>(null);
+
+  // Check PSN ID availability with debounce
+  useEffect(() => {
+    if (!psnId || psnId.length < 3 || psnId.length > 16) {
+      setPsnIdAvailable(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setCheckingPsnId(true);
+      try {
+        const available = await checkPsnIdAvailability(psnId);
+        setPsnIdAvailable(available);
+      } catch (err) {
+        console.error("Error checking PSN ID:", err);
+        setPsnIdAvailable(null);
+      } finally {
+        setCheckingPsnId(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [psnId]);
 
   // Password strength checks
   const passwordChecks = {
@@ -31,14 +56,15 @@ export function EmailSignUpForm() {
 
   const passwordsMatch = password === confirmPassword && password.length > 0;
   const isPasswordValid = Object.values(passwordChecks).every((check) => check);
+  const isPsnIdValid = psnId.length >= 3 && psnId.length <= 16 && psnIdAvailable === true;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     // Validation
-    if (!psnId || psnId.length < 3 || psnId.length > 16) {
-      setError("PSN ID must be between 3-16 characters.");
+    if (!isPsnIdValid) {
+      setError("Please enter a valid and available PSN ID.");
       return;
     }
 
@@ -114,20 +140,50 @@ export function EmailSignUpForm() {
         <Label htmlFor="psn_id">
           PSN ID <span className="text-destructive">*</span>
         </Label>
-        <Input
-          id="psn_id"
-          type="text"
-          placeholder="PlayStation Network ID"
-          value={psnId}
-          onChange={(e) => setPsnId(e.target.value)}
-          required
-          minLength={3}
-          maxLength={16}
-          disabled={isLoading}
-        />
-        <p className="text-xs text-muted-foreground">
-          Enter your in-game PSN ID (3-16 characters)
-        </p>
+        <div className="relative">
+          <Input
+            id="psn_id"
+            type="text"
+            placeholder="PlayStation Network ID"
+            value={psnId}
+            onChange={(e) => setPsnId(e.target.value)}
+            required
+            minLength={3}
+            maxLength={16}
+            disabled={isLoading}
+            className={
+              psnId.length >= 3
+                ? psnIdAvailable === true
+                  ? "pr-10 border-green-500 focus-visible:ring-green-500"
+                  : psnIdAvailable === false
+                  ? "pr-10 border-red-500 focus-visible:ring-red-500"
+                  : "pr-10"
+                : ""
+            }
+          />
+          {psnId.length >= 3 && (
+            <div className="absolute right-3 top-3">
+              {checkingPsnId ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : psnIdAvailable === true ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : psnIdAvailable === false ? (
+                <X className="h-4 w-4 text-red-600" />
+              ) : null}
+            </div>
+          )}
+        </div>
+        {psnId.length >= 3 && psnIdAvailable === false && (
+          <p className="text-xs text-red-600">This PSN ID is already taken</p>
+        )}
+        {psnId.length >= 3 && psnIdAvailable === true && (
+          <p className="text-xs text-green-600">This PSN ID is available</p>
+        )}
+        {psnId.length < 3 && (
+          <p className="text-xs text-muted-foreground">
+            Enter your in-game PSN ID (3-16 characters)
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -195,7 +251,7 @@ export function EmailSignUpForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || !isPasswordValid || !passwordsMatch || !psnId}
+        disabled={isLoading || !isPasswordValid || !passwordsMatch || !isPsnIdValid || checkingPsnId}
       >
         {isLoading ? "Signing up..." : "Sign Up"}
       </Button>
