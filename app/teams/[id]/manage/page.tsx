@@ -70,7 +70,6 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
   // Add player dialog states
   const [addPlayerOpen, setAddPlayerOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
-  const [jerseyNumber, setJerseyNumber] = useState("");
   const [position, setPosition] = useState("");
   const [addingPlayer, setAddingPlayer] = useState(false);
 
@@ -145,7 +144,7 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
 
       setRoster(rosterData || []);
 
-      // Get available players (not in any team for this season)
+      // Get available players (not in any team, regardless of season)
       const rosterPlayerIds = rosterData?.map((r) => r.player_id) || [];
 
       const { data: allPlayers } = await supabase
@@ -153,11 +152,10 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
         .select("id, psn_id, avatar_url")
         .eq("role", "user");
 
-      // Filter out players already in a team this season
+      // Filter out players already in ANY team (regardless of season)
       const { data: allRosters } = await supabase
         .from("team_rosters")
         .select("player_id")
-        .eq("season_id", teamData.season_id)
         .eq("is_active", true);
 
       const takenPlayerIds = allRosters?.map((r) => r.player_id) || [];
@@ -261,7 +259,7 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
         team_id: team.id,
         season_id: team.season_id,
         player_id: selectedPlayerId,
-        jersey_number: jerseyNumber ? parseInt(jerseyNumber) : null,
+        jersey_number: null,
         position: position || null,
         is_active: true,
       });
@@ -271,7 +269,6 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
       toast.success("선수가 추가되었습니다.");
       setAddPlayerOpen(false);
       setSelectedPlayerId("");
-      setJerseyNumber("");
       setPosition("");
       loadData(teamId);
     } catch (err: any) {
@@ -450,18 +447,6 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="jersey">등번호</Label>
-                      <Input
-                        id="jersey"
-                        type="number"
-                        min="0"
-                        max="99"
-                        value={jerseyNumber}
-                        onChange={(e) => setJerseyNumber(e.target.value)}
-                        placeholder="예: 23"
-                      />
-                    </div>
-                    <div>
                       <Label htmlFor="position">포지션</Label>
                       <Select value={position} onValueChange={setPosition}>
                         <SelectTrigger>
@@ -523,9 +508,6 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {member.jersey_number && (
-                        <Badge variant="outline">#{member.jersey_number}</Badge>
-                      )}
                       <Button
                         variant="ghost"
                         size="icon"

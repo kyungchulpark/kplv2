@@ -89,31 +89,38 @@ export function PlayersClient({ players }: { players: Player[] }) {
         {/* Players Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPlayers.map((player) => (
-            <Card key={player.id} className="hover:bg-accent transition-colors">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={player.avatar_url || undefined} />
-                    <AvatarFallback className="bg-muted">
-                      <UserRound className="h-5 w-5 text-muted-foreground" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold truncate">
-                        {player.psn_id || "PSN ID"}
+            <Link key={player.id} href={`/players/${player.id}`}>
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={player.avatar_url || undefined} />
+                      <AvatarFallback className="bg-muted">
+                        <UserRound className="h-5 w-5 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold truncate">
+                          {player.psn_id || "PSN ID"}
+                        </p>
+                        {player.isCaptain && (
+                          <Shield className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mb-2">
+                        {player.email}
                       </p>
-                      {player.isCaptain && (
-                        <Shield className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate mb-2">
-                      {player.email}
-                    </p>
 
-                    {player.team ? (
-                      <Link href={`/teams/${player.team.id}`}>
-                        <div className="flex items-center gap-2 rounded-md bg-muted p-2 hover:bg-muted/80 transition-colors">
+                      {player.team ? (
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.location.href = `/teams/${player.team!.id}`;
+                          }}
+                          className="flex items-center gap-2 rounded-md bg-muted p-2 hover:bg-muted/80 transition-colors"
+                        >
                           {player.team.logo_url ? (
                             <img
                               src={player.team.logo_url}
@@ -129,16 +136,16 @@ export function PlayersClient({ players }: { players: Player[] }) {
                             {player.team.name}
                           </span>
                         </div>
-                      </Link>
-                    ) : (
-                      <Badge variant="outline" className="text-xs">
-                        Free agent
-                      </Badge>
-                    )}
+                      ) : (
+                        <Badge variant="outline" className="text-xs">
+                          Free agent
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 

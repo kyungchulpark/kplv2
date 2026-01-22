@@ -24,7 +24,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Trash2, UserCog, Shield, User as UserIcon } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
 type User = {
@@ -111,7 +110,6 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
     if (!selectedUser) return;
 
     setLoading(true);
-    const supabase = createClient();
 
     try {
       // Check if user is captain or member of any team
@@ -122,18 +120,21 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
         return;
       }
 
-      // Delete profile (cascade will handle related data)
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", selectedUser.id);
+      // Call API route to delete user (bypasses RLS)
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: "DELETE",
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "삭제 실패");
+      }
 
       toast.success("사용자가 삭제되었습니다");
       setDeleteDialogOpen(false);
       router.refresh();
     } catch (error: any) {
+      console.error("Delete error:", error);
       toast.error(error.message || "삭제 실패");
     } finally {
       setLoading(false);

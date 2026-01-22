@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "delete-users": "tsx scripts/delete-non-admin-users.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

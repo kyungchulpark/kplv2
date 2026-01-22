@@ -40,9 +40,13 @@ export default async function ConferenceDrawPage() {
     .select("*")
     .order("name", { ascending: true });
 
-  // Separate active and inactive teams
-  const activeTeams = allTeams?.filter((t) => t.is_active !== false) || [];
-  const inactiveTeams = allTeams?.filter((t) => t.is_active === false) || [];
+  // Separate teams: only teams in current season are active, rest are inactive
+  const activeTeams = allTeams?.filter((t) =>
+    t.season_id === activeSeason.id && t.is_active !== false
+  ) || [];
+  const inactiveTeams = allTeams?.filter((t) =>
+    t.season_id !== activeSeason.id || t.is_active === false
+  ) || [];
 
   const westTeams = activeTeams.filter((t) => t.conference === "West");
   const eastTeams = activeTeams.filter((t) => t.conference === "East");
