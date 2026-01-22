@@ -31,7 +31,9 @@ export default async function TeamRequestsPage() {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <CardTitle>{request.team_name}</CardTitle>
-            <CardDescription>{request.season.name}</CardDescription>
+            <CardDescription>
+              {request.season?.name || "리그 참가 대기 (시즌 미배정)"}
+            </CardDescription>
           </div>
           {request.status === "pending" && (
             <Badge variant="outline" className="border-orange-500 text-orange-500">
