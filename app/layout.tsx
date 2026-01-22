@@ -43,19 +43,24 @@ export default async function RootLayout({
         .maybeSingle();
 
       // Check if captain (시즌과 관계없이 팀장인 팀 조회)
+      console.log("[Layout] Checking captain team for user:", user.id);
       const { data: captainTeam, error: captainError } = await supabase
         .from("teams")
-        .select("id, name, logo_url")
+        .select("id, name, logo_url, captain_id")
         .eq("captain_id", user.id)
         .maybeSingle();
+
+      console.log("[Layout] Captain team result:", { captainTeam, captainError });
 
       if (captainError) {
         console.error("Error fetching captain team:", captainError);
       }
 
       if (captainTeam) {
+        console.log("[Layout] Found captain team:", captainTeam.name);
         userTeam = captainTeam;
       } else {
+        console.log("[Layout] No captain team, checking roster");
         // Check if roster member (시즌과 관계없이)
         const { data: rosterTeam, error: rosterError } = await supabase
           .from("team_rosters")
@@ -64,14 +69,21 @@ export default async function RootLayout({
           .eq("is_active", true)
           .maybeSingle();
 
+        console.log("[Layout] Roster team result:", { rosterTeam, rosterError });
+
         if (rosterError) {
           console.error("Error fetching roster team:", rosterError);
         }
 
         if (rosterTeam && (rosterTeam as any).team) {
+          console.log("[Layout] Found roster team:", (rosterTeam as any).team.name);
           userTeam = (rosterTeam as any).team;
+        } else {
+          console.log("[Layout] No team found for user");
         }
       }
+
+      console.log("[Layout] Final userTeam:", userTeam);
     } catch (error) {
       console.error("Error in layout team fetch:", error);
     }
