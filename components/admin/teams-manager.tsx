@@ -140,7 +140,7 @@ export function TeamsManager({ teams, seasonId, seasonName }: TeamsManagerProps)
                     {winRate(team.wins, team.losses)}%
                   </td>
                   <td className="py-4 px-2 text-center">
-                    <span className="text-sm">{team.roster_count || 0}/5</span>
+                    <span className="text-sm">{team.roster_count || 0}</span>
                   </td>
                   <td className="py-4 px-2">
                     {team.captain ? (

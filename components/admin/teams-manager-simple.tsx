@@ -246,7 +246,7 @@ export function TeamsManagerSimple({ teams, activeSeason }: TeamsManagerSimplePr
                                     </td>
                                     <td className="py-4 px-2 text-center">
                                         <span className="text-sm">
-                                            {team.is_current_season ? `${team.roster_count || 0}/5` : "-"}
+                                            {team.is_current_season ? `${team.roster_count || 0}` : "-"}
                                         </span>
                                     </td>
                                     <td className="py-4 px-2">

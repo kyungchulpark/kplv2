@@ -177,7 +177,7 @@ export function TeamsManagerWithFilter({ teams, seasons }: TeamsManagerWithFilte
                                     <td className="py-4 px-2 text-center font-medium">{team.wins}-{team.losses}</td>
                                     <td className="py-4 px-2 text-center">{winRate(team.wins, team.losses)}%</td>
                                     <td className="py-4 px-2 text-center">
-                                        <span className="text-sm">{team.roster_count || 0}/5</span>
+                                        <span className="text-sm">{team.roster_count || 0}</span>
                                     </td>
                                     <td className="py-4 px-2">
                                         {team.captain ? (
