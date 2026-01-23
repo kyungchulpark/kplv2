@@ -152,7 +152,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="border-orange-500 text-orange-500">
-                      리그 참가 대기
+                      Waiting for league entry
                     </Badge>
                   )}
                 </div>
@@ -160,7 +160,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                   <p className="text-muted-foreground">{team.region}</p>
                 )}
                 <p className="text-lg text-muted-foreground">
-                  {team.season?.name || "리그 참가 대기"}
+                  {team.season?.name || "Waiting for league entry"}
                 </p>
 
                 {/* Captain */}

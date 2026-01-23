@@ -55,7 +55,12 @@ export async function checkPsnIdAvailability(psnId: string): Promise<boolean> {
 /**
  * Sign up with email and password
  */
-export async function signUpWithEmail(email: string, password: string, psnId: string) {
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  psnId: string,
+  youtubeChannel?: string | null
+) {
   const supabase = createClient();
 
   // Check PSN ID availability BEFORE creating auth account
@@ -71,6 +76,7 @@ export async function signUpWithEmail(email: string, password: string, psnId: st
       emailRedirectTo: `${window.location.origin}/auth/callback`,
       data: {
         psn_id: psnId,
+        youtube_channel: youtubeChannel || null,
       },
     },
   });

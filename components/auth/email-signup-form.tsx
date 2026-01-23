@@ -16,6 +16,7 @@ export function EmailSignUpForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [psnId, setPsnId] = useState("");
+  const [youtubeChannel, setYoutubeChannel] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +82,7 @@ export function EmailSignUpForm() {
     setIsLoading(true);
 
     try {
-      await signUpWithEmail(email, password, psnId);
+      await signUpWithEmail(email, password, psnId, youtubeChannel || null);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || "An error occurred during registration.");
@@ -184,6 +185,23 @@ export function EmailSignUpForm() {
             Enter your in-game PSN ID (3-16 characters)
           </p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="youtube_channel">
+          YouTube Channel <span className="text-xs text-muted-foreground">(Optional)</span>
+        </Label>
+        <Input
+          id="youtube_channel"
+          type="text"
+          placeholder="https://youtube.com/@yourchannel or Channel Name"
+          value={youtubeChannel}
+          onChange={(e) => setYoutubeChannel(e.target.value)}
+          disabled={isLoading}
+        />
+        <p className="text-xs text-muted-foreground">
+          Enter your YouTube channel URL or name (optional)
+        </p>
       </div>
 
       <div className="space-y-2">
