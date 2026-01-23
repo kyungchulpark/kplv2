@@ -13,19 +13,19 @@ CREATE POLICY "Users can upload their own avatar"
   WITH CHECK (
     bucket_id = 'avatars'
     AND (storage.foldername(name))[1] = 'avatars'
-    AND auth.uid()::text = (storage.filename(name) = split_part((storage.filename(name)), '-', 1))
+    AND auth.uid()::text = split_part(storage.filename(name), '-', 1)
   );
 
 CREATE POLICY "Users can update their own avatar"
   ON storage.objects FOR UPDATE
   USING (
     bucket_id = 'avatars'
-    AND auth.uid()::text = split_part((storage.filename(name)), '-', 1)
+    AND auth.uid()::text = split_part(storage.filename(name), '-', 1)
   );
 
 CREATE POLICY "Users can delete their own avatar"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'avatars'
-    AND auth.uid()::text = split_part((storage.filename(name)), '-', 1)
+    AND auth.uid()::text = split_part(storage.filename(name), '-', 1)
   );

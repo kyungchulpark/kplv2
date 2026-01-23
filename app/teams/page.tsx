@@ -12,7 +12,7 @@ export default async function TeamsPage() {
     .eq("is_active", true)
     .maybeSingle();
 
-  // Get ALL teams (regardless of season)
+  // Get ALL teams (regardless of season), excluding disbanded teams
   const { data: teams } = await supabase
     .from("teams")
     .select(
@@ -27,6 +27,7 @@ export default async function TeamsPage() {
       season:seasons(name)
     `
     )
+    .eq("is_disbanded", false)
     .order("name", { ascending: true }); // Sort alphabetically by team name
 
   // Get championship counts for each team

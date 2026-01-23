@@ -132,6 +132,26 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
   // Filter matches for selected date
   const currentMatches = resolvedDate ? groupedMatches[resolvedDate] || [] : [];
 
+  // Group matches by time slot (22:40 vs 23:20)
+  const groupMatchesByTimeSlot = (matches: Match[]) => {
+    const slot1 = matches.filter((m) => {
+      const time = formatMatchTime(m.match_date);
+      return time.includes("22:40");
+    });
+    const slot2 = matches.filter((m) => {
+      const time = formatMatchTime(m.match_date);
+      return time.includes("23:20");
+    });
+    const others = matches.filter((m) => {
+      const time = formatMatchTime(m.match_date);
+      return !time.includes("22:40") && !time.includes("23:20");
+    });
+
+    return { slot1, slot2, others };
+  };
+
+  const { slot1, slot2, others } = groupMatchesByTimeSlot(currentMatches);
+
   // Format time in KST to display correctly (no date shift)
   const formatMatchTime = (dateString: string) => {
     return formatMatchTimeKST(dateString);
@@ -158,6 +178,107 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
     }
   };
 
+  const renderMatchCard = (match: Match, isFinished: boolean, homeWin: boolean, awayWin: boolean) => (
+    <div
+      key={match.id}
+      className="bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all duration-200 group"
+    >
+      {/* Match Header */}
+      <div
+        className={cn(
+          "px-4 py-2 flex items-center justify-between text-xs font-semibold border-b",
+          statusTheme(match.status)
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <Clock className="h-3 w-3" />
+          <span>
+            {formatMatchTime(match.match_date)}
+          </span>
+        </div>
+        <div>{getStatusBadge(match.status)}</div>
+      </div>
+
+      {/* Match Content */}
+      <div className="p-4 md:p-6">
+        <div className="flex items-center justify-between gap-4 md:gap-8">
+          {/* Home Team */}
+          <div className="flex-1 flex flex-col items-center gap-2 text-center">
+            <Link
+              href={`/teams/${match.home_team.id}`}
+              className="hover:opacity-80 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {renderTeamLogo(match.home_team)}
+            </Link>
+            <div className="space-y-1">
+              <Link
+                href={`/teams/${match.home_team.id}`}
+                className="font-bold text-sm md:text-base hover:underline block truncate max-w-[100px] md:max-w-[150px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {match.home_team.name}
+              </Link>
+              {isFinished && (
+                <div className={cn("text-2xl md:text-3xl font-bold font-mono", homeWin ? "text-primary" : "text-muted-foreground")}>
+                  {match.home_score}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* VS / Info */}
+          <div
+            className="flex flex-col items-center justify-center gap-2 cursor-pointer"
+            onClick={() => setSelectedMatch(match)}
+          >
+            <div className="text-muted-foreground font-bold text-sm md:text-lg">VS</div>
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              View Details
+            </Button>
+          </div>
+
+          {/* Away Team */}
+          <div className="flex-1 flex flex-col items-center gap-2 text-center">
+            <Link
+              href={`/teams/${match.away_team.id}`}
+              className="hover:opacity-80 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {renderTeamLogo(match.away_team)}
+            </Link>
+            <div className="space-y-1">
+              <Link
+                href={`/teams/${match.away_team.id}`}
+                className="font-bold text-sm md:text-base hover:underline block truncate max-w-[100px] md:max-w-[150px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {match.away_team.name}
+              </Link>
+              {isFinished && (
+                <div className={cn("text-2xl md:text-3xl font-bold font-mono", awayWin ? "text-primary" : "text-muted-foreground")}>
+                  {match.away_score}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Game Password (Scheduled only) */}
+        {match.game_password && match.status === "scheduled" && (
+          <div className="mt-4 pt-4 border-t flex justify-center">
+            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800">
+              <Key className="h-3 w-3 text-green-600 dark:text-green-400" />
+              <span className="text-xs text-green-700 dark:text-green-300 font-medium">
+                Password: <code className="font-mono font-bold">{match.game_password}</code>
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {leagueEnded && (
@@ -173,119 +294,78 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
       />
 
       {/* Matches List */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {currentMatches.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
             No scheduled matches for this date.
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
-            {currentMatches.map((match) => {
-              const isFinished = match.status === "finished";
-              const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
-              const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
-
-              return (
-                <div
-                  key={match.id}
-                  className="bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all duration-200 group"
-                >
-                  {/* Match Header */}
-                  <div
-                    className={cn(
-                      "px-4 py-2 flex items-center justify-between text-xs font-semibold border-b",
-                      statusTheme(match.status)
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {formatMatchTime(match.match_date)}
-                      </span>
-                    </div>
-                    <div>{getStatusBadge(match.status)}</div>
-                  </div>
-
-                  {/* Match Content */}
-                  <div className="p-4 md:p-6">
-                    <div className="flex items-center justify-between gap-4 md:gap-8">
-                      {/* Home Team */}
-                      <div className="flex-1 flex flex-col items-center gap-2 text-center">
-                        <Link
-                          href={`/teams/${match.home_team.id}`}
-                          className="hover:opacity-80 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {renderTeamLogo(match.home_team)}
-                        </Link>
-                        <div className="space-y-1">
-                          <Link
-                            href={`/teams/${match.home_team.id}`}
-                            className="font-bold text-sm md:text-base hover:underline block truncate max-w-[100px] md:max-w-[150px]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {match.home_team.name}
-                          </Link>
-                          {isFinished && (
-                            <div className={cn("text-2xl md:text-3xl font-bold font-mono", homeWin ? "text-primary" : "text-muted-foreground")}>
-                              {match.home_score}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* VS / Info */}
-                      <div
-                        className="flex flex-col items-center justify-center gap-2 cursor-pointer"
-                        onClick={() => setSelectedMatch(match)}
-                      >
-                        <div className="text-muted-foreground font-bold text-sm md:text-lg">VS</div>
-                        <Button variant="outline" size="sm" className="h-7 text-xs">
-                          View Details
-                        </Button>
-                      </div>
-
-                      {/* Away Team */}
-                      <div className="flex-1 flex flex-col items-center gap-2 text-center">
-                        <Link
-                          href={`/teams/${match.away_team.id}`}
-                          className="hover:opacity-80 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {renderTeamLogo(match.away_team)}
-                        </Link>
-                        <div className="space-y-1">
-                          <Link
-                            href={`/teams/${match.away_team.id}`}
-                            className="font-bold text-sm md:text-base hover:underline block truncate max-w-[100px] md:max-w-[150px]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {match.away_team.name}
-                          </Link>
-                          {isFinished && (
-                            <div className={cn("text-2xl md:text-3xl font-bold font-mono", awayWin ? "text-primary" : "text-muted-foreground")}>
-                              {match.away_score}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Game Password (Scheduled only) */}
-                    {match.game_password && match.status === "scheduled" && (
-                      <div className="mt-4 pt-4 border-t flex justify-center">
-                        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800">
-                          <Key className="h-3 w-3 text-green-600 dark:text-green-400" />
-                          <span className="text-xs text-green-700 dark:text-green-300 font-medium">
-                            Password: <code className="font-mono font-bold">{match.game_password}</code>
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+          <div className="space-y-8">
+            {/* 22:40 Time Slot */}
+            {slot1.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
+                    22:40 KST
+                  </h3>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                 </div>
-              );
-            })}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
+                  {slot1.map((match) => {
+                    const isFinished = match.status === "finished";
+                    const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
+                    const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
+
+                    return renderMatchCard(match, isFinished, homeWin, awayWin);
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 23:20 Time Slot */}
+            {slot2.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
+                    23:20 KST
+                  </h3>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
+                  {slot2.map((match) => {
+                    const isFinished = match.status === "finished";
+                    const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
+                    const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
+
+                    return renderMatchCard(match, isFinished, homeWin, awayWin);
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Other Time Slots */}
+            {others.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
+                    Other Times
+                  </h3>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
+                  {others.map((match) => {
+                    const isFinished = match.status === "finished";
+                    const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
+                    const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
+
+                    return renderMatchCard(match, isFinished, homeWin, awayWin);
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

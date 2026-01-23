@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { TodayMatches } from "@/components/home/today-matches";
+import { UpcomingMatches } from "@/components/home/upcoming-matches";
 import { LeagueLeaders } from "@/components/home/league-leaders";
 import { HeroSection } from "@/components/home/hero-section";
 
@@ -56,6 +57,32 @@ export default async function Home() {
     .order("match_date", { ascending: false })
     .limit(20);
 
+  // Get upcoming matches (scheduled)
+  const { data: upcomingMatches } = await supabase
+    .from("matches")
+    .select(
+      `
+      *,
+      home_team:teams!matches_home_team_id_fkey(
+        id,
+        name,
+        logo_url,
+        conference
+      ),
+      away_team:teams!matches_away_team_id_fkey(
+        id,
+        name,
+        logo_url,
+        conference
+      )
+    `
+    )
+    .eq("season_id", activeSeason.id)
+    .eq("status", "scheduled")
+    .gte("match_date", new Date().toISOString())
+    .order("match_date", { ascending: true })
+    .limit(10);
+
   // Get league leaders (top 5 in each category)
   const { data: scoringLeaders } = await supabase
     .from("player_season_stats")
@@ -102,6 +129,12 @@ export default async function Home() {
       </section>
 
       <div className="container mx-auto px-4 py-16 space-y-12">
+        {upcomingMatches && upcomingMatches.length > 0 && (
+          <section className="rounded-3xl border border-blue-100 bg-blue-50/40 p-8 shadow-sm">
+            <UpcomingMatches matches={upcomingMatches} />
+          </section>
+        )}
+
         <section className="rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-sm">
           <TodayMatches matches={recentMatches || []} />
         </section>

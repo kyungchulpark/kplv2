@@ -22,6 +22,7 @@ export default async function TeamsAdminPage() {
       _rosters:team_rosters(count)
     `
     )
+    .order("is_disbanded", { ascending: true })
     .order("name", { ascending: true });
 
   // Transform data for component
