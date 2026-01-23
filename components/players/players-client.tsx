@@ -37,15 +37,21 @@ interface Player {
   isCaptain: boolean;
 }
 
-export function PlayersClient({ players }: { players: Player[] }) {
+export function PlayersClient({
+  players,
+  isAdmin = false,
+}: {
+  players: Player[];
+  isAdmin?: boolean;
+}) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "team" | "free">("all");
 
   const filteredPlayers = useMemo(() => {
     return players.filter((player) => {
-      const matchesSearch =
-        player.psn_id?.toLowerCase().includes(search.toLowerCase()) ||
-        player.email?.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = player.psn_id
+        ?.toLowerCase()
+        .includes(search.toLowerCase());
 
       const matchesFilter =
         filter === "all" ||
@@ -68,7 +74,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by PSN ID or email..."
+              placeholder="Search by PSN ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -108,9 +114,11 @@ export function PlayersClient({ players }: { players: Player[] }) {
                           <Shield className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mb-2">
-                        {player.email}
-                      </p>
+                      {isAdmin && (
+                        <p className="text-xs text-muted-foreground truncate mb-2">
+                          {player.email}
+                        </p>
+                      )}
 
                       {player.team ? (
                         <div

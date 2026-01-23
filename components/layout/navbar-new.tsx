@@ -181,46 +181,85 @@ export function Navbar({ user, userTeam }: NavbarProps) {
           {/* Right Side - Auth & Team Info */}
           <div className="flex items-center space-x-2">
             {user ? (
-              <div className="hidden items-center space-x-2 md:flex">
-                {/* My Team Shortcut */}
-                {userTeam && (
-                  <Link href={`/teams/${userTeam.id}`}>
-                    <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
-                      {userTeam.logo_url ? (
-                        <img
-                          src={userTeam.logo_url}
-                          alt={userTeam.name}
-                          className="h-4 w-4 object-contain"
-                        />
-                      ) : (
-                        <Shield className="h-4 w-4" />
-                      )}
-                      <span className="max-w-[100px] truncate">{userTeam.name}</span>
+              <>
+                {/* Desktop Navigation */}
+                <div className="hidden items-center space-x-2 md:flex">
+                  {/* My Team Shortcut */}
+                  {userTeam && (
+                    <Link href={`/teams/${userTeam.id}`}>
+                      <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
+                        {userTeam.logo_url ? (
+                          <img
+                            src={userTeam.logo_url}
+                            alt={userTeam.name}
+                            className="h-4 w-4 object-contain"
+                          />
+                        ) : (
+                          <Shield className="h-4 w-4" />
+                        )}
+                        <span className="max-w-[100px] truncate">{userTeam.name}</span>
+                      </Button>
+                    </Link>
+                  )}
+
+                  {/* Admin/Staff Links */}
+                  {isOperator && (
+                    <Link href="/admin">
+                      <Button variant="outline" size="sm" className="border-slate-200 text-slate-700 hover:bg-slate-50">
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
+
+                  {/* Profile */}
+                  <Link href="/profile">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      {user.profile?.psn_id || "Profile"}
                     </Button>
                   </Link>
-                )}
+                </div>
 
-                {/* Admin/Staff Links */}
-                {isOperator && (
-                  <Link href="/admin">
-                    <Button variant="outline" size="sm" className="border-slate-200 text-slate-700 hover:bg-slate-50">
-                      Admin
+                {/* Mobile Navigation - Always visible */}
+                <div className="flex items-center space-x-1 md:hidden">
+                  {/* My Team */}
+                  {userTeam && (
+                    <Link href={`/teams/${userTeam.id}`}>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        {userTeam.logo_url ? (
+                          <img
+                            src={userTeam.logo_url}
+                            alt={userTeam.name}
+                            className="h-5 w-5 object-contain"
+                          />
+                        ) : (
+                          <Shield className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </Link>
+                  )}
+
+                  {/* Admin */}
+                  {isOperator && (
+                    <Link href="/admin">
+                      <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
+
+                  {/* Profile */}
+                  <Link href="/profile">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <User className="h-5 w-5" />
                     </Button>
                   </Link>
-                )}
-
-                {/* Profile */}
-                <Link href="/profile">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-emerald-600 text-white hover:bg-emerald-700"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    {user.profile?.psn_id || "Profile"}
-                  </Button>
-                </Link>
-              </div>
+                </div>
+              </>
             ) : (
               <Link href="/auth/signin" className="hidden md:block">
                 <Button

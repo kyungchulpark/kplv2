@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ export const metadata = {
 
 export default async function PlayersPage() {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
 
   // Get active season
   const { data: activeSeason } = await supabase
@@ -102,7 +104,10 @@ export default async function PlayersPage() {
         </div>
 
         {/* Players List (Client Component for search) */}
-        <PlayersClient players={playersWithTeams} />
+        <PlayersClient
+          players={playersWithTeams}
+          isAdmin={currentUser?.profile?.role === "admin"}
+        />
       </div>
     </div>
   );
