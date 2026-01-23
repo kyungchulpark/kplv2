@@ -25,7 +25,8 @@
       "Bash(git --no-pager diff --color=never app/standings/page.tsx)",
       "Bash(git --no-pager diff --color=never components/schedule/match-detail-dialog.tsx)",
       "Bash(wait)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []

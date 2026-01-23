@@ -27,7 +27,7 @@ export default async function TeamsPage() {
       season:seasons(name)
     `
     )
-    .eq("is_disbanded", false)
+    .or("is_disbanded.is.null,is_disbanded.eq.false")
     .order("name", { ascending: true }); // Sort alphabetically by team name
 
   // Get championship counts for each team
