@@ -44,8 +44,8 @@ const SEASONS = [
 // Parse SQL INSERT statements
 function parseSqlInserts(sqlContent: string, tableName: string): string[][] {
   const pattern = new RegExp(
-    `INSERT INTO \`${tableName}\`[^V]*VALUES\\s*([^;]+);`,
-    "gi"
+    `INSERT INTO \`${tableName}\`\\s*\\([^)]+\\)\\s*VALUES\\s*([^;]+);`,
+    "gis"
   );
   const matches = [...sqlContent.matchAll(pattern)];
 
