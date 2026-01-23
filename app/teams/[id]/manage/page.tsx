@@ -262,16 +262,39 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
         return;
       }
 
-      const { error: insertError } = await supabase.from("team_rosters").insert({
-        team_id: team.id,
-        season_id: team.season_id,
-        player_id: selectedPlayerId,
-        jersey_number: null,
-        position: position || null,
-        is_active: true,
-      });
+      // Check if this player was previously in this team (is_active=false)
+      const { data: previousRoster } = await supabase
+        .from("team_rosters")
+        .select("id")
+        .eq("team_id", team.id)
+        .eq("player_id", selectedPlayerId)
+        .eq("is_active", false)
+        .maybeSingle();
 
-      if (insertError) throw insertError;
+      if (previousRoster) {
+        // Reactivate the existing roster entry
+        const { error: updateError } = await supabase
+          .from("team_rosters")
+          .update({
+            is_active: true,
+            position: position || null,
+          } as any)
+          .eq("id", previousRoster.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new roster entry
+        const { error: insertError } = await supabase.from("team_rosters").insert({
+          team_id: team.id,
+          season_id: team.season_id,
+          player_id: selectedPlayerId,
+          jersey_number: null,
+          position: position || null,
+          is_active: true,
+        } as any);
+
+        if (insertError) throw insertError;
+      }
 
       toast.success("Player added successfully");
       setAddPlayerOpen(false);

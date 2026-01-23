@@ -45,7 +45,7 @@ export default async function TeamsPage() {
   const teamsWithData = teams?.map((team) => ({
     ...team,
     championships: championshipCounts.get(team.id) || 0,
-    isActiveLeague: activeSeason && team.season_id === activeSeason.id,
+    isActiveLeague: !!(activeSeason && team.season_id === activeSeason.id && team.is_active),
   })) || [];
 
   return (

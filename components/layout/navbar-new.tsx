@@ -184,7 +184,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               <div className="hidden items-center space-x-2 md:flex">
                 {/* My Team Shortcut */}
                 {userTeam && (
-                  <Link href={canManageTeam ? `/teams/${userTeam.id}/manage` : `/teams/${userTeam.id}`}>
+                  <Link href={`/teams/${userTeam.id}`}>
                     <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
                       {userTeam.logo_url ? (
                         <img
@@ -374,7 +374,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 {/* My Team */}
                 {userTeam && (
                   <Link
-                    href={canManageTeam ? `/teams/${userTeam.id}/manage` : `/teams/${userTeam.id}`}
+                    href={`/teams/${userTeam.id}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
