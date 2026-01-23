@@ -49,6 +49,16 @@ export function Navbar({ user, userTeam }: NavbarProps) {
   const isOperator = user && ["admin", "staff"].includes(userRole);
   const canManageTeam = !!user && (userRole === "captain" || isOperator);
 
+  // Debug logging for mobile menu
+  console.log("Navbar Debug:", {
+    hasUser: !!user,
+    userRole,
+    isOperator,
+    canManageTeam,
+    hasUserTeam: !!userTeam,
+    userTeamId: userTeam?.id,
+  });
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="container mx-auto px-4">
@@ -186,6 +196,15 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                         <Shield className="h-4 w-4" />
                       )}
                       <span className="max-w-[100px] truncate">{userTeam.name}</span>
+                    </Button>
+                  </Link>
+                )}
+
+                {/* Team Management */}
+                {userTeam && canManageTeam && (
+                  <Link href={`/teams/${userTeam.id}/manage`}>
+                    <Button variant="outline" size="sm" className="border-emerald-500 text-emerald-700 hover:bg-emerald-50">
+                      Manage
                     </Button>
                   </Link>
                 )}
@@ -382,6 +401,16 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                   </Link>
                 )}
 
+                {/* Team Management */}
+                {userTeam && canManageTeam && (
+                  <Link href={`/teams/${userTeam.id}/manage`} onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-50">
+                      Team Management
+                    </Button>
+                  </Link>
+                )}
+
+                {/* Admin */}
                 {isOperator && (
                   <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full border-slate-200 text-slate-700 hover:bg-slate-50">

@@ -14,6 +14,7 @@ interface TeamCardProps {
     wins: number;
     losses: number;
     championships?: number;
+    isActiveLeague?: boolean;
     captain: {
       id: string;
       psn_id: string;
@@ -21,29 +22,23 @@ interface TeamCardProps {
     } | null;
     _rosters: { count: number }[];
   };
+  showActiveLeagueBadge?: boolean;
 }
 
-export function TeamCard({ team }: TeamCardProps) {
+export function TeamCard({ team, showActiveLeagueBadge = false }: TeamCardProps) {
   const rosterCount = team._rosters?.[0]?.count || 0;
   const gamesPlayed = team.wins + team.losses;
   const winRate =
     gamesPlayed > 0 ? ((team.wins / gamesPlayed) * 100).toFixed(1) : "0.0";
 
-  // Determine conference colors
-  const isWest = team.conference === "West";
-  const conferenceColor = isWest ? "red" : "blue";
-  const conferenceBgColor = isWest ? "bg-red-500" : "bg-blue-500";
-  const conferenceHoverColor = isWest ? "hover:text-red-600" : "hover:text-blue-600";
-  const conferenceBorderColor = isWest ? "hover:border-red-200" : "hover:border-blue-200";
-
   return (
     <Link href={`/teams/${team.id}`}>
-      <Card className={`group cursor-pointer border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 ${conferenceBorderColor} hover:shadow-lg`}>
+      <Card className="group cursor-pointer border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex flex-1 items-center space-x-3">
               {team.logo_url ? (
-                <div className={`h-12 w-12 rounded p-1 ${team.conference ? conferenceBgColor : 'bg-slate-200'}`}>
+                <div className="h-12 w-12 rounded bg-slate-100 p-1">
                   <img
                     src={team.logo_url}
                     alt={team.name}
@@ -51,12 +46,12 @@ export function TeamCard({ team }: TeamCardProps) {
                   />
                 </div>
               ) : (
-                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${team.conference ? conferenceBgColor : 'bg-emerald-500'} text-xl font-bold text-white`}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500 text-xl font-bold text-white">
                   {team.name.substring(0, 2).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h3 className={`truncate text-lg font-bold transition-colors ${team.conference ? conferenceHoverColor : 'group-hover:text-emerald-600'}`}>
+                <h3 className="truncate text-lg font-bold transition-colors group-hover:text-emerald-600">
                   {team.name}
                 </h3>
                 {team.region && (
@@ -65,16 +60,12 @@ export function TeamCard({ team }: TeamCardProps) {
               </div>
             </div>
 
-            {team.conference && (
+            {showActiveLeagueBadge && team.isActiveLeague && (
               <Badge
                 variant="outline"
-                className={
-                  isWest
-                    ? "border-red-200 bg-red-50 text-red-700"
-                    : "border-blue-200 bg-blue-50 text-blue-700"
-                }
+                className="border-emerald-200 bg-emerald-50 text-emerald-700"
               >
-                {team.conference}
+                Active League
               </Badge>
             )}
           </div>
@@ -101,7 +92,7 @@ export function TeamCard({ team }: TeamCardProps) {
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Roster Size</span>
             <div className="flex items-center space-x-2">
-              <Users className={`h-4 w-4 ${team.conference ? (isWest ? 'text-red-600' : 'text-blue-600') : 'text-emerald-600'}`} />
+              <Users className="h-4 w-4 text-emerald-600" />
               <span className="font-semibold">{rosterCount} players</span>
             </div>
           </div>
