@@ -184,7 +184,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               <div className="hidden items-center space-x-2 md:flex">
                 {/* My Team Shortcut */}
                 {userTeam && (
-                  <Link href={`/teams/${userTeam.id}`}>
+                  <Link href={canManageTeam ? `/teams/${userTeam.id}/manage` : `/teams/${userTeam.id}`}>
                     <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
                       {userTeam.logo_url ? (
                         <img
@@ -196,15 +196,6 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                         <Shield className="h-4 w-4" />
                       )}
                       <span className="max-w-[100px] truncate">{userTeam.name}</span>
-                    </Button>
-                  </Link>
-                )}
-
-                {/* Team Management */}
-                {userTeam && canManageTeam && (
-                  <Link href={`/teams/${userTeam.id}/manage`}>
-                    <Button variant="outline" size="sm" className="border-emerald-500 text-emerald-700 hover:bg-emerald-50">
-                      Manage
                     </Button>
                   </Link>
                 )}
@@ -383,7 +374,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                 {/* My Team */}
                 {userTeam && (
                   <Link
-                    href={`/teams/${userTeam.id}`}
+                    href={canManageTeam ? `/teams/${userTeam.id}/manage` : `/teams/${userTeam.id}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
@@ -396,16 +387,7 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                       ) : (
                         <Shield className="h-4 w-4" />
                       )}
-                      My team: {userTeam.name}
-                    </Button>
-                  </Link>
-                )}
-
-                {/* Team Management */}
-                {userTeam && canManageTeam && (
-                  <Link href={`/teams/${userTeam.id}/manage`} onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-50">
-                      Team Management
+                      {userTeam.name}
                     </Button>
                   </Link>
                 )}
