@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SignOutButton } from "@/components/auth/signout-button";
 import { ProfileEditForm } from "@/components/profile/profile-edit-form";
+import { PsnIdHistory } from "@/components/profile/psn-id-history";
 import { User, Mail, Shield, Calendar, Youtube, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
@@ -157,9 +158,13 @@ export default async function ProfilePage() {
               userId={user.id}
               currentPsnId={user.profile?.psn_id || ""}
               currentYoutubeChannel={user.profile?.youtube_channel || ""}
+              currentAvatarUrl={user.profile?.avatar_url}
             />
           </CardContent>
         </Card>
+
+        {/* PSN ID History */}
+        <PsnIdHistory userId={user.id} currentPsnId={user.profile?.psn_id || ""} />
 
         <Card>
           <CardHeader>

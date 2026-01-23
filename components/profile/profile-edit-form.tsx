@@ -1,29 +1,97 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileEditFormProps {
   userId: string;
   currentPsnId: string;
   currentYoutubeChannel: string;
+  currentAvatarUrl?: string | null;
 }
 
 export function ProfileEditForm({
   userId,
   currentPsnId,
   currentYoutubeChannel,
+  currentAvatarUrl,
 }: ProfileEditFormProps) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [psnId, setPsnId] = useState(currentPsnId);
   const [youtubeChannel, setYoutubeChannel] = useState(currentYoutubeChannel);
+  const [avatarUrl, setAvatarUrl] = useState(currentAvatarUrl || "");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
+    setAvatarFile(file);
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) return null;
+
+    setIsUploadingAvatar(true);
+    try {
+      const supabase = createClient();
+      const fileExt = avatarFile.name.split(".").pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, avatarFile, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        toast.error("Failed to upload avatar");
+        return null;
+      }
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      toast.error("An error occurred while uploading avatar");
+      return null;
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +100,25 @@ export function ProfileEditForm({
     try {
       const supabase = createClient();
 
+      // Upload avatar if changed
+      let newAvatarUrl = currentAvatarUrl;
+      if (avatarFile) {
+        const uploadedUrl = await handleUploadAvatar();
+        if (uploadedUrl) {
+          newAvatarUrl = uploadedUrl;
+        } else {
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Update profile
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
           psn_id: psnId,
           youtube_channel: youtubeChannel || null,
+          avatar_url: newAvatarUrl,
         })
         .eq("id", userId);
 
@@ -52,6 +133,7 @@ export function ProfileEditForm({
       }
 
       toast.success("Profile updated successfully!");
+      setAvatarFile(null);
       router.refresh();
     } catch (err) {
       console.error("Profile update error:", err);
@@ -62,10 +144,62 @@ export function ProfileEditForm({
   };
 
   const hasChanges =
-    psnId !== currentPsnId || youtubeChannel !== currentYoutubeChannel;
+    psnId !== currentPsnId ||
+    youtubeChannel !== currentYoutubeChannel ||
+    avatarFile !== null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Avatar Upload */}
+      <div className="space-y-2">
+        <Label>Profile Picture</Label>
+        <div className="flex items-center gap-4">
+          <Avatar className="h-20 w-20">
+            <AvatarImage src={avatarUrl || undefined} alt="Profile" />
+            <AvatarFallback className="text-2xl">
+              {psnId?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || isUploadingAvatar}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {avatarFile ? "Change Image" : "Upload Image"}
+            </Button>
+            {avatarFile && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAvatarFile(null);
+                  setAvatarUrl(currentAvatarUrl || "");
+                }}
+                disabled={isLoading || isUploadingAvatar}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Upload a profile picture (Max 2MB, JPG/PNG)
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="edit_psn_id">
           PSN ID <span className="text-destructive">*</span>
