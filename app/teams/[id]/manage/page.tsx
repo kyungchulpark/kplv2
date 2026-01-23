@@ -72,6 +72,7 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [position, setPosition] = useState("");
   const [addingPlayer, setAddingPlayer] = useState(false);
+  const [playerSearch, setPlayerSearch] = useState("");
 
   useEffect(() => {
     params.then((resolvedParams) => {
@@ -114,7 +115,7 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
 
       // Check if user is captain
       if (teamData.captain_id !== currentUser.id) {
-        setError("팀장만 팀을 관리할 수 있습니다.");
+        setError("Only the team captain can manage the team.");
         return;
       }
 
@@ -272,10 +273,11 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
 
       if (insertError) throw insertError;
 
-      toast.success("선수가 추가되었습니다.");
+      toast.success("Player added successfully");
       setAddPlayerOpen(false);
       setSelectedPlayerId("");
       setPosition("");
+      setPlayerSearch("");
       loadData(teamId);
     } catch (err: any) {
       toast.error(`선수 추가 실패: ${err.message}`);
@@ -329,21 +331,21 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">팀 관리</h1>
+            <h1 className="text-3xl font-bold">Team Management</h1>
             <p className="text-muted-foreground">
-              {team.name} - {activeSeason?.name}
+              {team.name} - {activeSeason?.name || "Waiting for league entry"}
             </p>
           </div>
           <Button variant="outline" onClick={() => router.push(`/teams/${teamId}`)}>
-            팀 페이지로
+            View Team Page
           </Button>
         </div>
 
         {/* Logo Management */}
         <Card>
           <CardHeader>
-            <CardTitle>팀 로고</CardTitle>
-            <CardDescription>팀 로고를 업로드하거나 변경하세요</CardDescription>
+            <CardTitle>Team Logo</CardTitle>
+            <CardDescription>Upload or change your team logo</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-6">
@@ -378,19 +380,19 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
                     disabled={uploadingLogo}
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    {logoFile ? "다른 파일 선택" : "로고 선택"}
+                    {logoFile ? "Choose Another File" : "Choose Logo"}
                   </Button>
                   {logoFile && (
                     <Button onClick={handleLogoUpload} disabled={uploadingLogo}>
                       {uploadingLogo ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          업로드 중...
+                          Uploading...
                         </>
                       ) : (
                         <>
                           <CheckCircle className="mr-2 h-4 w-4" />
-                          로고 업데이트
+                          Update Logo
                         </>
                       )}
                     </Button>
@@ -398,11 +400,11 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
                 </div>
                 {logoFile && (
                   <p className="text-sm text-muted-foreground">
-                    선택된 파일: {logoFile.name}
+                    Selected: {logoFile.name}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  PNG, JPG, WEBP 형식 지원 (최대 2MB)
+                  PNG, JPG, WEBP supported (max 2MB)
                 </p>
               </div>
             </div>
@@ -414,49 +416,68 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>로스터 관리</CardTitle>
+                <CardTitle>Roster Management</CardTitle>
                 <CardDescription>
-                  팀원 추가 및 관리 ({roster.length}명)
+                  Add and manage team members ({roster.length} players)
                 </CardDescription>
               </div>
               <Dialog open={addPlayerOpen} onOpenChange={setAddPlayerOpen}>
                 <DialogTrigger asChild>
                   <Button>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    선수 추가
+                    Add Player
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>선수 추가</DialogTitle>
+                    <DialogTitle>Add Player</DialogTitle>
                     <DialogDescription>
-                      로스터에 추가할 선수를 선택하세요
+                      Search and select a player to add to the roster
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label>선수 선택 *</Label>
-                      <Select
-                        value={selectedPlayerId}
-                        onValueChange={setSelectedPlayerId}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="선수를 선택하세요" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availablePlayers.map((player) => (
-                            <SelectItem key={player.id} value={player.id}>
+                      <Label>Search Player *</Label>
+                      <Input
+                        placeholder="Type PSN ID to search..."
+                        value={playerSearch}
+                        onChange={(e) => setPlayerSearch(e.target.value)}
+                        className="mb-2"
+                      />
+                      <div className="max-h-[200px] overflow-y-auto border rounded-md">
+                        {availablePlayers
+                          .filter((p) =>
+                            p.psn_id.toLowerCase().includes(playerSearch.toLowerCase())
+                          )
+                          .slice(0, 50)
+                          .map((player) => (
+                            <div
+                              key={player.id}
+                              onClick={() => {
+                                setSelectedPlayerId(player.id);
+                                setPlayerSearch(player.psn_id);
+                              }}
+                              className={`px-3 py-2 cursor-pointer hover:bg-accent ${
+                                selectedPlayerId === player.id ? "bg-accent" : ""
+                              }`}
+                            >
                               {player.psn_id}
-                            </SelectItem>
+                            </div>
                           ))}
-                        </SelectContent>
-                      </Select>
+                        {availablePlayers.filter((p) =>
+                          p.psn_id.toLowerCase().includes(playerSearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                            No players found
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
-                      <Label htmlFor="position">포지션</Label>
+                      <Label htmlFor="position">Position</Label>
                       <Select value={position} onValueChange={setPosition}>
                         <SelectTrigger>
-                          <SelectValue placeholder="포지션 선택 (선택사항)" />
+                          <SelectValue placeholder="Select position (optional)" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="PG">PG (Point Guard)</SelectItem>
@@ -471,19 +492,24 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
                   <DialogFooter>
                     <Button
                       variant="outline"
-                      onClick={() => setAddPlayerOpen(false)}
+                      onClick={() => {
+                        setAddPlayerOpen(false);
+                        setPlayerSearch("");
+                        setSelectedPlayerId("");
+                        setPosition("");
+                      }}
                       disabled={addingPlayer}
                     >
-                      취소
+                      Cancel
                     </Button>
-                    <Button onClick={handleAddPlayer} disabled={addingPlayer}>
+                    <Button onClick={handleAddPlayer} disabled={addingPlayer || !selectedPlayerId}>
                       {addingPlayer ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          추가 중...
+                          Adding...
                         </>
                       ) : (
-                        "추가"
+                        "Add Player"
                       )}
                     </Button>
                   </DialogFooter>
@@ -509,7 +535,7 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
                       <div>
                         <p className="font-semibold">{member.player.psn_id}</p>
                         <p className="text-sm text-muted-foreground">
-                          {member.position || "포지션 미지정"}
+                          {member.position || "No position assigned"}
                         </p>
                       </div>
                     </div>
@@ -527,8 +553,8 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p>등록된 선수가 없습니다</p>
-                <p className="text-sm">위 버튼을 클릭하여 선수를 추가하세요</p>
+                <p>No players registered</p>
+                <p className="text-sm">Click the button above to add players</p>
               </div>
             )}
           </CardContent>
