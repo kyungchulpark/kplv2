@@ -132,6 +132,11 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
   // Filter matches for selected date
   const currentMatches = resolvedDate ? groupedMatches[resolvedDate] || [] : [];
 
+  // Format time in KST to display correctly (no date shift)
+  const formatMatchTime = (dateString: string) => {
+    return formatMatchTimeKST(dateString);
+  };
+
   // Group matches by time slot (22:40 vs 23:20)
   const groupMatchesByTimeSlot = (matches: Match[]) => {
     const slot1 = matches.filter((m) => {
@@ -151,11 +156,6 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
   };
 
   const { slot1, slot2, others } = groupMatchesByTimeSlot(currentMatches);
-
-  // Format time in KST to display correctly (no date shift)
-  const formatMatchTime = (dateString: string) => {
-    return formatMatchTimeKST(dateString);
-  };
 
   const handleDateChange = (date: string) => {
     if (onDateChange) {

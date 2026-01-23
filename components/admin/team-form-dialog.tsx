@@ -215,17 +215,18 @@ export function TeamFormDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="conference">컨퍼런스 *</Label>
+              <Label htmlFor="conference">Conference</Label>
               <Select
-                value={formData.conference}
+                value={formData.conference || "none"}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, conference: value })
+                  setFormData({ ...formData, conference: value === "none" ? "" : value })
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">No Conference</SelectItem>
                   <SelectItem value="West">Western Conference</SelectItem>
                   <SelectItem value="East">Eastern Conference</SelectItem>
                 </SelectContent>

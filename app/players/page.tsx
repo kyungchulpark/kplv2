@@ -8,8 +8,8 @@ import { Shield, Users } from "lucide-react";
 import { PlayersClient } from "@/components/players/players-client";
 
 export const metadata = {
-  title: "선수 목록 - KPL",
-  description: "KPL에 등록된 모든 선수 목록",
+  title: "Players - KPL",
+  description: "All registered players in KPL",
 };
 
 export default async function PlayersPage() {
@@ -62,9 +62,9 @@ export default async function PlayersPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">선수 목록</h1>
+          <h1 className="text-3xl font-bold">Players</h1>
           <p className="text-muted-foreground">
-            KPL에 등록된 모든 선수 - {activeSeason?.name || "시즌 없음"}
+            All registered players in KPL - {activeSeason?.name || "No active season"}
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export default async function PlayersPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">전체 선수</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Players</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -81,7 +81,7 @@ export default async function PlayersPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">팀 소속</CardTitle>
+              <CardTitle className="text-sm font-medium">In Teams</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -92,7 +92,7 @@ export default async function PlayersPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">자유 계약</CardTitle>
+              <CardTitle className="text-sm font-medium">Free Agents</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
