@@ -303,12 +303,12 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
         ) : (
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
-              <TabsTrigger value="all">전체</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="game1" disabled={slot1.length === 0}>
-                1경기 ({slot1.length})
+                Game 1 ({slot1.length})
               </TabsTrigger>
               <TabsTrigger value="game2" disabled={slot2.length === 0}>
-                2경기 ({slot2.length})
+                Game 2 ({slot2.length})
               </TabsTrigger>
             </TabsList>
 
@@ -320,7 +320,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                     <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                      1경기 - 22:40 KST
+                      Game 1 - 22:40 KST
                     </h3>
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   </div>
@@ -342,7 +342,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                     <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                      2경기 - 23:20 KST
+                      Game 2 - 23:20 KST
                     </h3>
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   </div>
@@ -364,7 +364,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                     <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                      기타 경기
+                      Other Games
                     </h3>
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   </div>
@@ -395,7 +395,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-                  1경기(22:40) 일정이 없습니다.
+                  No Game 1 (22:40) scheduled.
                 </div>
               )}
             </TabsContent>
@@ -414,7 +414,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-                  2경기(23:20) 일정이 없습니다.
+                  No Game 2 (23:20) scheduled.
                 </div>
               )}
             </TabsContent>
