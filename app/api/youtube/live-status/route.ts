@@ -12,18 +12,30 @@ interface LiveStatusResponse {
   };
 }
 
-function extractChannelId(url: string): string | null {
+function extractChannelInfo(url: string): { type: 'channelId' | 'handle' | 'custom' | 'user'; value: string } | null {
   try {
-    const patterns = [
-      /youtube\.com\/channel\/([a-zA-Z0-9_-]+)/,
-      /youtube\.com\/c\/([a-zA-Z0-9_-]+)/,
-      /youtube\.com\/@([a-zA-Z0-9_-]+)/,
-      /youtube\.com\/user\/([a-zA-Z0-9_-]+)/,
-    ];
+    // Channel ID format: youtube.com/channel/UC...
+    const channelIdMatch = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
+    if (channelIdMatch) {
+      return { type: 'channelId', value: channelIdMatch[1] };
+    }
 
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) return match[1];
+    // Handle format: youtube.com/@...
+    const handleMatch = url.match(/youtube\.com\/@([a-zA-Z0-9_-]+)/);
+    if (handleMatch) {
+      return { type: 'handle', value: handleMatch[1] };
+    }
+
+    // Custom URL format: youtube.com/c/...
+    const customMatch = url.match(/youtube\.com\/c\/([a-zA-Z0-9_-]+)/);
+    if (customMatch) {
+      return { type: 'custom', value: customMatch[1] };
+    }
+
+    // Legacy user format: youtube.com/user/...
+    const userMatch = url.match(/youtube\.com\/user\/([a-zA-Z0-9_-]+)/);
+    if (userMatch) {
+      return { type: 'user', value: userMatch[1] };
     }
 
     return null;
@@ -67,25 +79,34 @@ async function checkChannelLiveStatus(channelId: string, apiKey: string) {
   }
 }
 
-async function resolveChannelId(handleOrUsername: string, apiKey: string): Promise<string | null> {
+async function resolveChannelId(handle: string, apiKey: string): Promise<string | null> {
   try {
-    // Try to resolve @handle or username to channel ID
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(handleOrUsername)}&type=channel&maxResults=1&key=${apiKey}`;
+    // Use YouTube Data API v3 channels.list with forHandle parameter
+    // This is the proper way to resolve @handle to channel ID
+    const channelsUrl = `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
 
-    const response = await fetch(searchUrl);
+    console.log(`[YouTube API] Resolving handle with channels.list: ${handle}`);
+    const response = await fetch(channelsUrl);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[YouTube API] channels.list error: ${errorText}`);
       return null;
     }
 
     const data = await response.json();
+    console.log(`[YouTube API] channels.list response:`, JSON.stringify(data, null, 2));
 
     if (data.items && data.items.length > 0) {
-      return data.items[0].snippet.channelId;
+      const channelId = data.items[0].id;
+      console.log(`[YouTube API] Resolved @${handle} to channel ID: ${channelId}`);
+      return channelId;
     }
 
+    console.log(`[YouTube API] No channel found for handle: ${handle}`);
     return null;
-  } catch {
+  } catch (error) {
+    console.error(`[YouTube API] Error resolving handle ${handle}:`, error);
     return null;
   }
 }
@@ -116,22 +137,36 @@ export async function POST(request: NextRequest) {
     // Check each channel's live status
     for (const url of channelUrls) {
       console.log(`[YouTube API] Processing URL: ${url}`);
-      let channelId = extractChannelId(url);
+      const channelInfo = extractChannelInfo(url);
 
-      // If we couldn't extract a channel ID directly, try to resolve it
-      if (!channelId) {
-        const handleMatch = url.match(/@([a-zA-Z0-9_-]+)/);
-        if (handleMatch) {
-          console.log(`[YouTube API] Resolving handle: @${handleMatch[1]}`);
-          channelId = await resolveChannelId(handleMatch[1], apiKey);
-          if (channelId) {
-            console.log(`[YouTube API] Resolved to channel ID: ${channelId}`);
-          }
+      if (!channelInfo) {
+        console.log(`[YouTube API] Could not parse URL: ${url}`);
+        results[url] = { isLive: false };
+        continue;
+      }
+
+      console.log(`[YouTube API] Detected ${channelInfo.type}: ${channelInfo.value}`);
+
+      let channelId: string | null = null;
+
+      if (channelInfo.type === 'channelId') {
+        // Already have the channel ID
+        channelId = channelInfo.value;
+        console.log(`[YouTube API] Using channel ID: ${channelId}`);
+      } else if (channelInfo.type === 'handle') {
+        // Resolve handle to channel ID
+        console.log(`[YouTube API] Resolving handle: @${channelInfo.value}`);
+        channelId = await resolveChannelId(channelInfo.value, apiKey);
+        if (channelId) {
+          console.log(`[YouTube API] Resolved to channel ID: ${channelId}`);
         } else {
-          console.log(`[YouTube API] Could not extract handle from URL: ${url}`);
+          console.log(`[YouTube API] Failed to resolve handle: @${channelInfo.value}`);
         }
       } else {
-        console.log(`[YouTube API] Extracted channel ID: ${channelId}`);
+        // For custom URLs and legacy user URLs, we need to search
+        console.log(`[YouTube API] Searching for ${channelInfo.type}: ${channelInfo.value}`);
+        // For now, treat as handle
+        channelId = await resolveChannelId(channelInfo.value, apiKey);
       }
 
       if (channelId) {
