@@ -81,26 +81,46 @@ async function checkChannelLiveStatus(channelId: string, apiKey: string) {
 
 async function resolveChannelId(handle: string, apiKey: string): Promise<string | null> {
   try {
-    // Use YouTube Data API v3 channels.list with forHandle parameter
-    // This is the proper way to resolve @handle to channel ID
-    const channelsUrl = `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
+    // Method 1: Try forHandle parameter (newer API)
+    const handleUrl = `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
 
-    console.log(`[YouTube API] Resolving handle with channels.list: ${handle}`);
-    const response = await fetch(channelsUrl);
+    console.log(`[YouTube API] Resolving handle with forHandle: ${handle}`);
+    const handleResponse = await fetch(handleUrl);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[YouTube API] channels.list error: ${errorText}`);
+    if (handleResponse.ok) {
+      const handleData = await handleResponse.json();
+      console.log(`[YouTube API] forHandle response:`, JSON.stringify(handleData, null, 2));
+
+      if (handleData.items && handleData.items.length > 0) {
+        const channelId = handleData.items[0].id;
+        console.log(`[YouTube API] Resolved @${handle} to channel ID via forHandle: ${channelId}`);
+        return channelId;
+      }
+    } else {
+      console.log(`[YouTube API] forHandle failed with status ${handleResponse.status}, trying search fallback`);
+    }
+
+    // Method 2: Fallback to search API
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent('@' + handle)}&type=channel&maxResults=1&key=${apiKey}`;
+
+    console.log(`[YouTube API] Trying search API for: @${handle}`);
+    const searchResponse = await fetch(searchUrl);
+
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      console.error(`[YouTube API] Search API error: ${errorText}`);
       return null;
     }
 
-    const data = await response.json();
-    console.log(`[YouTube API] channels.list response:`, JSON.stringify(data, null, 2));
+    const searchData = await searchResponse.json();
+    console.log(`[YouTube API] Search response:`, JSON.stringify(searchData, null, 2));
 
-    if (data.items && data.items.length > 0) {
-      const channelId = data.items[0].id;
-      console.log(`[YouTube API] Resolved @${handle} to channel ID: ${channelId}`);
-      return channelId;
+    if (searchData.items && searchData.items.length > 0) {
+      const channelId = searchData.items[0].snippet.channelId || searchData.items[0].id?.channelId;
+      if (channelId) {
+        console.log(`[YouTube API] Resolved @${handle} to channel ID via search: ${channelId}`);
+        return channelId;
+      }
     }
 
     console.log(`[YouTube API] No channel found for handle: ${handle}`);
@@ -113,25 +133,31 @@ async function resolveChannelId(handle: string, apiKey: string): Promise<string 
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[YouTube API] ========== NEW REQUEST ==========");
     const apiKey = process.env.YOUTUBE_API_KEY;
 
     if (!apiKey) {
+      console.error("[YouTube API] API key not configured!");
       return NextResponse.json(
         { error: "YouTube API key not configured" },
         { status: 500 }
       );
     }
 
+    console.log("[YouTube API] API key found, length:", apiKey.length);
+
     const body: LiveStatusRequest = await request.json();
     const { channelUrls } = body;
 
     if (!channelUrls || !Array.isArray(channelUrls)) {
+      console.error("[YouTube API] Invalid request body:", body);
       return NextResponse.json(
         { error: "Invalid request: channelUrls array required" },
         { status: 400 }
       );
     }
 
+    console.log(`[YouTube API] Processing ${channelUrls.length} channels`);
     const results: LiveStatusResponse = {};
 
     // Check each channel's live status
@@ -177,11 +203,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log("[YouTube API] ========== REQUEST COMPLETE ==========");
     return NextResponse.json(results);
-  } catch (error) {
-    console.error("Error in live-status API:", error);
+  } catch (error: any) {
+    console.error("[YouTube API] ========== FATAL ERROR ==========");
+    console.error("[YouTube API] Error type:", error?.constructor?.name);
+    console.error("[YouTube API] Error message:", error?.message);
+    console.error("[YouTube API] Error stack:", error?.stack);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error?.message },
       { status: 500 }
     );
   }
