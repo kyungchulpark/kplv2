@@ -28,7 +28,7 @@ export async function PATCH(
 
     // Get update data from request
     const body = await request.json();
-    const { role, psn_id } = body;
+    const { role, psn_id, is_active } = body;
 
     // Use admin client to bypass RLS
     const adminClient = createAdminClient();
@@ -37,6 +37,7 @@ export async function PATCH(
       .update({
         role,
         psn_id,
+        is_active,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);

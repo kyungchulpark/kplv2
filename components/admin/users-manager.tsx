@@ -33,6 +33,8 @@ type User = {
   role: string;
   avatar_url: string | null;
   created_at: string;
+  is_legacy: boolean;
+  is_active: boolean;
   captain_of: Array<{ id: string; name: string }>;
   member_of: Array<{ id: string; name: string }>;
 };
@@ -46,17 +48,20 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
   const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("active"); // 기본값: 활성 사용자만 표시
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editRole, setEditRole] = useState("");
   const [editPsnId, setEditPsnId] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setEditRole(user.role);
     setEditPsnId(user.psn_id || "");
+    setEditIsActive(user.is_active);
     setEditDialogOpen(true);
   };
 
@@ -80,6 +85,7 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
         body: JSON.stringify({
           role: editRole,
           psn_id: editPsnId || null,
+          is_active: editIsActive,
         }),
       });
 
@@ -91,7 +97,7 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
       // Update local state
       setUsers(users.map(u =>
         u.id === selectedUser.id
-          ? { ...u, role: editRole, psn_id: editPsnId || null }
+          ? { ...u, role: editRole, psn_id: editPsnId || null, is_active: editIsActive }
           : u
       ));
 
@@ -160,7 +166,12 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.psn_id || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesStatus =
+      statusFilter === "all" ? true :
+        statusFilter === "active" ? user.is_active :
+          statusFilter === "inactive" ? !user.is_active :
+            statusFilter === "legacy" ? user.is_legacy : true;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   return (
@@ -189,6 +200,17 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                 <SelectItem value="user">사용자</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">활성</SelectItem>
+                <SelectItem value="inactive">비활성</SelectItem>
+                <SelectItem value="legacy">레거시</SelectItem>
+                <SelectItem value="all">전체 상태</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -199,6 +221,7 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                   <th className="text-left py-3 px-2">사용자</th>
                   <th className="text-left py-3 px-2">PSN ID</th>
                   <th className="text-center py-3 px-2">권한</th>
+                  <th className="text-center py-3 px-2">상태</th>
                   <th className="text-left py-3 px-2">소속 팀</th>
                   <th className="text-center py-3 px-2">가입일</th>
                   <th className="text-right py-3 px-2">작업</th>
@@ -225,6 +248,25 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                     </td>
                     <td className="py-4 px-2 text-center">
                       {getRoleBadge(user.role)}
+                    </td>
+                    <td className="py-4 px-2 text-center">
+                      <div className="flex flex-col gap-1 items-center">
+                        {!user.is_active && (
+                          <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/20 text-xs">
+                            비활성
+                          </Badge>
+                        )}
+                        {user.is_legacy && (
+                          <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20 text-xs">
+                            레거시
+                          </Badge>
+                        )}
+                        {user.is_active && !user.is_legacy && (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 text-xs">
+                            활성
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-2">
                       <div className="space-y-1">
@@ -311,6 +353,23 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                   <SelectItem value="admin">관리자</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label htmlFor="is_active">활성 상태</Label>
+              <Select value={editIsActive.toString()} onValueChange={(v) => setEditIsActive(v === "true")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">활성 (관리 UI에 표시)</SelectItem>
+                  <SelectItem value="false">비활성 (관리 UI에서 숨김)</SelectItem>
+                </SelectContent>
+              </Select>
+              {selectedUser?.is_legacy && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 레거시 프로필: 과거 데이터에서 마이그레이션된 사용자입니다.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>

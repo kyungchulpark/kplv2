@@ -26,34 +26,40 @@ export function ProfileSetupForm({ userId, email }: ProfileSetupFormProps) {
     setError(null);
 
     try {
-      const supabase = createClient();
-
-      // Create profile
-      const { error: insertError } = await supabase.from("profiles").insert({
-        id: userId,
-        email,
-        psn_id: psnId,
-        youtube_channel: youtubeChannel || null,
-        role: "user",
+      const response = await fetch("/api/auth/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          psn_id: psnId,
+          youtube_channel: youtubeChannel,
+        }),
       });
 
-      if (insertError) {
-        if (insertError.code === "23505") {
-          // Unique constraint violation
-          setError("PSN ID is already in use.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error) {
+          setError(data.error);
         } else {
-          setError("An error occurred while creating profile.");
+          setError("An error occurred while setting up profile.");
         }
         setIsLoading(false);
         return;
       }
 
-      // Success - redirect to home
+      // Success
+      if (data.merged) {
+        // Optional: Show a toast or message about successful merge
+        console.log("Profile merged with legacy data!");
+      }
+
       router.push("/");
       router.refresh();
     } catch (err) {
       console.error("Profile setup error:", err);
-      setError("An error occurred while creating profile.");
+      setError("An error occurred. Please try again.");
       setIsLoading(false);
     }
   };

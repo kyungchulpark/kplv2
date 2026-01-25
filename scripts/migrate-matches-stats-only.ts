@@ -86,9 +86,62 @@ function parseRowValues(rowStr: string): string[] {
   return values;
 }
 
+// Create legacy profile for unmapped players
+// IMPORTANT: Only creates new profile if PSN ID doesn't exist (case-insensitive)
+// New profiles are marked as is_legacy=true, is_active=false to prevent cluttering admin UI
+async function createLegacyProfile(
+  psnId: string,
+  existingProfiles: Map<string, string>
+): Promise<string | null> {
+  try {
+    const normalizedPsnId = psnId.toLowerCase().trim();
+
+    // Double-check against existing profiles map (case-insensitive)
+    if (existingProfiles.has(normalizedPsnId)) {
+      return existingProfiles.get(normalizedPsnId)!;
+    }
+
+    // Final DB check with ilike for case-insensitive match
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id, psn_id")
+      .ilike("psn_id", psnId.trim())
+      .maybeSingle();
+
+    if (existing) {
+      // Found existing profile - update our map and return it
+      existingProfiles.set(normalizedPsnId, existing.id);
+      console.log(`       ℹ️ 기존 프로필 발견: ${existing.psn_id} → ${psnId}`);
+      return existing.id;
+    }
+
+    // Create new legacy profile (inactive by default)
+    const { data, error } = await supabase
+      .from("profiles")
+      .insert({
+        psn_id: psnId.trim(),
+        is_legacy: true,
+        is_active: false, // Hide from active user management
+        role: "player",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    // Update our map
+    existingProfiles.set(normalizedPsnId, data.id);
+
+    return data.id;
+  } catch (err) {
+    console.error(`       ✗ 레거시 프로필 생성 실패 (${psnId}):`, err);
+    return null;
+  }
+}
+
 async function main() {
   console.log("🚀 매치 & 스탯 전용 마이그레이션 시작\n");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   // Read SQL file
   const sqlPath = path.join(__dirname, "../supabase/kpl_all.sql");
@@ -102,9 +155,9 @@ async function main() {
   console.log(`✓ SQL 파일 로드 완료 (${(sqlContent.length / 1024 / 1024).toFixed(2)} MB)\n`);
 
   // Load existing seasons from DB
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log("[1/4] 🏆 기존 시즌 정보 로드");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   const { data: seasons } = await supabase
     .from("seasons")
@@ -149,9 +202,9 @@ async function main() {
   console.log(`\n📊 로드된 시즌: ${seasonMap.size}개\n`);
 
   // Load existing teams from DB
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log("[2/4] 🏀 기존 팀 정보 로드");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   const { data: teams } = await supabase
     .from("teams")
@@ -178,9 +231,9 @@ async function main() {
   console.log(`  ✓ 로드된 팀: ${teamMap.size}개\n`);
 
   // Build player mappings
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log("[3/4] 👥 플레이어 매핑 구축");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   const { data: profiles } = await supabase.from("profiles").select("id, psn_id");
   const { data: psnHistory } = await supabase
@@ -200,13 +253,14 @@ async function main() {
 
   console.log(`  ✓ 매핑된 PSN ID: ${playerMap.size}개\n`);
 
-  // Migrate Matches
-  console.log("=" .repeat(60));
+  // Migrate Matches & Stats
+  console.log("=".repeat(60));
   console.log("[4/4] 🎮 매치 & 스탯 마이그레이션");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   let matchCount = 0;
   let statsCount = 0;
+  let legacyProfilesCreated = 0;
   let unmappedPlayers = new Set<string>();
 
   for (const [seasonCode, seasonData] of seasonMap) {
@@ -228,11 +282,14 @@ async function main() {
     for (const row of matchData) {
       const [dateTime, homeTeam, awayTeam, homePts, awayPts] = row;
 
-      const homeTeamData = teamMap.get(`${seasonCode}_${homeTeam?.trim()}`);
-      const awayTeamData = teamMap.get(`${seasonCode}_${awayTeam?.trim()}`);
+      if (!homeTeam || !awayTeam || !homeTeam.trim() || !awayTeam.trim()) {
+        continue; // Skip empty team names
+      }
+
+      const homeTeamData = teamMap.get(`${seasonCode}_${homeTeam.trim()}`);
+      const awayTeamData = teamMap.get(`${seasonCode}_${awayTeam.trim()}`);
 
       if (!homeTeamData || !awayTeamData) {
-        console.log(`     ⚠️ 팀을 찾을 수 없음: ${homeTeam} vs ${awayTeam}`);
         continue;
       }
 
@@ -279,15 +336,34 @@ async function main() {
     }
 
     let seasonStats = 0;
-    for (const row of statsData) {
-      const [matchId, psnId, vs, pts, reb, ast, stl, blk, fls, to, fgm, fga, tpm, tpa] = row;
+    let seasonLegacyProfiles = 0;
 
-      const playerId = playerMap.get(psnId?.toLowerCase().trim());
-      if (!playerId) {
-        unmappedPlayers.add(psnId);
+    for (const row of statsData) {
+      // 수정: matchId 제거! stats 테이블에는 matchId가 없음
+      const [psnId, vs, pts, reb, ast, stl, blk, fls, to, fgm, fga, tpm, tpa] = row;
+
+      if (!psnId || !vs || !psnId.trim() || !vs.trim()) {
+        continue; // Skip invalid data
       }
 
-      const vsTeamData = teamMap.get(`${seasonCode}_${vs?.trim()}`);
+      // Check if player exists, if not create legacy profile
+      let playerId: string | undefined | null = playerMap.get(psnId.toLowerCase().trim());
+
+      if (!playerId) {
+        // Create legacy profile for this player
+        const newPlayerId = await createLegacyProfile(psnId.trim(), playerMap);
+
+        if (newPlayerId) {
+          playerId = newPlayerId;
+          legacyProfilesCreated++;
+          seasonLegacyProfiles++;
+        } else {
+          unmappedPlayers.add(psnId);
+          continue;
+        }
+      }
+
+      const vsTeamData = teamMap.get(`${seasonCode}_${vs.trim()}`);
       if (!vsTeamData) continue;
 
       // Find matching match (player's opponent is vs team)
@@ -300,8 +376,8 @@ async function main() {
       try {
         await supabase.from("match_stats").insert({
           match_id: match.id,
-          player_id: playerId || null,
-          psn_id: psnId,
+          player_id: playerId,
+          psn_id: psnId.trim(),
           team_id: match.home_team_id === vsTeamData.id ? match.away_team_id : match.home_team_id,
           pts: parseInt(pts) || 0,
           reb: parseInt(reb) || 0,
@@ -324,19 +400,23 @@ async function main() {
     }
 
     console.log(`     ✓ 스탯 임포트: ${seasonStats}개`);
+    if (seasonLegacyProfiles > 0) {
+      console.log(`     ✓ 레거시 프로필 생성: ${seasonLegacyProfiles}개`);
+    }
   }
 
-  console.log("\n" + "=" .repeat(60));
+  console.log("\n" + "=".repeat(60));
   console.log("✅ 매치 & 스탯 마이그레이션 완료!");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log(`\n📊 결과:`);
   console.log(`  • 임포트된 매치: ${matchCount}개`);
   console.log(`  • 임포트된 스탯: ${statsCount}개`);
-  console.log(`  • 매핑되지 않은 플레이어: ${unmappedPlayers.size}명`);
+  console.log(`  • 생성된 레거시 프로필: ${legacyProfilesCreated}개`);
+  console.log(`  • 실패한 플레이어: ${unmappedPlayers.size}명`);
 
-  if (unmappedPlayers.size > 0) {
-    console.log(`\n💡 팁: 유저가 프로필 → PSN ID 히스토리에서 이전 PSN ID를 추가하면`);
-    console.log(`   자동으로 과거 스탯이 연결됩니다.\n`);
+  if (legacyProfilesCreated > 0) {
+    console.log(`\n💡 레거시 프로필은 is_legacy=true로 표시되어 숨김 처리 가능합니다.`);
+    console.log(`   실제 유저가 가입 후 PSN ID 히스토리에 추가하면 자동으로 연결됩니다.\n`);
   }
 }
 

@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { parseISO, isBefore, startOfDay } from "date-fns";
 import { Clock, Key } from "lucide-react";
@@ -293,24 +294,96 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
         onDateChange={handleDateChange}
       />
 
-      {/* Matches List */}
+      {/* Matches List with Tabs */}
       <div className="space-y-6">
         {currentMatches.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
             No scheduled matches for this date.
           </div>
         ) : (
-          <div className="space-y-8">
-            {/* 22:40 Time Slot */}
-            {slot1.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-                  <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                    22:40 KST
-                  </h3>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+              <TabsTrigger value="all">전체</TabsTrigger>
+              <TabsTrigger value="game1" disabled={slot1.length === 0}>
+                1경기 ({slot1.length})
+              </TabsTrigger>
+              <TabsTrigger value="game2" disabled={slot2.length === 0}>
+                2경기 ({slot2.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* All Games */}
+            <TabsContent value="all" className="space-y-8 mt-6">
+              {/* 22:40 Time Slot */}
+              {slot1.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
+                      1경기 - 22:40 KST
+                    </h3>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
+                    {slot1.map((match) => {
+                      const isFinished = match.status === "finished";
+                      const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
+                      const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
+
+                      return renderMatchCard(match, isFinished, homeWin, awayWin);
+                    })}
+                  </div>
                 </div>
+              )}
+
+              {/* 23:20 Time Slot */}
+              {slot2.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
+                      2경기 - 23:20 KST
+                    </h3>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
+                    {slot2.map((match) => {
+                      const isFinished = match.status === "finished";
+                      const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
+                      const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
+
+                      return renderMatchCard(match, isFinished, homeWin, awayWin);
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Other Time Slots */}
+              {others.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
+                      기타 경기
+                    </h3>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
+                    {others.map((match) => {
+                      const isFinished = match.status === "finished";
+                      const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
+                      const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
+
+                      return renderMatchCard(match, isFinished, homeWin, awayWin);
+                    })}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Game 1 - 22:40 */}
+            <TabsContent value="game1" className="mt-6">
+              {slot1.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
                   {slot1.map((match) => {
                     const isFinished = match.status === "finished";
@@ -320,19 +393,16 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                     return renderMatchCard(match, isFinished, homeWin, awayWin);
                   })}
                 </div>
-              </div>
-            )}
-
-            {/* 23:20 Time Slot */}
-            {slot2.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-                  <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                    23:20 KST
-                  </h3>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                  1경기(22:40) 일정이 없습니다.
                 </div>
+              )}
+            </TabsContent>
+
+            {/* Game 2 - 23:20 */}
+            <TabsContent value="game2" className="mt-6">
+              {slot2.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
                   {slot2.map((match) => {
                     const isFinished = match.status === "finished";
@@ -342,31 +412,13 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                     return renderMatchCard(match, isFinished, homeWin, awayWin);
                   })}
                 </div>
-              </div>
-            )}
-
-            {/* Other Time Slots */}
-            {others.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-                  <h3 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                    Other Times
-                  </h3>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                  2경기(23:20) 일정이 없습니다.
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-3xl mx-auto">
-                  {others.map((match) => {
-                    const isFinished = match.status === "finished";
-                    const homeWin = isFinished && (match.home_score || 0) > (match.away_score || 0);
-                    const awayWin = isFinished && (match.away_score || 0) > (match.home_score || 0);
-
-                    return renderMatchCard(match, isFinished, homeWin, awayWin);
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </div>
 
