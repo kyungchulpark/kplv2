@@ -33,8 +33,8 @@ type User = {
   role: string;
   avatar_url: string | null;
   created_at: string;
-  is_legacy: boolean;
-  is_active: boolean;
+  is_legacy?: boolean;
+  is_active?: boolean;
   captain_of: Array<{ id: string; name: string }>;
   member_of: Array<{ id: string; name: string }>;
 };
@@ -48,7 +48,7 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
   const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("active"); // 기본값: 활성 사용자만 표시
+  const [statusFilter, setStatusFilter] = useState<string>("all"); // 기본값: 전체 표시
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -61,7 +61,7 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
     setSelectedUser(user);
     setEditRole(user.role);
     setEditPsnId(user.psn_id || "");
-    setEditIsActive(user.is_active);
+    setEditIsActive(user.is_active ?? true);
     setEditDialogOpen(true);
   };
 
@@ -168,9 +168,9 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     const matchesStatus =
       statusFilter === "all" ? true :
-        statusFilter === "active" ? user.is_active :
-          statusFilter === "inactive" ? !user.is_active :
-            statusFilter === "legacy" ? user.is_legacy : true;
+        statusFilter === "active" ? (user.is_active ?? true) :
+          statusFilter === "inactive" ? !(user.is_active ?? true) :
+            statusFilter === "legacy" ? (user.is_legacy ?? false) : true;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -251,17 +251,17 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                     </td>
                     <td className="py-4 px-2 text-center">
                       <div className="flex flex-col gap-1 items-center">
-                        {!user.is_active && (
+                        {user.is_active === false && (
                           <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/20 text-xs">
                             비활성
                           </Badge>
                         )}
-                        {user.is_legacy && (
+                        {user.is_legacy === true && (
                           <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20 text-xs">
                             레거시
                           </Badge>
                         )}
-                        {user.is_active && !user.is_legacy && (
+                        {(user.is_active ?? true) && !user.is_legacy && (
                           <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 text-xs">
                             활성
                           </Badge>
@@ -354,23 +354,26 @@ export function UsersManager({ users: initialUsers }: UsersManagerProps) {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="is_active">활성 상태</Label>
-              <Select value={editIsActive.toString()} onValueChange={(v) => setEditIsActive(v === "true")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">활성 (관리 UI에 표시)</SelectItem>
-                  <SelectItem value="false">비활성 (관리 UI에서 숨김)</SelectItem>
-                </SelectContent>
-              </Select>
-              {selectedUser?.is_legacy && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  💡 레거시 프로필: 과거 데이터에서 마이그레이션된 사용자입니다.
-                </p>
-              )}
-            </div>
+            {/* is_active 필드가 존재할 때만 표시 */}
+            {selectedUser?.is_active !== undefined && (
+              <div>
+                <Label htmlFor="is_active">활성 상태</Label>
+                <Select value={editIsActive.toString()} onValueChange={(v) => setEditIsActive(v === "true")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">활성 (관리 UI에 표시)</SelectItem>
+                    <SelectItem value="false">비활성 (관리 UI에서 숨김)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {selectedUser?.is_legacy && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💡 레거시 프로필: 과거 데이터에서 마이그레이션된 사용자입니다.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
