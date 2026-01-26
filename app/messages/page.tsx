@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import MessagesClient from "@/components/messages/messages-client";
 
@@ -14,11 +14,10 @@ export default async function MessagesPage() {
     redirect("/login");
   }
 
-  // Get all active players for the "New Conversation" dialog
+  // Get all players for the "New Conversation" dialog
   const { data: players } = await supabase
     .from("profiles")
     .select("id, psn_id, avatar_url, email")
-    .eq("is_active", true)
     .neq("id", user.id)
     .order("psn_id");
 
