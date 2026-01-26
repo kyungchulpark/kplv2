@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 
 interface Player {
@@ -59,7 +58,7 @@ export default function StartConversationDialog({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <ScrollArea className="h-[300px] border rounded-md">
+          <div className="h-[300px] border rounded-md overflow-y-auto">
             {filteredPlayers.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
                 선수를 찾을 수 없습니다
@@ -88,7 +87,7 @@ export default function StartConversationDialog({
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

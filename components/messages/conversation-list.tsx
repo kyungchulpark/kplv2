@@ -5,7 +5,6 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { MessageSquarePlus } from "lucide-react";
 import StartConversationDialog from "./start-conversation-dialog";
@@ -138,7 +137,7 @@ export default function ConversationList({
         </div>
       </CardHeader>
       <CardContent className="p-0 flex-1">
-        <ScrollArea className="h-full">
+        <div className="h-full overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-muted-foreground">
               로딩 중...
@@ -197,7 +196,7 @@ export default function ConversationList({
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </CardContent>
 
       <StartConversationDialog

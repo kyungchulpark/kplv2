@@ -5,7 +5,6 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { CardHeader, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import MessageBubble from "./message-bubble";
@@ -150,7 +149,7 @@ export default function ChatWindow({
 
       {/* Messages */}
       <CardContent className="flex-1 p-4 overflow-hidden">
-        <ScrollArea className="h-full pr-4">
+        <div className="h-full overflow-y-auto pr-4">
           {loading ? (
             <div className="text-center text-muted-foreground">
               메시지 로딩 중...
@@ -171,7 +170,7 @@ export default function ChatWindow({
               <div ref={scrollRef} />
             </div>
           )}
-        </ScrollArea>
+        </div>
       </CardContent>
 
       {/* Input */}
