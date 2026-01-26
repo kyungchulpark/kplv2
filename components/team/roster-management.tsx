@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -21,7 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserPlus, Edit, Trash2, Save, X } from "lucide-react";
+import { UserPlus, Edit, Trash2, Save, X, Crown, UserCog, Ban } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -73,8 +74,64 @@ export function RosterManagement({
   const [jerseyNumber, setJerseyNumber] = useState<string>("");
   const [position, setPosition] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [teamRoles, setTeamRoles] = useState<Record<string, string>>({});
+  const [disciplines, setDisciplines] = useState<Record<string, { games_remaining: number; reason: string }>>({});
 
   const supabase = createClient();
+
+  // Fetch team roles and disciplines on mount
+  useEffect(() => {
+    fetchTeamRoles();
+    fetchDisciplines();
+  }, [team.id, team.season_id]);
+
+  const fetchTeamRoles = async () => {
+    try {
+      const { data: roles, error } = await supabase
+        .from("team_roles")
+        .select("player_id, role")
+        .eq("team_id", team.id)
+        .eq("season_id", team.season_id)
+        .eq("is_active", true)
+        .in("role", ["captain", "vice_captain"]);
+
+      if (error) throw error;
+
+      // Create a map of player_id to role
+      const rolesMap: Record<string, string> = {};
+      roles?.forEach((role) => {
+        rolesMap[role.player_id] = role.role;
+      });
+      setTeamRoles(rolesMap);
+    } catch (error) {
+      console.error("Error fetching team roles:", error);
+    }
+  };
+
+  const fetchDisciplines = async () => {
+    try {
+      const { data: disciplineData, error } = await supabase
+        .from("player_disciplines")
+        .select("player_id, games_remaining, reason")
+        .eq("season_id", team.season_id)
+        .eq("is_active", true)
+        .gt("games_remaining", 0);
+
+      if (error) throw error;
+
+      // Create a map of player_id to discipline info
+      const disciplinesMap: Record<string, { games_remaining: number; reason: string }> = {};
+      disciplineData?.forEach((disc) => {
+        disciplinesMap[disc.player_id] = {
+          games_remaining: disc.games_remaining,
+          reason: disc.reason,
+        };
+      });
+      setDisciplines(disciplinesMap);
+    } catch (error) {
+      console.error("Error fetching disciplines:", error);
+    }
+  };
 
   const handleAddPlayer = async () => {
     if (!selectedPlayer) return;
@@ -191,10 +248,33 @@ export function RosterManagement({
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold text-lg">{member.player.psn_id}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`font-semibold text-lg ${disciplines[member.player_id] ? "line-through text-muted-foreground" : ""}`}>
+                          {member.player.psn_id}
+                        </p>
+                        {teamRoles[member.player_id] === "captain" && (
+                          <Badge variant="default" className="flex items-center gap-1">
+                            <Crown className="h-3 w-3" />
+                            주장
+                          </Badge>
+                        )}
+                        {teamRoles[member.player_id] === "vice_captain" && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <UserCog className="h-3 w-3" />
+                            부주장
+                          </Badge>
+                        )}
+                        {disciplines[member.player_id] && (
+                          <Badge variant="destructive" className="flex items-center gap-1">
+                            <Ban className="h-3 w-3" />
+                            징계 중 ({disciplines[member.player_id].games_remaining}경기)
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {member.position && `${member.position} • `}
                         {member.jersey_number && `#${member.jersey_number}`}
+                        {disciplines[member.player_id] && ` • ${disciplines[member.player_id].reason}`}
                       </p>
                     </div>
                   </div>

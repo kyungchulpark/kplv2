@@ -301,21 +301,23 @@ function TeamStatsSection({
                   <div className="flex items-center gap-1 justify-center">
                     <Input
                       type="number"
-                      value={playerStat.fgm}
+                      value={playerStat.fgm === 0 ? "" : playerStat.fgm}
                       onChange={(e) =>
                         onStatChange(index, "fgm", e.target.value)
                       }
                       className="w-16 text-center"
+                      placeholder="0"
                       min={0}
                     />
                     <span className="text-muted-foreground">/</span>
                     <Input
                       type="number"
-                      value={playerStat.fga}
+                      value={playerStat.fga === 0 ? "" : playerStat.fga}
                       onChange={(e) =>
                         onStatChange(index, "fga", e.target.value)
                       }
                       className="w-16 text-center"
+                      placeholder="0"
                       min={0}
                     />
                   </div>
@@ -324,21 +326,23 @@ function TeamStatsSection({
                   <div className="flex items-center gap-1 justify-center">
                     <Input
                       type="number"
-                      value={playerStat.three_pm}
+                      value={playerStat.three_pm === 0 ? "" : playerStat.three_pm}
                       onChange={(e) =>
                         onStatChange(index, "three_pm", e.target.value)
                       }
                       className="w-16 text-center"
+                      placeholder="0"
                       min={0}
                     />
                     <span className="text-muted-foreground">/</span>
                     <Input
                       type="number"
-                      value={playerStat.three_pa}
+                      value={playerStat.three_pa === 0 ? "" : playerStat.three_pa}
                       onChange={(e) =>
                         onStatChange(index, "three_pa", e.target.value)
                       }
                       className="w-16 text-center"
+                      placeholder="0"
                       min={0}
                     />
                   </div>
@@ -347,21 +351,23 @@ function TeamStatsSection({
                   <div className="flex items-center gap-1 justify-center">
                     <Input
                       type="number"
-                      value={playerStat.ftm}
+                      value={playerStat.ftm === 0 ? "" : playerStat.ftm}
                       onChange={(e) =>
                         onStatChange(index, "ftm", e.target.value)
                       }
                       className="w-16 text-center"
+                      placeholder="0"
                       min={0}
                     />
                     <span className="text-muted-foreground">/</span>
                     <Input
                       type="number"
-                      value={playerStat.fta}
+                      value={playerStat.fta === 0 ? "" : playerStat.fta}
                       onChange={(e) =>
                         onStatChange(index, "fta", e.target.value)
                       }
                       className="w-16 text-center"
+                      placeholder="0"
                       min={0}
                     />
                   </div>
@@ -481,9 +487,10 @@ function StatInput({
     <td className="p-2">
       <Input
         type="number"
-        value={value}
+        value={value === 0 ? "" : value}
         onChange={(e) => onChange(e.target.value)}
         className="w-20 text-center"
+        placeholder="0"
         min={0}
       />
     </td>
@@ -505,9 +512,10 @@ function MobileStatInput({
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Input
         type="number"
-        value={value}
+        value={value === 0 ? "" : value}
         onChange={(e) => onChange(e.target.value)}
         className="text-center"
+        placeholder="0"
         min={0}
       />
     </div>
@@ -533,19 +541,19 @@ function MobileShotInput({
       <Label className="text-xs text-muted-foreground w-8">{label}</Label>
       <Input
         type="number"
-        value={made}
+        value={made === 0 ? "" : made}
         onChange={(e) => onMadeChange(e.target.value)}
         className="flex-1 text-center"
-        placeholder="Made"
+        placeholder="0"
         min={0}
       />
       <span className="text-muted-foreground">/</span>
       <Input
         type="number"
-        value={attempted}
+        value={attempted === 0 ? "" : attempted}
         onChange={(e) => onAttemptedChange(e.target.value)}
         className="flex-1 text-center"
-        placeholder="Att"
+        placeholder="0"
         min={0}
       />
     </div>

@@ -6,6 +6,18 @@ interface PermissionResult {
   reason: string;
 }
 
+interface TeamRole {
+  id: string;
+  team_id: string;
+  player_id: string;
+  season_id: string;
+  role: string;
+  granted_by: string | null;
+  granted_at: string;
+  revoked_at: string | null;
+  is_active: boolean;
+}
+
 /**
  * Check if current user can upload results for this match
  *
@@ -145,4 +157,88 @@ export async function getUserUploadableMatches(
     .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`);
 
   return matches ? matches.map((m) => m.id) : [];
+}
+
+/**
+ * Check if a user is a team manager (captain or vice captain)
+ *
+ * @param userId - User ID to check
+ * @param teamId - Team ID
+ * @param seasonId - Season ID
+ * @returns True if user is an active captain or vice captain
+ */
+export async function isTeamManager(
+  userId: string,
+  teamId: string,
+  seasonId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data: role } = await supabase
+    .from("team_roles")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("player_id", userId)
+    .eq("season_id", seasonId)
+    .in("role", ["captain", "vice_captain"])
+    .eq("is_active", true)
+    .maybeSingle();
+
+  return !!role;
+}
+
+/**
+ * Check if a user is a team captain
+ *
+ * @param userId - User ID to check
+ * @param teamId - Team ID
+ * @param seasonId - Season ID
+ * @returns True if user is an active captain
+ */
+export async function isTeamCaptain(
+  userId: string,
+  teamId: string,
+  seasonId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data: role } = await supabase
+    .from("team_roles")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("player_id", userId)
+    .eq("season_id", seasonId)
+    .eq("role", "captain")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  return !!role;
+}
+
+/**
+ * Get all active managers (captains and vice captains) for a team
+ *
+ * @param teamId - Team ID
+ * @param seasonId - Season ID
+ * @returns Array of team roles with player information
+ */
+export async function getTeamManagers(
+  teamId: string,
+  seasonId: string
+): Promise<Array<TeamRole & { player: { psn_id: string; email: string } }>> {
+  const supabase = await createClient();
+
+  const { data: managers } = await supabase
+    .from("team_roles")
+    .select(`
+      *,
+      player:profiles!team_roles_player_id_fkey(psn_id, email)
+    `)
+    .eq("team_id", teamId)
+    .eq("season_id", seasonId)
+    .in("role", ["captain", "vice_captain"])
+    .eq("is_active", true)
+    .order("role", { ascending: true }); // captain first, then vice_captain
+
+  return managers || [];
 }

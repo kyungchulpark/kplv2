@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import {
+  resolveChannelId,
+  checkChannelLiveStatus,
+} from "@/lib/youtube-rss-parser";
 
 interface LiveStatusRequest {
   channelUrls: string[];
@@ -9,131 +14,121 @@ interface LiveStatusResponse {
     isLive: boolean;
     videoId?: string;
     title?: string;
+    thumbnailUrl?: string;
   };
 }
 
-function extractChannelInfo(url: string): { type: 'channelId' | 'handle' | 'custom' | 'user'; value: string } | null {
-  try {
-    // Channel ID format: youtube.com/channel/UC...
-    const channelIdMatch = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
-    if (channelIdMatch) {
-      return { type: 'channelId', value: channelIdMatch[1] };
-    }
-
-    // Handle format: youtube.com/@...
-    const handleMatch = url.match(/youtube\.com\/@([a-zA-Z0-9_-]+)/);
-    if (handleMatch) {
-      return { type: 'handle', value: handleMatch[1] };
-    }
-
-    // Custom URL format: youtube.com/c/...
-    const customMatch = url.match(/youtube\.com\/c\/([a-zA-Z0-9_-]+)/);
-    if (customMatch) {
-      return { type: 'custom', value: customMatch[1] };
-    }
-
-    // Legacy user format: youtube.com/user/...
-    const userMatch = url.match(/youtube\.com\/user\/([a-zA-Z0-9_-]+)/);
-    if (userMatch) {
-      return { type: 'user', value: userMatch[1] };
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
+interface CachedChannel {
+  id: string;
+  profile_id: string;
+  youtube_url: string;
+  channel_id: string;
+  channel_title: string | null;
+  last_resolved_at: string;
+  last_checked_at: string | null;
+  last_live_status: boolean;
+  last_live_video_id: string | null;
 }
 
-async function checkChannelLiveStatus(channelId: string, apiKey: string) {
+/**
+ * Gets or resolves a channel ID from the cache
+ * If not cached or cache is old (>7 days), resolves and caches it
+ */
+async function getOrResolveChannelId(
+  youtubeUrl: string,
+  apiKey: string,
+  supabase: any
+): Promise<string | null> {
   try {
-    // First, get the channel's uploads playlist or live broadcasts
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
+    // Try to get from cache first
+    const { data: cached, error: cacheError } = await supabase
+      .from("youtube_channel_cache")
+      .select("*")
+      .eq("youtube_url", youtubeUrl)
+      .single();
 
-    console.log(`[YouTube API] Checking live status for channel: ${channelId}`);
-    const response = await fetch(searchUrl);
+    if (!cacheError && cached) {
+      const cacheAge = Date.now() - new Date(cached.last_resolved_at).getTime();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[YouTube API] Error ${response.status}: ${errorText}`);
-      return { isLive: false };
-    }
-
-    const data = await response.json();
-    console.log(`[YouTube API] Response for ${channelId}:`, JSON.stringify(data, null, 2));
-
-    if (data.items && data.items.length > 0) {
-      const liveVideo = data.items[0];
-      console.log(`[YouTube API] Live video found: ${liveVideo.snippet.title} (${liveVideo.id.videoId})`);
-      return {
-        isLive: true,
-        videoId: liveVideo.id.videoId,
-        title: liveVideo.snippet.title,
-      };
-    }
-
-    console.log(`[YouTube API] No live videos for channel ${channelId}`);
-    return { isLive: false };
-  } catch (error) {
-    console.error("[YouTube API] Error checking live status:", error);
-    return { isLive: false };
-  }
-}
-
-async function resolveChannelId(handle: string, apiKey: string): Promise<string | null> {
-  try {
-    // Method 1: Try forHandle parameter (newer API)
-    const handleUrl = `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
-
-    console.log(`[YouTube API] Resolving handle with forHandle: ${handle}`);
-    const handleResponse = await fetch(handleUrl);
-
-    if (handleResponse.ok) {
-      const handleData = await handleResponse.json();
-      console.log(`[YouTube API] forHandle response:`, JSON.stringify(handleData, null, 2));
-
-      if (handleData.items && handleData.items.length > 0) {
-        const channelId = handleData.items[0].id;
-        console.log(`[YouTube API] Resolved @${handle} to channel ID via forHandle: ${channelId}`);
-        return channelId;
+      // If cache is fresh (< 7 days), use it
+      if (cacheAge < sevenDays) {
+        console.log(`[YouTube Cache] Using cached channel ID for ${youtubeUrl}: ${cached.channel_id}`);
+        return cached.channel_id;
       }
-    } else {
-      console.log(`[YouTube API] forHandle failed with status ${handleResponse.status}, trying search fallback`);
+
+      console.log(`[YouTube Cache] Cache expired for ${youtubeUrl}, re-resolving...`);
     }
 
-    // Method 2: Fallback to search API
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent('@' + handle)}&type=channel&maxResults=1&key=${apiKey}`;
+    // Resolve the channel ID
+    console.log(`[YouTube API] Resolving channel ID for: ${youtubeUrl}`);
+    const channelId = await resolveChannelId(youtubeUrl, apiKey);
 
-    console.log(`[YouTube API] Trying search API for: @${handle}`);
-    const searchResponse = await fetch(searchUrl);
-
-    if (!searchResponse.ok) {
-      const errorText = await searchResponse.text();
-      console.error(`[YouTube API] Search API error: ${errorText}`);
+    if (!channelId) {
+      console.error(`[YouTube API] Failed to resolve channel ID for: ${youtubeUrl}`);
       return null;
     }
 
-    const searchData = await searchResponse.json();
-    console.log(`[YouTube API] Search response:`, JSON.stringify(searchData, null, 2));
+    console.log(`[YouTube API] Resolved ${youtubeUrl} to channel ID: ${channelId}`);
 
-    if (searchData.items && searchData.items.length > 0) {
-      const channelId = searchData.items[0].snippet.channelId || searchData.items[0].id?.channelId;
-      if (channelId) {
-        console.log(`[YouTube API] Resolved @${handle} to channel ID via search: ${channelId}`);
-        return channelId;
-      }
+    // Update or insert into cache
+    const { error: upsertError } = await supabase
+      .from("youtube_channel_cache")
+      .upsert(
+        {
+          youtube_url: youtubeUrl,
+          channel_id: channelId,
+          last_resolved_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "youtube_url",
+          ignoreDuplicates: false,
+        }
+      );
+
+    if (upsertError) {
+      console.error("[YouTube Cache] Error upserting cache:", upsertError);
+    } else {
+      console.log(`[YouTube Cache] Cached channel ID: ${channelId} for ${youtubeUrl}`);
     }
 
-    console.log(`[YouTube API] No channel found for handle: ${handle}`);
-    return null;
+    return channelId;
   } catch (error) {
-    console.error(`[YouTube API] Error resolving handle ${handle}:`, error);
+    console.error("[YouTube Cache] Error in getOrResolveChannelId:", error);
     return null;
+  }
+}
+
+/**
+ * Updates the cache with live status information
+ */
+async function updateLiveStatusCache(
+  channelId: string,
+  isLive: boolean,
+  videoId: string | undefined,
+  supabase: any
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("youtube_channel_cache")
+      .update({
+        last_checked_at: new Date().toISOString(),
+        last_live_status: isLive,
+        last_live_video_id: videoId || null,
+      })
+      .eq("channel_id", channelId);
+
+    if (error) {
+      console.error("[YouTube Cache] Error updating live status:", error);
+    }
+  } catch (error) {
+    console.error("[YouTube Cache] Error in updateLiveStatusCache:", error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[YouTube API] ========== NEW REQUEST ==========");
+    console.log("[YouTube API] ========== NEW REQUEST (RSS MODE) ==========");
     const apiKey = process.env.YOUTUBE_API_KEY;
 
     if (!apiKey) {
@@ -144,8 +139,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[YouTube API] API key found, length:", apiKey.length);
-
+    const supabase = await createClient();
     const body: LiveStatusRequest = await request.json();
     const { channelUrls } = body;
 
@@ -157,53 +151,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[YouTube API] Processing ${channelUrls.length} channels`);
+    console.log(`[YouTube API] Processing ${channelUrls.length} channels using RSS + API hybrid`);
     const results: LiveStatusResponse = {};
 
-    // Check each channel's live status
+    // Process each channel
     for (const url of channelUrls) {
       console.log(`[YouTube API] Processing URL: ${url}`);
-      const channelInfo = extractChannelInfo(url);
 
-      if (!channelInfo) {
-        console.log(`[YouTube API] Could not parse URL: ${url}`);
+      // Get or resolve channel ID (uses cache to minimize API calls)
+      const channelId = await getOrResolveChannelId(url, apiKey, supabase);
+
+      if (!channelId) {
+        console.log(`[YouTube API] Could not resolve channel ID for: ${url}`);
         results[url] = { isLive: false };
         continue;
       }
 
-      console.log(`[YouTube API] Detected ${channelInfo.type}: ${channelInfo.value}`);
+      // Check live status using RSS + minimal API calls
+      console.log(`[YouTube RSS] Checking live status for channel: ${channelId}`);
+      const liveStatus = await checkChannelLiveStatus(
+        channelId,
+        apiKey,
+        3 // Check up to 3 most recent videos
+      );
 
-      let channelId: string | null = null;
+      if (liveStatus) {
+        results[url] = {
+          isLive: liveStatus.isLive,
+          videoId: liveStatus.videoId,
+          title: liveStatus.title,
+          thumbnailUrl: liveStatus.thumbnailUrl,
+        };
 
-      if (channelInfo.type === 'channelId') {
-        // Already have the channel ID
-        channelId = channelInfo.value;
-        console.log(`[YouTube API] Using channel ID: ${channelId}`);
-      } else if (channelInfo.type === 'handle') {
-        // Resolve handle to channel ID
-        console.log(`[YouTube API] Resolving handle: @${channelInfo.value}`);
-        channelId = await resolveChannelId(channelInfo.value, apiKey);
-        if (channelId) {
-          console.log(`[YouTube API] Resolved to channel ID: ${channelId}`);
-        } else {
-          console.log(`[YouTube API] Failed to resolve handle: @${channelInfo.value}`);
-        }
+        console.log(
+          `[YouTube RSS] Channel ${channelId} live status: ${liveStatus.isLive}`,
+          liveStatus.isLive ? `(${liveStatus.videoId})` : ""
+        );
+
+        // Update cache with live status
+        await updateLiveStatusCache(
+          channelId,
+          liveStatus.isLive,
+          liveStatus.videoId,
+          supabase
+        );
       } else {
-        // For custom URLs and legacy user URLs, we need to search
-        console.log(`[YouTube API] Searching for ${channelInfo.type}: ${channelInfo.value}`);
-        // For now, treat as handle
-        channelId = await resolveChannelId(channelInfo.value, apiKey);
-      }
-
-      if (channelId) {
-        results[url] = await checkChannelLiveStatus(channelId, apiKey);
-      } else {
-        console.log(`[YouTube API] No channel ID found for URL: ${url}`);
         results[url] = { isLive: false };
+        await updateLiveStatusCache(channelId, false, undefined, supabase);
       }
     }
 
     console.log("[YouTube API] ========== REQUEST COMPLETE ==========");
+    console.log(`[YouTube API] Quota saved: Using RSS (0 quota) + Videos API (${channelUrls.length * 1-3} units) instead of Search API (${channelUrls.length * 100} units)`);
     return NextResponse.json(results);
   } catch (error: any) {
     console.error("[YouTube API] ========== FATAL ERROR ==========");

@@ -213,13 +213,16 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
               {renderTeamLogo(match.home_team)}
             </Link>
             <div className="space-y-1">
-              <Link
-                href={`/teams/${match.home_team.id}`}
-                className="font-bold text-sm md:text-base hover:underline block truncate max-w-[100px] md:max-w-[150px]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {match.home_team.name}
-              </Link>
+              <div className="flex items-center justify-center gap-1.5">
+                <Link
+                  href={`/teams/${match.home_team.id}`}
+                  className="font-bold text-sm md:text-base hover:underline truncate max-w-[80px] md:max-w-[120px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {match.home_team.name}
+                </Link>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">H</Badge>
+              </div>
               {isFinished && (
                 <div className={cn("text-2xl md:text-3xl font-bold font-mono", homeWin ? "text-primary" : "text-muted-foreground")}>
                   {match.home_score}
@@ -249,13 +252,16 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
               {renderTeamLogo(match.away_team)}
             </Link>
             <div className="space-y-1">
-              <Link
-                href={`/teams/${match.away_team.id}`}
-                className="font-bold text-sm md:text-base hover:underline block truncate max-w-[100px] md:max-w-[150px]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {match.away_team.name}
-              </Link>
+              <div className="flex items-center justify-center gap-1.5">
+                <Link
+                  href={`/teams/${match.away_team.id}`}
+                  className="font-bold text-sm md:text-base hover:underline truncate max-w-[80px] md:max-w-[120px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {match.away_team.name}
+                </Link>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">A</Badge>
+              </div>
               {isFinished && (
                 <div className={cn("text-2xl md:text-3xl font-bold font-mono", awayWin ? "text-primary" : "text-muted-foreground")}>
                   {match.away_score}
