@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,11 +30,7 @@ export function PsnIdHistory({ userId, currentPsnId }: PsnIdHistoryProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [oldPsnId, setOldPsnId] = useState("");
 
-  useEffect(() => {
-    loadHistory();
-  }, [userId]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -50,7 +46,11 @@ export function PsnIdHistory({ userId, currentPsnId }: PsnIdHistoryProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory, currentPsnId]);
 
   const handleAddHistory = async (e: React.FormEvent) => {
     e.preventDefault();
