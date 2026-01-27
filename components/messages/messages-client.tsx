@@ -21,8 +21,14 @@ export default function MessagesClient({
   currentUserId,
   availablePlayers,
 }: MessagesClientProps) {
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<{ id: string; psn_id: string; avatar_url: string | null } | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
+    null
+  );
+  const [selectedUser, setSelectedUser] = useState<{
+    id: string;
+    psn_id: string;
+    avatar_url: string | null;
+  } | null>(null);
 
   const handleSelectConversation = (
     conversationId: string,
@@ -33,9 +39,9 @@ export default function MessagesClient({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full min-h-0">
       {/* Conversation List (Left) */}
-      <Card className="col-span-1 overflow-hidden flex flex-col">
+      <Card className="col-span-1 overflow-hidden flex flex-col min-h-0">
         <ConversationList
           currentUserId={currentUserId}
           availablePlayers={availablePlayers}
@@ -45,7 +51,7 @@ export default function MessagesClient({
       </Card>
 
       {/* Chat Window (Right) */}
-      <Card className="col-span-1 md:col-span-2 overflow-hidden flex flex-col">
+      <Card className="col-span-1 md:col-span-2 overflow-hidden flex flex-col min-h-0">
         {selectedConversationId && selectedUser ? (
           <ChatWindow
             conversationId={selectedConversationId}

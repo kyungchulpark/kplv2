@@ -52,6 +52,11 @@ export default async function AdminLayout({
       icon: "teamManagement",
     },
     {
+      href: "/admin/team-roles",
+      label: "Team Roles",
+      icon: "teamRoles",
+    },
+    {
       href: "/admin/conference-draw",
       label: "Conference Draw",
       icon: "conferenceDraw",
@@ -72,9 +77,19 @@ export default async function AdminLayout({
       icon: "uploadSchedule",
     },
     {
+      href: "/admin/disciplines",
+      label: "Disciplines",
+      icon: "disciplines",
+    },
+    {
       href: "/admin/history",
       label: "History",
       icon: "history",
+    },
+    {
+      href: "/admin/notices",
+      label: "Broadcast Notices",
+      icon: "broadcast",
     },
     {
       href: "/admin/users",

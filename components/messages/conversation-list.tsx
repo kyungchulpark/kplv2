@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { MessageSquarePlus } from "lucide-react";
+import { MessageSquarePlus, X } from "lucide-react";
 import StartConversationDialog from "./start-conversation-dialog";
-import { subscribeToConversations, unsubscribeChannel } from "@/lib/realtime-helpers";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import {
+  subscribeToConversations,
+  unsubscribeChannel,
+} from "@/lib/realtime-helpers";
 
 interface Conversation {
   id: string;
@@ -45,6 +46,70 @@ interface ConversationListProps {
   ) => void;
 }
 
+const HIDDEN_STORAGE_KEY = "kpl.hiddenConversations.v1";
+
+function readHiddenMeta(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(HIDDEN_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.warn("[ConversationList] Failed to read hidden meta:", error);
+    return {};
+  }
+}
+
+function writeHiddenMeta(meta: Record<string, string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(meta));
+  } catch (error) {
+    console.warn("[ConversationList] Failed to write hidden meta:", error);
+  }
+}
+
+function hasMetaChanged(
+  prev: Record<string, string>,
+  next: Record<string, string>
+) {
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+  if (prevKeys.length !== nextKeys.length) return true;
+  return prevKeys.some((key) => prev[key] !== next[key]);
+}
+
+function sortConversations(list: Conversation[]) {
+  return [...list].sort((a, b) => {
+    const aTime = a.lastMessageAt || a.createdAt;
+    const bTime = b.lastMessageAt || b.createdAt;
+    return new Date(bTime).getTime() - new Date(aTime).getTime();
+  });
+}
+
+function applyHiddenFilter(
+  list: Conversation[],
+  meta: Record<string, string>
+): { visible: Conversation[]; nextMeta: Record<string, string> } {
+  const nextMeta = { ...meta };
+  const visible = list.filter((conv) => {
+    const hiddenAt = meta[conv.id];
+    if (!hiddenAt) return true;
+
+    const latestActivityAt = conv.lastMessageAt || conv.createdAt;
+    if (latestActivityAt && new Date(latestActivityAt) > new Date(hiddenAt)) {
+      // Auto-unhide if a new message arrives after the user hid it.
+      delete nextMeta[conv.id];
+      return true;
+    }
+
+    return false;
+  });
+
+  return { visible, nextMeta };
+}
+
 export default function ConversationList({
   currentUserId,
   availablePlayers,
@@ -52,11 +117,42 @@ export default function ConversationList({
   onSelectConversation,
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [hiddenMeta, setHiddenMeta] = useState<Record<string, string>>({});
+  const [hiddenMetaReady, setHiddenMetaReady] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
+    const stored = readHiddenMeta();
+    setHiddenMeta(stored);
+    setHiddenMetaReady(true);
+  }, []);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const response = await fetch("/api/messages/conversations");
+      if (!response.ok) throw new Error("Failed to load conversations");
+
+      const data = await response.json();
+      const rawConversations = (data.conversations || []) as Conversation[];
+      const sorted = sortConversations(rawConversations);
+      const { visible, nextMeta } = applyHiddenFilter(sorted, hiddenMeta);
+
+      if (hasMetaChanged(hiddenMeta, nextMeta)) {
+        setHiddenMeta(nextMeta);
+        writeHiddenMeta(nextMeta);
+      }
+
+      setConversations(visible);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [hiddenMeta]);
+
+  useEffect(() => {
+    if (!hiddenMetaReady) return;
     loadConversations();
 
     // Subscribe to real-time updates
@@ -68,21 +164,22 @@ export default function ConversationList({
     return () => {
       unsubscribeChannel(channel);
     };
-  }, [currentUserId]);
+  }, [currentUserId, hiddenMetaReady, loadConversations]);
 
-  async function loadConversations() {
-    try {
-      const response = await fetch("/api/messages/conversations");
-      if (!response.ok) throw new Error("Failed to load conversations");
+  const hideConversation = (conversationId: string) => {
+    const hiddenAt = new Date().toISOString();
+    const nextMeta = { ...hiddenMeta, [conversationId]: hiddenAt };
+    setHiddenMeta(nextMeta);
+    writeHiddenMeta(nextMeta);
 
-      const data = await response.json();
-      setConversations(data.conversations || []);
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+    setConversations((prev) => {
+      const remaining = prev.filter((conv) => conv.id !== conversationId);
+      if (selectedConversationId === conversationId && remaining[0]) {
+        onSelectConversation(remaining[0].id, remaining[0].otherUser);
+      }
+      return remaining;
+    });
+  };
 
   const handleStartConversation = async (userId: string) => {
     try {
@@ -136,8 +233,8 @@ export default function ConversationList({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0 flex-1">
-        <div className="h-full overflow-y-auto">
+      <CardContent className="p-0 flex-1 min-h-0">
+        <div className="h-full min-h-0 overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-muted-foreground">
               로딩 중...
@@ -149,14 +246,24 @@ export default function ConversationList({
           ) : (
             <div className="divide-y">
               {conversations.map((conv) => (
-                <button
+                <div
                   key={conv.id}
                   onClick={() =>
                     onSelectConversation(conv.id, conv.otherUser)
                   }
-                  className={`w-full p-4 hover:bg-accent transition-colors text-left ${
-                    selectedConversationId === conv.id ? "bg-accent" : ""
-                  }`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectConversation(conv.id, conv.otherUser);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className={`w-full p-4 text-left transition-colors border-l-2 border-transparent hover:bg-muted/50 ${
+                    selectedConversationId === conv.id
+                      ? "bg-primary/10 border-l-primary"
+                      : ""
+                  } cursor-pointer`}
                 >
                   <div className="flex items-start gap-3">
                     <Avatar>
@@ -170,11 +277,26 @@ export default function ConversationList({
                         <span className="font-semibold truncate">
                           {conv.otherUser.psn_id}
                         </span>
-                        {conv.lastMessageAt && (
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatTime(conv.lastMessageAt)}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {conv.lastMessageAt && (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {formatTime(conv.lastMessageAt)}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            aria-label="Hide conversation"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              hideConversation(conv.id);
+                            }}
+                            className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Hide conversation (UI only)"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1">
                         <p className="text-sm text-muted-foreground truncate">
@@ -192,7 +314,7 @@ export default function ConversationList({
                       </div>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,35 +46,21 @@ export default function ChatWindow({
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadMessages();
-    markAsRead();
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehavior = "auto") => {
+      const el = containerRef.current;
+      if (!el) return;
+      // Scroll the inner container instead of the whole page.
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior });
+      });
+    },
+    []
+  );
 
-    // Subscribe to real-time messages
-    const channel = subscribeToConversation(conversationId, (message) => {
-      console.log("[ChatWindow] New message received:", message);
-      setMessages((prev) => [...prev, message as any]);
-      scrollToBottom();
-
-      // Mark as read if message is from other user
-      if (message.sender_id !== currentUserId) {
-        markAsRead();
-      }
-    });
-
-    return () => {
-      unsubscribeChannel(channel);
-    };
-  }, [conversationId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  async function loadMessages() {
+  const loadMessages = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/messages/${conversationId}`);
@@ -88,15 +73,40 @@ export default function ChatWindow({
     } finally {
       setLoading(false);
     }
-  }
+  }, [conversationId]);
 
-  async function markAsRead() {
+  const markAsRead = useCallback(async () => {
     try {
       await markConversationAsRead(conversationId, currentUserId);
     } catch (error) {
       console.error("Error marking as read:", error);
     }
-  }
+  }, [conversationId, currentUserId]);
+
+  useEffect(() => {
+    loadMessages();
+    markAsRead();
+
+    // Subscribe to real-time messages
+    const channel = subscribeToConversation(conversationId, (message) => {
+      console.log("[ChatWindow] New message received:", message);
+      setMessages((prev) => [...prev, message as any]);
+      scrollToBottom("smooth");
+
+      // Mark as read if message is from other user
+      if (message.sender_id !== currentUserId) {
+        markAsRead();
+      }
+    });
+
+    return () => {
+      unsubscribeChannel(channel);
+    };
+  }, [conversationId, currentUserId, loadMessages, markAsRead, scrollToBottom]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -122,14 +132,6 @@ export default function ChatWindow({
     }
   }
 
-  function scrollToBottom() {
-    setTimeout(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 100);
-  }
-
   return (
     <>
       {/* Header */}
@@ -148,8 +150,11 @@ export default function ChatWindow({
       </CardHeader>
 
       {/* Messages */}
-      <CardContent className="flex-1 p-4 overflow-hidden">
-        <div className="h-full overflow-y-auto pr-4">
+      <CardContent className="flex-1 min-h-0 p-4 overflow-hidden">
+        <div
+          ref={containerRef}
+          className="h-full min-h-0 overflow-y-auto pr-4"
+        >
           {loading ? (
             <div className="text-center text-muted-foreground">
               메시지 로딩 중...
@@ -167,7 +172,6 @@ export default function ChatWindow({
                   isFromMe={message.sender_id === currentUserId}
                 />
               ))}
-              <div ref={scrollRef} />
             </div>
           )}
         </div>

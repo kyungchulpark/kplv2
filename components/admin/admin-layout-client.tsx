@@ -17,6 +17,9 @@ import {
   Shuffle,
   Award,
   AlertTriangle,
+  Ban,
+  Crown,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,12 +29,15 @@ type IconKey =
   | "teams"
   | "teamRequests"
   | "teamManagement"
+  | "teamRoles"
   | "conferenceDraw"
   | "matches"
   | "uploadSchedule"
+  | "disciplines"
   | "users"
   | "playoffs"
-  | "history";
+  | "history"
+  | "broadcast";
 
 type NavItem = {
   href: string;
@@ -59,12 +65,15 @@ export function AdminLayoutClient({
     teams: Users,
     teamRequests: UserCheck,
     teamManagement: AlertTriangle,
+    teamRoles: Crown,
     conferenceDraw: Shuffle,
     matches: Calendar,
     uploadSchedule: FileSpreadsheet,
+    disciplines: Ban,
     users: UserCog,
     playoffs: Trophy,
     history: Award,
+    broadcast: Megaphone,
   };
 
   return (
