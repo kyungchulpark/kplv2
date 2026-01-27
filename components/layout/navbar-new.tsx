@@ -10,6 +10,7 @@ import {
   ExternalLink,
   ChevronDown,
   Shield,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -224,6 +225,13 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                     </Link>
                   )}
 
+                  {/* Messages */}
+                  <Link href="/messages">
+                    <Button variant="ghost" size="icon" className="relative">
+                      <MessageCircle className="h-5 w-5" />
+                    </Button>
+                  </Link>
+
                   {/* Profile */}
                   <Link href="/profile">
                     <Button
@@ -264,6 +272,13 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                       </Button>
                     </Link>
                   )}
+
+                  {/* Messages */}
+                  <Link href="/messages">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MessageCircle className="h-5 w-5" />
+                    </Button>
+                  </Link>
 
                   {/* Profile */}
                   <Link href="/profile">
@@ -463,6 +478,15 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                     </Button>
                   </Link>
                 )}
+
+                {/* Messages */}
+                <Link href="/messages" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full border-slate-200 text-slate-700 hover:bg-slate-50">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Messages
+                  </Button>
+                </Link>
+
                 <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                   <Button
                     variant="default"
