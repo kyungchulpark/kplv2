@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Menu,
   X,
@@ -21,6 +21,11 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/utils/supabase/client";
+import {
+  subscribeToUnreadCounts,
+  unsubscribeChannel,
+} from "@/lib/realtime-helpers";
 
 interface NavbarProps {
   user: {
@@ -41,10 +46,43 @@ interface NavbarProps {
 
 export function Navbar({ user, userTeam }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [totalUnread, setTotalUnread] = useState(0);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+
+  const loadTotalUnread = useCallback(async () => {
+    if (!user?.id) {
+      setTotalUnread(0);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("dm_unread_counts")
+        .select("unread_count")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      const total =
+        data?.reduce((sum, row) => sum + (row.unread_count || 0), 0) || 0;
+      setTotalUnread(total);
+    } catch (error) {
+      console.error("[Navbar] Failed to load unread counts:", error);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadTotalUnread();
+    const channel = subscribeToUnreadCounts(user.id, setTotalUnread);
+    return () => {
+      unsubscribeChannel(channel);
+    };
+  }, [user?.id, loadTotalUnread]);
 
   const userRole = (user?.profile as any)?.role;
   const isOperator = user && ["admin", "staff"].includes(userRole);
@@ -229,6 +267,11 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                   <Link href="/messages">
                     <Button variant="ghost" size="icon" className="relative">
                       <MessageCircle className="h-5 w-5" />
+                      {totalUnread > 0 && (
+                        <span className="absolute -right-1 -top-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                          New
+                        </span>
+                      )}
                     </Button>
                   </Link>
 
@@ -277,6 +320,11 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                   <Link href="/messages">
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                       <MessageCircle className="h-5 w-5" />
+                      {totalUnread > 0 && (
+                        <span className="absolute -right-1 -top-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                          New
+                        </span>
+                      )}
                     </Button>
                   </Link>
 

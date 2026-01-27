@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -80,11 +80,36 @@ function hasMetaChanged(
   return prevKeys.some((key) => prev[key] !== next[key]);
 }
 
+function toMs(value: string | null | undefined) {
+  return value ? new Date(value).getTime() : 0;
+}
+
+function getLastActivityAt(conv: Conversation) {
+  const lastMessageAtMs = toMs(conv.lastMessageAt);
+  const lastSentAtMs = toMs(conv.lastMessage?.sentAt);
+  const createdAtMs = toMs(conv.createdAt);
+  const latestMs = Math.max(lastMessageAtMs, lastSentAtMs, createdAtMs);
+
+  if (latestMs === lastSentAtMs && conv.lastMessage?.sentAt) {
+    return conv.lastMessage.sentAt;
+  }
+  if (latestMs === lastMessageAtMs && conv.lastMessageAt) {
+    return conv.lastMessageAt;
+  }
+  return conv.createdAt;
+}
+
 function sortConversations(list: Conversation[]) {
   return [...list].sort((a, b) => {
-    const aTime = a.lastMessageAt || a.createdAt;
-    const bTime = b.lastMessageAt || b.createdAt;
-    return new Date(bTime).getTime() - new Date(aTime).getTime();
+    const aUnread = a.unreadCount > 0 ? 1 : 0;
+    const bUnread = b.unreadCount > 0 ? 1 : 0;
+    if (aUnread !== bUnread) {
+      return bUnread - aUnread;
+    }
+    return (
+      new Date(getLastActivityAt(b)).getTime() -
+      new Date(getLastActivityAt(a)).getTime()
+    );
   });
 }
 
@@ -97,7 +122,7 @@ function applyHiddenFilter(
     const hiddenAt = meta[conv.id];
     if (!hiddenAt) return true;
 
-    const latestActivityAt = conv.lastMessageAt || conv.createdAt;
+    const latestActivityAt = getLastActivityAt(conv);
     if (latestActivityAt && new Date(latestActivityAt) > new Date(hiddenAt)) {
       // Auto-unhide if a new message arrives after the user hid it.
       delete nextMeta[conv.id];
@@ -121,6 +146,8 @@ export default function ConversationList({
   const [hiddenMetaReady, setHiddenMetaReady] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const loadSeqRef = useRef(0);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     const stored = readHiddenMeta();
@@ -129,14 +156,24 @@ export default function ConversationList({
   }, []);
 
   const loadConversations = useCallback(async () => {
+    const requestId = ++loadSeqRef.current;
+    if (initialLoadRef.current) {
+      setLoading(true);
+    }
     try {
-      const response = await fetch("/api/messages/conversations");
+      const response = await fetch("/api/messages/conversations", {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("Failed to load conversations");
 
       const data = await response.json();
       const rawConversations = (data.conversations || []) as Conversation[];
       const sorted = sortConversations(rawConversations);
       const { visible, nextMeta } = applyHiddenFilter(sorted, hiddenMeta);
+
+      if (requestId !== loadSeqRef.current) {
+        return;
+      }
 
       if (hasMetaChanged(hiddenMeta, nextMeta)) {
         setHiddenMeta(nextMeta);
@@ -147,7 +184,10 @@ export default function ConversationList({
     } catch (error) {
       console.error("Error loading conversations:", error);
     } finally {
-      setLoading(false);
+      if (requestId === loadSeqRef.current && initialLoadRef.current) {
+        initialLoadRef.current = false;
+        setLoading(false);
+      }
     }
   }, [hiddenMeta]);
 
@@ -182,6 +222,8 @@ export default function ConversationList({
   };
 
   const handleStartConversation = async (userId: string) => {
+    // Close immediately to avoid the "double select" feeling on slow networks.
+    setDialogOpen(false);
     try {
       const response = await fetch("/api/messages/conversations", {
         method: "POST",
@@ -192,11 +234,12 @@ export default function ConversationList({
       if (!response.ok) throw new Error("Failed to create conversation");
 
       const data = await response.json();
-      setDialogOpen(false);
       onSelectConversation(data.conversation.id, data.conversation.otherUser);
       await loadConversations();
     } catch (error) {
       console.error("Error starting conversation:", error);
+      // Re-open so the user can try again.
+      setDialogOpen(true);
     }
   };
 
@@ -278,11 +321,9 @@ export default function ConversationList({
                           {conv.otherUser.psn_id}
                         </span>
                         <div className="flex items-center gap-1">
-                          {conv.lastMessageAt && (
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {formatTime(conv.lastMessageAt)}
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatTime(getLastActivityAt(conv))}
+                          </span>
                           <button
                             type="button"
                             aria-label="Hide conversation"

@@ -25,9 +25,37 @@ function normalizePsnId(value: string) {
   return value.trim().toLowerCase();
 }
 
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
 export default async function StatsPage({ searchParams }: StatsPageProps) {
   const { seasonId } = await searchParams;
   const supabase = await createClient();
+
+  const pagedSelect = async (table: string, select: string, applyFilters?: (query: any) => any) => {
+    const rows: any[] = [];
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const to = from + pageSize - 1;
+      let query = supabase.from(table).select(select).range(from, to);
+      if (applyFilters) {
+        query = applyFilters(query);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const batch = data || [];
+      rows.push(...batch);
+      if (batch.length < pageSize) break;
+      from += pageSize;
+    }
+    return rows;
+  };
 
   // Get seasons for selector and resolve the selected season
   const { data: seasons } = await supabase
@@ -53,24 +81,20 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
     seasons.find((season) => season.id === seasonId) || activeSeason;
 
   // Get finished matches for the selected season
-  const { data: finishedMatches } = await supabase
-    .from("matches")
-    .select("id")
-    .eq("season_id", selectedSeason.id)
-    .eq("status", "finished");
+  const finishedMatches = await pagedSelect(
+    "matches",
+    "id",
+    (query) => query.eq("season_id", selectedSeason.id).eq("status", "finished")
+  );
 
-  const matchIds = (finishedMatches || []).map((match) => match.id);
+  const matchIds = Array.from(new Set(finishedMatches.map((match) => match.id)));
 
   let rows: PlayerStatRow[] = [];
 
   if (matchIds.length > 0) {
     // Build PSN -> profile mapping (current PSN IDs + history)
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, psn_id, avatar_url");
-    const { data: psnHistory } = await supabase
-      .from("psn_id_history")
-      .select("user_id, old_psn_id, new_psn_id");
+    const profiles = await pagedSelect("profiles", "id, psn_id, avatar_url");
+    const psnHistory = await pagedSelect("psn_id_history", "user_id, old_psn_id, new_psn_id");
 
     const profileById = new Map<string, ProfileEntry>();
     const psnToProfile = new Map<string, ProfileEntry>();
@@ -114,72 +138,82 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
     });
 
     // Get current match stats with player/team info
-    const { data: rawStats } = await supabase
-      .from("match_stats")
-      .select(
+    const rawStats: any[] = [];
+    for (const ids of chunkArray(matchIds, 80)) {
+      const { data, error } = await supabase
+        .from("match_stats")
+        .select(
+          `
+          match_id,
+          team_id,
+          player_id,
+          grade,
+          pts,
+          reb,
+          ast,
+          stl,
+          blk,
+          fls,
+          turnovers,
+          fgm,
+          fga,
+          three_pm,
+          three_pa,
+          ftm,
+          fta,
+          player:player_id(
+            psn_id,
+            avatar_url
+          ),
+          team:team_id(
+            name,
+            logo_url
+          )
         `
-        match_id,
-        team_id,
-        player_id,
-        grade,
-        pts,
-        reb,
-        ast,
-        stl,
-        blk,
-        fls,
-        turnovers,
-        fgm,
-        fga,
-        three_pm,
-        three_pa,
-        ftm,
-        fta,
-        player:player_id(
-          psn_id,
-          avatar_url
-        ),
-        team:team_id(
-          name,
-          logo_url
         )
-      `
-      )
-      .in("match_id", matchIds);
+        .in("match_id", ids);
+      if (error) throw error;
+      rawStats.push(...(data || []));
+    }
 
     // Get legacy match stats (old_match_stats -> old_profiles)
-    const { data: legacyStats } = await supabase
-      .from("old_match_stats")
-      .select(
+    const legacyStats: any[] = [];
+    for (const ids of chunkArray(matchIds, 80)) {
+      const { data, error } = await supabase
+        .from("old_match_stats")
+        .select(
+          `
+          match_id,
+          team_id,
+          old_profile_id,
+          grade,
+          pts,
+          reb,
+          ast,
+          stl,
+          blk,
+          fls,
+          turnovers,
+          fgm,
+          fga,
+          three_pm,
+          three_pa,
+          ftm,
+          fta,
+          old_profile:old_profile_id(
+            psn_id,
+            psn_id_normalized
+          ),
+          team:team_id(
+            name,
+            logo_url
+          )
         `
-        match_id,
-        team_id,
-        old_profile_id,
-        grade,
-        pts,
-        reb,
-        ast,
-        stl,
-        blk,
-        fls,
-        turnovers,
-        fgm,
-        fga,
-        three_pm,
-        three_pa,
-        ftm,
-        fta,
-        old_profile:old_profile_id(
-          psn_id,
-          psn_id_normalized
-        ),
-        team:team_id(
-          name,
-          logo_url
         )
-      `
-      )
-      .in("match_id", matchIds);
+        .in("match_id", ids);
+      if (error) throw error;
+      legacyStats.push(...(data || []));
+    }
 
     const aggregated = new Map<string, PlayerStatRow>();
     const teamCounts = new Map<string, Map<string, number>>();

@@ -65,29 +65,36 @@ export function subscribeToConversations(
         event: "*", // INSERT, UPDATE, DELETE
         schema: "public",
         table: "dm_conversations",
+        filter: `user1_id=eq.${userId}`,
       },
       (payload) => {
-        console.log("[Realtime] Conversation updated:", payload);
-        // Check if this conversation involves the current user
-        const conversation = payload.new as any;
-        if (
-          conversation &&
-          (conversation.user1_id === userId || conversation.user2_id === userId)
-        ) {
-          onConversationUpdate();
-        }
+        console.log("[Realtime] Conversation updated (user1):", payload);
+        onConversationUpdate();
       }
     )
     .on(
       "postgres_changes",
       {
-        event: "INSERT",
+        event: "*",
         schema: "public",
-        table: "dm_messages",
+        table: "dm_conversations",
+        filter: `user2_id=eq.${userId}`,
       },
       (payload) => {
-        console.log("[Realtime] New message in any conversation:", payload);
-        // Trigger update when any new message arrives
+        console.log("[Realtime] Conversation updated (user2):", payload);
+        onConversationUpdate();
+      }
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "dm_unread_counts",
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        console.log("[Realtime] Unread counts updated:", payload);
         onConversationUpdate();
       }
     )
