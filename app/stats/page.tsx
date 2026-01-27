@@ -1,43 +1,119 @@
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsTable, PlayerStatRow } from "@/components/stats/stats-table";
+import { SeasonSelector } from "@/components/stats/season-selector";
 
-export default async function StatsPage() {
+interface StatsPageProps {
+  searchParams: Promise<{
+    seasonId?: string;
+  }>;
+}
+
+type ProfileEntry = {
+  id: string;
+  psn_id: string;
+  avatar_url: string | null;
+};
+
+type TeamEntry = {
+  id: string;
+  name: string;
+  logo_url: string | null;
+};
+
+function normalizePsnId(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export default async function StatsPage({ searchParams }: StatsPageProps) {
+  const { seasonId } = await searchParams;
   const supabase = await createClient();
 
-  // Get active season
-  const { data: activeSeason } = await supabase
+  // Get seasons for selector and resolve the selected season
+  const { data: seasons } = await supabase
     .from("seasons")
-    .select("*")
-    .eq("is_active", true)
-    .single();
+    .select("id, name, is_active, start_date")
+    .order("start_date", { ascending: false });
 
-  if (!activeSeason) {
+  if (!seasons || seasons.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
             <CardTitle>Stats</CardTitle>
-            <CardDescription>No active season.</CardDescription>
+            <CardDescription>No seasons available.</CardDescription>
           </CardHeader>
         </Card>
       </div>
     );
   }
 
-  // Get finished matches for active season
+  const activeSeason = seasons.find((season) => season.is_active) || seasons[0];
+  const selectedSeason =
+    seasons.find((season) => season.id === seasonId) || activeSeason;
+
+  // Get finished matches for the selected season
   const { data: finishedMatches } = await supabase
     .from("matches")
     .select("id")
-    .eq("season_id", activeSeason.id)
+    .eq("season_id", selectedSeason.id)
     .eq("status", "finished");
 
-  const matchIds = (finishedMatches || []).map((m) => m.id);
+  const matchIds = (finishedMatches || []).map((match) => match.id);
 
   let rows: PlayerStatRow[] = [];
 
   if (matchIds.length > 0) {
-    // Get raw match stats with player/team info
+    // Build PSN -> profile mapping (current PSN IDs + history)
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, psn_id, avatar_url");
+    const { data: psnHistory } = await supabase
+      .from("psn_id_history")
+      .select("user_id, old_psn_id, new_psn_id");
+
+    const profileById = new Map<string, ProfileEntry>();
+    const psnToProfile = new Map<string, ProfileEntry>();
+
+    (profiles || []).forEach((profile: any) => {
+      const entry: ProfileEntry = {
+        id: profile.id,
+        psn_id: profile.psn_id || "",
+        avatar_url: profile.avatar_url || null,
+      };
+      profileById.set(entry.id, entry);
+      if (entry.psn_id) {
+        psnToProfile.set(normalizePsnId(entry.psn_id), entry);
+      }
+    });
+
+    (psnHistory || []).forEach((history: any) => {
+      const profile = profileById.get(history.user_id);
+      if (!profile) return;
+      if (history.old_psn_id) {
+        psnToProfile.set(normalizePsnId(history.old_psn_id), profile);
+      }
+      if (history.new_psn_id) {
+        psnToProfile.set(normalizePsnId(history.new_psn_id), profile);
+      }
+    });
+
+    // Team info for fallback lookups
+    const { data: teams } = await supabase
+      .from("teams")
+      .select("id, name, logo_url")
+      .eq("season_id", selectedSeason.id);
+
+    const teamInfo = new Map<string, TeamEntry>();
+    (teams || []).forEach((team: any) => {
+      teamInfo.set(team.id, {
+        id: team.id,
+        name: team.name,
+        logo_url: team.logo_url || null,
+      });
+    });
+
+    // Get current match stats with player/team info
     const { data: rawStats } = await supabase
       .from("match_stats")
       .select(
@@ -71,21 +147,75 @@ export default async function StatsPage() {
       )
       .in("match_id", matchIds);
 
+    // Get legacy match stats (old_match_stats -> old_profiles)
+    const { data: legacyStats } = await supabase
+      .from("old_match_stats")
+      .select(
+        `
+        match_id,
+        team_id,
+        old_profile_id,
+        grade,
+        pts,
+        reb,
+        ast,
+        stl,
+        blk,
+        fls,
+        turnovers,
+        fgm,
+        fga,
+        three_pm,
+        three_pa,
+        ftm,
+        fta,
+        old_profile:old_profile_id(
+          psn_id,
+          psn_id_normalized
+        ),
+        team:team_id(
+          name,
+          logo_url
+        )
+      `
+      )
+      .in("match_id", matchIds);
+
     const aggregated = new Map<string, PlayerStatRow>();
+    const teamCounts = new Map<string, Map<string, number>>();
 
-    (rawStats || []).forEach((stat) => {
-      const key = stat.player_id as string;
-      const existing = aggregated.get(key);
+    const bumpTeamCount = (
+      playerId: string,
+      teamId: string | null,
+      teamName?: string | null,
+      teamLogoUrl?: string | null
+    ) => {
+      if (!teamId) return;
+      const counts = teamCounts.get(playerId) || new Map<string, number>();
+      counts.set(teamId, (counts.get(teamId) || 0) + 1);
+      teamCounts.set(playerId, counts);
 
-      const base: PlayerStatRow = existing || {
-        player_id: stat.player_id as string,
-        psn_id: (stat as any).player?.psn_id || "",
-        avatar_url: (stat as any).player?.avatar_url || null,
-        team_id: stat.team_id as string | null,
-        team_name: (stat as any).team?.name || "Unknown",
-        team_logo_url: (stat as any).team?.logo_url || null,
+      if (!teamInfo.has(teamId)) {
+        teamInfo.set(teamId, {
+          id: teamId,
+          name: teamName || "Unknown",
+          logo_url: teamLogoUrl || null,
+        });
+      }
+    };
+
+    const upsertAggregate = (playerId: string, seed: Partial<PlayerStatRow>) => {
+      const existing = aggregated.get(playerId);
+      if (existing) return existing;
+      const row: PlayerStatRow = {
+        player_id: playerId,
+        psn_id: seed.psn_id || "Unknown",
+        avatar_url: seed.avatar_url || null,
+        team_id: seed.team_id ?? null,
+        team_name: seed.team_name || "Unknown",
+        team_logo_url: seed.team_logo_url || null,
         games_played: 0,
-        grade: null,
+        grade: seed.grade ?? null,
         pts: 0,
         reb: 0,
         ast: 0,
@@ -100,25 +230,104 @@ export default async function StatsPage() {
         ftm: 0,
         fta: 0,
       };
+      aggregated.set(playerId, row);
+      return row;
+    };
 
-      aggregated.set(key, {
-        ...base,
-        games_played: base.games_played + 1,
-        grade: (stat as any).grade ?? base.grade,
-        pts: base.pts + (stat as any).pts,
-        reb: base.reb + (stat as any).reb,
-        ast: base.ast + (stat as any).ast,
-        stl: base.stl + (stat as any).stl,
-        blk: base.blk + (stat as any).blk,
-        fls: base.fls + (stat as any).fls,
-        turnovers: base.turnovers + (stat as any).turnovers,
-        fgm: base.fgm + (stat as any).fgm,
-        fga: base.fga + (stat as any).fga,
-        three_pm: base.three_pm + (stat as any).three_pm,
-        three_pa: base.three_pa + (stat as any).three_pa,
-        ftm: base.ftm + (stat as any).ftm,
-        fta: base.fta + (stat as any).fta,
+    (rawStats || []).forEach((stat: any) => {
+      const playerId = stat.player_id as string;
+      const player = stat.player;
+      const team = stat.team;
+
+      bumpTeamCount(playerId, stat.team_id as string | null, team?.name, team?.logo_url);
+
+      const row = upsertAggregate(playerId, {
+        psn_id: player?.psn_id,
+        avatar_url: player?.avatar_url,
+        team_id: stat.team_id as string | null,
+        team_name: team?.name,
+        team_logo_url: team?.logo_url,
+        grade: stat.grade,
       });
+
+      row.games_played += 1;
+      row.grade = stat.grade ?? row.grade;
+      row.pts += stat.pts ?? 0;
+      row.reb += stat.reb ?? 0;
+      row.ast += stat.ast ?? 0;
+      row.stl += stat.stl ?? 0;
+      row.blk += stat.blk ?? 0;
+      row.fls += stat.fls ?? 0;
+      row.turnovers += stat.turnovers ?? 0;
+      row.fgm += stat.fgm ?? 0;
+      row.fga += stat.fga ?? 0;
+      row.three_pm += stat.three_pm ?? 0;
+      row.three_pa += stat.three_pa ?? 0;
+      row.ftm += stat.ftm ?? 0;
+      row.fta += stat.fta ?? 0;
+    });
+
+    (legacyStats || []).forEach((stat: any) => {
+      const oldProfile = stat.old_profile;
+      if (!oldProfile?.psn_id) return;
+
+      const normalized =
+        oldProfile.psn_id_normalized || normalizePsnId(oldProfile.psn_id);
+      const mappedProfile = psnToProfile.get(normalized);
+
+      const playerId = mappedProfile?.id || `legacy:${stat.old_profile_id}`;
+      const psnId = mappedProfile?.psn_id || oldProfile.psn_id;
+      const avatarUrl = mappedProfile?.avatar_url || null;
+
+      const team = stat.team;
+      bumpTeamCount(playerId, stat.team_id || null, team?.name, team?.logo_url);
+
+      const row = upsertAggregate(playerId, {
+        psn_id: psnId,
+        avatar_url: avatarUrl,
+        team_id: stat.team_id || null,
+        team_name: team?.name,
+        team_logo_url: team?.logo_url,
+        grade: stat.grade,
+      });
+
+      row.games_played += 1;
+      row.grade = stat.grade ?? row.grade;
+      row.pts += stat.pts ?? 0;
+      row.reb += stat.reb ?? 0;
+      row.ast += stat.ast ?? 0;
+      row.stl += stat.stl ?? 0;
+      row.blk += stat.blk ?? 0;
+      row.fls += stat.fls ?? 0;
+      row.turnovers += stat.turnovers ?? 0;
+      row.fgm += stat.fgm ?? 0;
+      row.fga += stat.fga ?? 0;
+      row.three_pm += stat.three_pm ?? 0;
+      row.three_pa += stat.three_pa ?? 0;
+      row.ftm += stat.ftm ?? 0;
+      row.fta += stat.fta ?? 0;
+    });
+
+    // Choose the most common team per player for display
+    aggregated.forEach((row, playerId) => {
+      const counts = teamCounts.get(playerId);
+      if (!counts || counts.size === 0) return;
+
+      let bestTeamId: string | null = null;
+      let bestCount = -1;
+      counts.forEach((count, teamId) => {
+        if (count > bestCount) {
+          bestCount = count;
+          bestTeamId = teamId;
+        }
+      });
+
+      if (bestTeamId) {
+        const info = teamInfo.get(bestTeamId);
+        row.team_id = bestTeamId;
+        row.team_name = info?.name || row.team_name || "Unknown";
+        row.team_logo_url = info?.logo_url ?? row.team_logo_url ?? null;
+      }
     });
 
     rows = Array.from(aggregated.values());
@@ -128,13 +337,24 @@ export default async function StatsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">
-            Stats
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            {activeSeason.name} - Player stats from match results
-          </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold">Stats</h1>
+            <p className="text-xl text-muted-foreground">
+              {selectedSeason.name} - Player stats from match results
+            </p>
+          </div>
+
+          <div className="flex items-center">
+            <SeasonSelector
+              seasons={seasons.map((season) => ({
+                id: season.id,
+                name: season.name,
+                is_active: season.is_active,
+              }))}
+              selectedSeasonId={selectedSeason.id}
+            />
+          </div>
         </div>
 
         <StatsTable rows={rows} />

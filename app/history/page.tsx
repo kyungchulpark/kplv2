@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -62,14 +64,17 @@ export default async function HistoryPage() {
 
   return (
     <div className="container max-w-7xl mx-auto space-y-8 py-8">
-      <div className="space-y-2 text-center">
+      <div className="flex flex-col items-center gap-3 text-center">
         <div className="flex items-center justify-center space-x-3">
           <Trophy className="h-8 w-8 text-yellow-500" />
-          <h1 className="text-3xl font-bold">History</h1>
+          <h1 className="text-3xl font-bold">League History</h1>
         </div>
         <p className="text-muted-foreground">
-          Championship records and season awards
+          League championships and season awards
         </p>
+        <Link href="/history/past-leagues">
+          <Button variant="outline" size="sm">Past League Records</Button>
+        </Link>
       </div>
 
       <div className="space-y-6">

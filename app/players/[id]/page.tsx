@@ -28,6 +28,38 @@ export default async function PlayerProfilePage({ params }: PageProps) {
         notFound();
     }
 
+    // Get PSN ID history for legacy match linking
+    const { data: psnHistory } = await supabase
+        .from("psn_id_history")
+        .select("old_psn_id, new_psn_id")
+        .eq("user_id", id);
+
+    const psnIds = new Set<string>();
+    if (profile.psn_id) {
+        psnIds.add(profile.psn_id);
+    }
+
+    (psnHistory || []).forEach((entry: any) => {
+        if (entry.old_psn_id) psnIds.add(entry.old_psn_id);
+        if (entry.new_psn_id) psnIds.add(entry.new_psn_id);
+    });
+
+    const normalizedPsnIds = Array.from(psnIds)
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0)
+        .map((value) => value.toLowerCase());
+
+    let legacyProfileIds: string[] = [];
+
+    if (normalizedPsnIds.length > 0) {
+        const { data: legacyProfiles } = await supabase
+            .from("old_profiles")
+            .select("id, psn_id_normalized")
+            .in("psn_id_normalized", normalizedPsnIds);
+
+        legacyProfileIds = (legacyProfiles || []).map((profile: any) => profile.id);
+    }
+
     // Get active season
     const { data: activeSeason } = await supabase
         .from("seasons")
@@ -74,7 +106,7 @@ export default async function PlayerProfilePage({ params }: PageProps) {
     }
 
     // Get player stats (all seasons) with season info
-    const { data: stats } = await supabase
+    const { data: matchStats } = await supabase
         .from("match_stats")
         .select(`
       *,
@@ -89,9 +121,47 @@ export default async function PlayerProfilePage({ params }: PageProps) {
         .eq("player_id", id)
         .order("created_at", { ascending: false });
 
+    // Get legacy stats mapped by PSN IDs (old_profiles -> old_match_stats)
+    let legacyStats: any[] = [];
+    if (legacyProfileIds.length > 0) {
+        const { data: legacyData } = await supabase
+            .from("old_match_stats")
+            .select(`
+        id,
+        team_id,
+        pts,
+        reb,
+        ast,
+        stl,
+        blk,
+        fgm,
+        fga,
+        three_pm,
+        three_pa,
+        grade,
+        match:matches!old_match_stats_match_id_fkey(
+          id,
+          match_date,
+          season_id,
+          home_team:teams!matches_home_team_id_fkey(name, id),
+          away_team:teams!matches_away_team_id_fkey(name, id)
+        )
+      `)
+            .in("old_profile_id", legacyProfileIds);
+
+        legacyStats = legacyData || [];
+    }
+
+    const combinedStats = [...(matchStats || []), ...(legacyStats || [])];
+    combinedStats.sort((a: any, b: any) => {
+        const aTime = new Date(a.match?.match_date || 0).getTime();
+        const bTime = new Date(b.match?.match_date || 0).getTime();
+        return bTime - aTime;
+    });
+
     // Calculate averages
-    const totalGames = stats?.length || 0;
-    const averages = stats?.reduce(
+    const totalGames = combinedStats.length || 0;
+    const averages = combinedStats.reduce(
         (acc, curr) => ({
             pts: acc.pts + curr.pts,
             reb: acc.reb + curr.reb,
@@ -173,7 +243,7 @@ export default async function PlayerProfilePage({ params }: PageProps) {
                 {/* Detailed Stats with Season Filter */}
                 <PlayerStatsBySeason
                     seasons={allSeasons || []}
-                    stats={stats as any || []}
+                    stats={combinedStats as any || []}
                     teamId={team?.id}
                     teamName={team?.name}
                 />

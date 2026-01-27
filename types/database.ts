@@ -268,6 +268,149 @@ export interface Database {
           created_at?: string;
         };
       };
+      psn_id_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          old_psn_id: string;
+          new_psn_id: string;
+          changed_at: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          old_psn_id: string;
+          new_psn_id: string;
+          changed_at?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          old_psn_id?: string;
+          new_psn_id?: string;
+          changed_at?: string | null;
+          created_at?: string | null;
+        };
+      };
+      old_profiles: {
+        Row: {
+          id: string;
+          psn_id: string;
+          psn_id_normalized: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          psn_id: string;
+          psn_id_normalized: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          psn_id?: string;
+          psn_id_normalized?: string;
+          created_at?: string;
+        };
+      };
+      old_match_stats: {
+        Row: {
+          id: string;
+          legacy_row_id: string;
+          match_id: string;
+          team_id: string;
+          old_profile_id: string;
+          grade: string | null;
+          pts: number;
+          reb: number;
+          ast: number;
+          stl: number;
+          blk: number;
+          fls: number;
+          turnovers: number;
+          fgm: number;
+          fga: number;
+          three_pm: number;
+          three_pa: number;
+          ftm: number;
+          fta: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          legacy_row_id: string;
+          match_id: string;
+          team_id: string;
+          old_profile_id: string;
+          grade?: string | null;
+          pts?: number;
+          reb?: number;
+          ast?: number;
+          stl?: number;
+          blk?: number;
+          fls?: number;
+          turnovers?: number;
+          fgm?: number;
+          fga?: number;
+          three_pm?: number;
+          three_pa?: number;
+          ftm?: number;
+          fta?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          legacy_row_id?: string;
+          match_id?: string;
+          team_id?: string;
+          old_profile_id?: string;
+          grade?: string | null;
+          pts?: number;
+          reb?: number;
+          ast?: number;
+          stl?: number;
+          blk?: number;
+          fls?: number;
+          turnovers?: number;
+          fgm?: number;
+          fga?: number;
+          three_pm?: number;
+          three_pa?: number;
+          ftm?: number;
+          fta?: number;
+          created_at?: string;
+        };
+      };
+      old_team_rosters: {
+        Row: {
+          id: string;
+          legacy_row_id: string;
+          season_id: string;
+          team_id: string;
+          old_profile_id: string;
+          position: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          legacy_row_id: string;
+          season_id: string;
+          team_id: string;
+          old_profile_id: string;
+          position?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          legacy_row_id?: string;
+          season_id?: string;
+          team_id?: string;
+          old_profile_id?: string;
+          position?: string | null;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       current_standings: {

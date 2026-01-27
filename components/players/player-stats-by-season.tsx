@@ -20,6 +20,7 @@ interface Season {
 
 interface MatchStat {
   id: string;
+  team_id?: string | null;
   pts: number;
   reb: number;
   ast: number;
@@ -179,9 +180,13 @@ export function PlayerStatsBySeason({
                         </div>
                         <div className="text-xs text-muted-foreground">
                           vs{" "}
-                          {stat.match.home_team.id === teamId
-                            ? stat.match.away_team.name
-                            : stat.match.home_team.name}
+                          {(() => {
+                            const playerTeamId = stat.team_id || teamId;
+                            if (playerTeamId && stat.match.home_team.id === playerTeamId) {
+                              return stat.match.away_team.name;
+                            }
+                            return stat.match.home_team.name;
+                          })()}
                         </div>
                       </td>
                       <td className="text-center font-bold">{stat.pts}</td>

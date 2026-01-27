@@ -153,12 +153,25 @@ export function Navbar({ user, userTeam }: NavbarProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link
-              href="/history"
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              History
-            </Link>
+            {/* History Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground inline-flex items-center gap-1">
+                History
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link href="/history" className="cursor-pointer">
+                    League history
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/history/past-leagues" className="cursor-pointer">
+                    Past league records
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Link
               href="/live"
@@ -379,13 +392,24 @@ export function Navbar({ user, userTeam }: NavbarProps) {
             )}
           </div>
 
-          <Link
-            href="/history"
-            className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            History
-          </Link>
+          {/* History Submenu */}
+          <div className="space-y-1">
+            <div className="px-3 py-2 text-sm font-semibold text-foreground">History</div>
+            <Link
+              href="/history"
+              className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              League history
+            </Link>
+            <Link
+              href="/history/past-leagues"
+              className="block rounded-md px-6 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Past league records
+            </Link>
+          </div>
 
           <Link
             href="/live"
