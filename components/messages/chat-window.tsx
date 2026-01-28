@@ -92,15 +92,17 @@ export default function ChatWindow({
       console.log("[ChatWindow] New message received:", message);
       setMessages((prev) => [...prev, message as any]);
       scrollToBottom("smooth");
-
-      // Mark as read if message is from other user
-      if (message.sender_id !== currentUserId) {
-        markAsRead();
-      }
+      // Realtime으로 받은 메시지는 화면에 표시되므로 읽은 것으로 간주
+      // markAsRead 제거 - 윈도우 포커스 시에만 호출하도록 변경
     });
+
+    // 윈도우 포커스 시에만 markAsRead 호출 (중복 호출 방지)
+    const handleFocus = () => markAsRead();
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       unsubscribeChannel(channel);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [conversationId, currentUserId, loadMessages, markAsRead, scrollToBottom]);
 
