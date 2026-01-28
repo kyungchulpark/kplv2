@@ -96,11 +96,11 @@ export default function DisciplineManager({
 
   async function loadPlayers() {
     try {
-      // Get all active players
+      // Get all players with psn_id
       const { data: players, error } = await supabase
         .from("profiles")
         .select("id, psn_id, email")
-        .eq("is_active", true)
+        .not("psn_id", "is", null)
         .order("psn_id");
 
       if (error) throw error;

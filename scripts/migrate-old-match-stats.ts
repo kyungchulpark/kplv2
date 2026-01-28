@@ -111,6 +111,12 @@ function parseDateTimeUtc(value: string | undefined | null) {
   return toIsoOrNull(trimmed);
 }
 
+function normalizeMatchDateKey(value: string | null | undefined) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 /**
  * Legacy match tables mix real datetimes ("2021-02-22 21:30:00")
  * and synthetic IDs like "20210426_20".
@@ -257,6 +263,32 @@ function matchKey(teamA: string, teamB: string) {
   return [teamA, teamB].sort().join("::");
 }
 
+function normalizeTeamName(teamName: string) {
+  return teamName.trim().toLowerCase();
+}
+
+function teamKey(seasonCode: string, teamName: string) {
+  return `${seasonCode}_${normalizeTeamName(teamName)}`;
+}
+
+function upperCount(value: string) {
+  const matches = value.match(/[A-Z]/g);
+  return matches ? matches.length : 0;
+}
+
+function pickPreferredTeamName(current: string | undefined, candidate: string) {
+  if (!current) return candidate;
+  const candidateScore = upperCount(candidate);
+  const currentScore = upperCount(current);
+  if (candidateScore !== currentScore) {
+    return candidateScore > currentScore ? candidate : current;
+  }
+  if (candidate.length !== current.length) {
+    return candidate.length > current.length ? candidate : current;
+  }
+  return candidate < current ? candidate : current;
+}
+
 type TeamMapEntry = { id: string; name: string };
 
 type SeasonContext = {
@@ -304,7 +336,7 @@ async function buildTeamMap(seasons: SeasonRuntime[]) {
   (teams as TeamDb[] | null)?.forEach((team) => {
     const code = seasonIdToCode.get(team.season_id);
     if (!code) return;
-    const key = `${code}_${team.name.trim()}`;
+    const key = teamKey(code, team.name);
     teamMap.set(key, { id: team.id, name: team.name });
     const bucket = teamsBySeason.get(code) || [];
     bucket.push(team);
@@ -370,17 +402,24 @@ async function ensureTeamsForSeason(
   matchRows: string[][],
   teamMap: Map<string, TeamMapEntry>
 ) {
-  const teamNames = new Set<string>();
+  const nameByNormalized = new Map<string, string>();
   matchRows.forEach((row) => {
     const [, homeTeam, awayTeam] = row;
-    if (homeTeam && homeTeam.trim()) teamNames.add(homeTeam.trim());
-    if (awayTeam && awayTeam.trim()) teamNames.add(awayTeam.trim());
+    if (homeTeam && homeTeam.trim()) {
+      const trimmed = homeTeam.trim();
+      const normalized = normalizeTeamName(trimmed);
+      nameByNormalized.set(normalized, pickPreferredTeamName(nameByNormalized.get(normalized), trimmed));
+    }
+    if (awayTeam && awayTeam.trim()) {
+      const trimmed = awayTeam.trim();
+      const normalized = normalizeTeamName(trimmed);
+      nameByNormalized.set(normalized, pickPreferredTeamName(nameByNormalized.get(normalized), trimmed));
+    }
   });
 
-  const missingNames = Array.from(teamNames).filter((name) => {
-    const key = `${season.code}_${name}`;
-    return !teamMap.has(key);
-  });
+  const missingNames = Array.from(nameByNormalized.entries())
+    .filter(([normalized]) => !teamMap.has(teamKey(season.code, normalized)))
+    .map(([, preferredName]) => preferredName);
 
   if (missingNames.length === 0) {
     return { missingNames: 0, upserted: 0 };
@@ -418,7 +457,7 @@ async function ensureTeamsForSeason(
     .eq("season_id", season.id);
   if (!error) {
     (teams as TeamDb[] | null)?.forEach((team) => {
-      const key = `${season.code}_${team.name.trim()}`;
+      const key = teamKey(season.code, team.name);
       teamMap.set(key, { id: team.id, name: team.name });
     });
   }
@@ -437,17 +476,17 @@ async function upsertMatchesForSeason(
   const ensureResult = await ensureTeamsForSeason(season, matchRows, teamMap);
 
   // Build a quick lookup of existing matches to avoid duplicates without ON CONFLICT.
-  const { data: existingMatches, error: existingError } = await supabase
-    .from("matches")
-    .select("id, home_team_id, away_team_id, match_date")
-    .eq("season_id", season.id);
-  if (existingError) {
+  let existingMatches: MatchDb[] = [];
+  try {
+    existingMatches = await loadMatchesForSeason(season.id);
+  } catch (existingError: any) {
     console.log(`    WARN failed to load existing matches: ${existingError.message}`);
   }
 
   const existingKeys = new Set<string>();
-  (existingMatches as MatchDb[] | null)?.forEach((match) => {
-    existingKeys.add(`${match.home_team_id}::${match.away_team_id}::${match.match_date}`);
+  existingMatches.forEach((match) => {
+    const matchDateKey = normalizeMatchDateKey(match.match_date);
+    existingKeys.add(`${match.home_team_id}::${match.away_team_id}::${matchDateKey}`);
   });
 
   let inserted = 0;
@@ -463,8 +502,8 @@ async function upsertMatchesForSeason(
       skipped++;
       continue;
     }
-    const homeKey = `${season.code}_${homeTeam.trim()}`;
-    const awayKey = `${season.code}_${awayTeam.trim()}`;
+    const homeKey = teamKey(season.code, homeTeam);
+    const awayKey = teamKey(season.code, awayTeam);
     const home = teamMap.get(homeKey);
     const away = teamMap.get(awayKey);
     if (!home || !away) {
@@ -478,17 +517,19 @@ async function upsertMatchesForSeason(
       continue;
     }
 
+    const matchDate = normalizeMatchDateKey(parseLegacyMatchDate(row, season));
+
     const payload = {
       season_id: season.id,
       home_team_id: home.id,
       away_team_id: away.id,
-      match_date: parseLegacyMatchDate(row, season),
+      match_date: matchDate,
       home_score: parseInt(homePts) || 0,
       away_score: parseInt(awayPts) || 0,
       status: "finished",
     };
 
-    const key = `${payload.home_team_id}::${payload.away_team_id}::${payload.match_date}`;
+    const key = `${payload.home_team_id}::${payload.away_team_id}::${matchDate}`;
     if (existingKeys.has(key)) {
       skipped++;
       skippedExisting++;
@@ -592,7 +633,8 @@ function buildLegacyMatchMap(
   const homeAwayMap = new Map<string, MatchDb[]>();
 
   matches.forEach((match) => {
-    const exactKey = `${match.home_team_id}::${match.away_team_id}::${match.match_date}`;
+    const matchDateKey = normalizeMatchDateKey(match.match_date);
+    const exactKey = `${match.home_team_id}::${match.away_team_id}::${matchDateKey}`;
     const exactBucket = exactKeyMap.get(exactKey) || [];
     exactBucket.push(match);
     exactKeyMap.set(exactKey, exactBucket);
@@ -611,13 +653,13 @@ function buildLegacyMatchMap(
     const awayName = row[2]?.trim();
     if (!legacyMatchId || !homeName || !awayName) return;
 
-    const homeKey = `${season.code}_${homeName}`;
-    const awayKey = `${season.code}_${awayName}`;
+    const homeKey = teamKey(season.code, homeName);
+    const awayKey = teamKey(season.code, awayName);
     const homeTeam = teamMap.get(homeKey);
     const awayTeam = teamMap.get(awayKey);
     if (!homeTeam || !awayTeam) return;
 
-    const matchDate = parseLegacyMatchDate(row, season);
+    const matchDate = normalizeMatchDateKey(parseLegacyMatchDate(row, season));
     const exactKey = `${homeTeam.id}::${awayTeam.id}::${matchDate}`;
     const homeAwayKey = `${homeTeam.id}::${awayTeam.id}`;
 
@@ -808,7 +850,7 @@ async function migrateSeasonStats(
     if (!psnId || !vs) return;
     const oldProfile = oldProfiles.get(normalizePsnId(psnId));
     if (!oldProfile) return;
-    const vsTeam = teamMap.get(`${season.code}_${vs}`);
+    const vsTeam = teamMap.get(teamKey(season.code, vs));
     if (!vsTeam) return;
     const bucket = playerVsTeams.get(oldProfile.id) || new Set<string>();
     bucket.add(vsTeam.id);
@@ -851,7 +893,7 @@ async function migrateSeasonStats(
       return;
     }
 
-    const vsKey = `${season.code}_${vs}`;
+    const vsKey = teamKey(season.code, vs);
     const vsTeam = teamMap.get(vsKey);
     if (!vsTeam) {
       missingVsTeam++;
