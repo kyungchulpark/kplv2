@@ -5,8 +5,8 @@ interface CreateConversationRequest {
   otherUserId: string;
 }
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// 캐싱 설정: GET 요청은 5초간 캐시 (Egress 절감)
+export const revalidate = 5;
 
 /**
  * GET /api/messages/conversations

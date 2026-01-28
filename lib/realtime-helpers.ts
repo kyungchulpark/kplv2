@@ -127,16 +127,11 @@ export function subscribeToUnreadCounts(
         table: "dm_unread_counts",
         filter: `user_id=eq.${userId}`,
       },
-      async (payload) => {
+      (payload) => {
         console.log("[Realtime] Unread count updated:", payload);
-        // Fetch total unread count
-        const { data } = await supabase
-          .from("dm_unread_counts")
-          .select("unread_count")
-          .eq("user_id", userId);
-
-        const total = data?.reduce((sum, row) => sum + row.unread_count, 0) || 0;
-        onUnreadUpdate(total);
+        // DB 조회 대신 -1 시그널로 변경 알림만 전달
+        // 상위 컴포넌트에서 필요시 조회하도록 함
+        onUnreadUpdate(-1);
       }
     )
     .subscribe((status) => {
