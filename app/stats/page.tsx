@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsTable, PlayerStatRow } from "@/components/stats/stats-table";
 import { SeasonSelector } from "@/components/stats/season-selector";
@@ -36,14 +37,20 @@ function chunkArray<T>(items: T[], size: number): T[][] {
 export default async function StatsPage({ searchParams }: StatsPageProps) {
   const { seasonId } = await searchParams;
   const supabase = await createClient();
+  const adminClient = createAdminClient();
 
-  const pagedSelect = async (table: string, select: string, applyFilters?: (query: any) => any) => {
+  const pagedSelect = async (
+    client: any,
+    table: string,
+    select: string,
+    applyFilters?: (query: any) => any
+  ) => {
     const rows: any[] = [];
     const pageSize = 1000;
     let from = 0;
     while (true) {
       const to = from + pageSize - 1;
-      let query = supabase.from(table).select(select).range(from, to);
+      let query = client.from(table).select(select).range(from, to);
       if (applyFilters) {
         query = applyFilters(query);
       }
@@ -82,6 +89,7 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
 
   // Get finished matches for the selected season
   const finishedMatches = await pagedSelect(
+    supabase,
     "matches",
     "id",
     (query) => query.eq("season_id", selectedSeason.id).eq("status", "finished")
@@ -93,8 +101,16 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
 
   if (matchIds.length > 0) {
     // Build PSN -> profile mapping (current PSN IDs + history)
-    const profiles = await pagedSelect("profiles", "id, psn_id, avatar_url");
-    const psnHistory = await pagedSelect("psn_id_history", "user_id, old_psn_id, new_psn_id");
+    const profiles = await pagedSelect(
+      adminClient,
+      "profiles",
+      "id, psn_id, avatar_url"
+    );
+    const psnHistory = await pagedSelect(
+      adminClient,
+      "psn_id_history",
+      "user_id, old_psn_id, new_psn_id"
+    );
 
     const profileById = new Map<string, ProfileEntry>();
     const psnToProfile = new Map<string, ProfileEntry>();
