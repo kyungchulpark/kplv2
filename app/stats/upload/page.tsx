@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient, getCurrentUser } from "@/utils/supabase/server";
-import { CheckCircle, Info } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Info } from "lucide-react";
 import { MatchesGroupedView } from "@/components/stats/matches-grouped-view";
 import { startOfDay } from "date-fns";
 
@@ -11,9 +13,6 @@ type Match = {
   match_date: string;
   status: "scheduled" | "live" | "finished" | "cancelled";
   match_sequence: string | null;
-  home_score: number | null;
-  away_score: number | null;
-  is_forfeit: boolean | null;
   home_team: {
     id: string;
     name: string;
@@ -65,28 +64,26 @@ export default async function ResultsUploadPage() {
   }
 
   // Permission logic: Show matches based on user role
-  // - Admin/Staff: See all scheduled/live/finished matches
-  // - Team members: See only their team's scheduled/live/finished matches
+  // - Admin/Staff: See all scheduled/live matches
+  // - Team members: See only their team's scheduled/live matches
   const userRole = (user.profile as any)?.role;
   const isAdminOrStaff = ["admin", "staff"].includes(userRole);
 
-  const pagedSelect = async (buildQuery: (from: number, to: number) => any) => {
-    const rows: Match[] = [];
-    const pageSize = 1000;
-    let from = 0;
-    while (true) {
-      const to = from + pageSize - 1;
-      const { data, error } = await buildQuery(from, to);
-      if (error) throw error;
-      const batch = (data || []) as Match[];
-      rows.push(...batch);
-      if (batch.length < pageSize) break;
-      from += pageSize;
-    }
-    return rows;
-  };
-
-  let teamFilter: string | null = null;
+  let matchesQuery = supabase
+    .from("matches")
+    .select(
+      `
+        id,
+        match_date,
+        status,
+        match_sequence,
+        home_team:teams!matches_home_team_id_fkey(id, name, logo_url, conference),
+        away_team:teams!matches_away_team_id_fkey(id, name, logo_url, conference)
+      `
+    )
+    .eq("season_id", activeSeason.id)
+    .in("status", ["scheduled", "live"])
+    .order("match_date", { ascending: true });
 
   // If not admin/staff, filter to only show matches where user is a team member
   if (!isAdminOrStaff) {
@@ -117,39 +114,15 @@ export default async function ResultsUploadPage() {
     }
 
     // Filter matches where user's team is playing (home or away)
-    teamFilter = `home_team_id.in.(${userTeamIds.join(",")}),away_team_id.in.(${userTeamIds.join(",")})`;
+    matchesQuery = matchesQuery.or(
+      `home_team_id.in.(${userTeamIds.join(",")}),away_team_id.in.(${userTeamIds.join(",")})`
+    );
   }
 
-  const matches = await pagedSelect((from, to) => {
-    let query = supabase
-      .from("matches")
-      .select(
-        `
-          id,
-          match_date,
-          status,
-          match_sequence,
-          home_score,
-          away_score,
-          is_forfeit,
-          home_team:teams!matches_home_team_id_fkey(id, name, logo_url, conference),
-          away_team:teams!matches_away_team_id_fkey(id, name, logo_url, conference)
-        `
-      )
-      .eq("season_id", activeSeason.id)
-      .in("status", ["scheduled", "live", "finished"])
-      .order("match_date", { ascending: true })
-      .range(from, to);
-
-    if (teamFilter) {
-      query = query.or(teamFilter);
-    }
-
-    return query;
-  });
+  const { data: matches } = await matchesQuery;
 
   // Group matches by date
-  const groupedMatches = matches.reduce((acc, match) => {
+  const groupedMatches = (matches || []).reduce((acc, match) => {
     const date = match.match_date.split("T")[0];
     if (!acc[date]) {
       acc[date] = [];
@@ -228,3 +201,4 @@ export default async function ResultsUploadPage() {
     </div>
   );
 }
+

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, RefreshCcw, Sparkles } from "lucide-react";
@@ -297,15 +296,6 @@ export function MatchesManager({
                   </td>
                   <td className="py-4 px-2 text-right">
                     <div className="flex justify-end flex-wrap gap-2">
-                      <Button
-                        asChild
-                        size="sm"
-                        variant={match.status === "finished" ? "secondary" : "default"}
-                      >
-                        <Link href={`/stats/upload/${match.id}`}>
-                          {match.status === "finished" ? "Edit Result" : "Enter Result"}
-                        </Link>
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

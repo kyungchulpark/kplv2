@@ -221,7 +221,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                 >
                   {match.home_team.name}
                 </Link>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">HOME</Badge>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">H</Badge>
               </div>
               {isFinished && (
                 <div className={cn("text-2xl md:text-3xl font-bold font-mono", homeWin ? "text-primary" : "text-muted-foreground")}>
@@ -260,7 +260,7 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
                 >
                   {match.away_team.name}
                 </Link>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">AWAY</Badge>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">A</Badge>
               </div>
               {isFinished && (
                 <div className={cn("text-2xl md:text-3xl font-bold font-mono", awayWin ? "text-primary" : "text-muted-foreground")}>

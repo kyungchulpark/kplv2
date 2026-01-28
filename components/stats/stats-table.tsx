@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -52,8 +52,10 @@ const columns: Array<{ key: SortKey; label: string; width?: string }> = [
   { key: "blk", label: "BLK" },
   { key: "fls", label: "FLS" },
   { key: "turnovers", label: "TO" },
-  { key: "fgm", label: "FGM/FGA" },
-  { key: "three_pm", label: "3PM/3PA" },
+  { key: "fgm", label: "FGM" },
+  { key: "fga", label: "FGA" },
+  { key: "three_pm", label: "3PM" },
+  { key: "three_pa", label: "3PA" },
   { key: "ftm", label: "FTM" },
   { key: "fta", label: "FTA" },
 ];
@@ -64,32 +66,30 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
-  const perGameKeys = useMemo<Set<SortKey>>(() => {
-    return new Set([
-      "pts",
-      "reb",
-      "ast",
-      "stl",
-      "blk",
-      "fls",
-      "turnovers",
-      "fgm",
-      "fga",
-      "three_pm",
-      "three_pa",
-      "ftm",
-      "fta",
-    ]);
-  }, []);
+  const perGameKeys: Set<SortKey> = new Set([
+    "pts",
+    "reb",
+    "ast",
+    "stl",
+    "blk",
+    "fls",
+    "turnovers",
+    "fgm",
+    "fga",
+    "three_pm",
+    "three_pa",
+    "ftm",
+    "fta",
+  ]);
 
-  const getSortableValue = useCallback((row: PlayerStatRow, key: SortKey) => {
+  const getSortableValue = (row: PlayerStatRow, key: SortKey) => {
     const raw = row[key] as any;
     if (perGameKeys.has(key)) {
       const games = row.games_played || 0;
       return games > 0 ? Number(raw || 0) / games : 0;
     }
     return raw ?? 0;
-  }, [perGameKeys]);
+  };
 
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -98,7 +98,7 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
       if (sortDir === "asc") return Number(aVal) - Number(bVal);
       return Number(bVal) - Number(aVal);
     });
-  }, [rows, sortKey, sortDir, getSortableValue]);
+  }, [rows, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / perPage) || 1);
   const paginatedRows = useMemo(() => {
@@ -143,11 +143,6 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
 
     const avg = Number(value || 0) / games;
     return games >= 2 ? avg.toFixed(1) : Number(value || 0);
-  };
-
-  const formatPct = (made: number, att: number) => {
-    if (!att || att <= 0) return "0.0";
-    return ((made / att) * 100).toFixed(1);
   };
 
   return (
@@ -258,12 +253,16 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
                     {formatStat(row, "turnovers")}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    {formatStat(row, "fgm")}/{formatStat(row, "fga")} (
-                    {formatPct(row.fgm, row.fga)}%)
+                    {formatStat(row, "fgm")}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    {formatStat(row, "three_pm")}/{formatStat(row, "three_pa")} (
-                    {formatPct(row.three_pm, row.three_pa)}%)
+                    {formatStat(row, "fga")}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {formatStat(row, "three_pm")}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {formatStat(row, "three_pa")}
                   </td>
                   <td className="px-3 py-2 text-center">
                     {formatStat(row, "ftm")}

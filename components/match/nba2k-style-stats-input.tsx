@@ -40,8 +40,6 @@ interface NBA2KStyleStatsInputProps {
   awayTeam: { id: string; name: string };
   homeRoster: RosterPlayer[];
   awayRoster: RosterPlayer[];
-  initialHomeStats?: PlayerStats[];
-  initialAwayStats?: PlayerStats[];
   onSubmit: (data: {
     homeScore: number;
     awayScore: number;
@@ -66,45 +64,26 @@ const emptyStats = (): Omit<PlayerStats, "player_id"> => ({
   fta: 0,
 });
 
-const buildInitialStats = (initial?: PlayerStats[]): PlayerStats[] => {
-  const makeEmpty = (): PlayerStats => ({ player_id: "", ...emptyStats() });
-  if (!initial || initial.length === 0) {
-    return Array(5)
-      .fill(null)
-      .map(() => makeEmpty());
-  }
-
-  const seeded = initial.slice(0, 5).map((stat) => ({
-    ...makeEmpty(),
-    ...stat,
-    player_id: stat.player_id || "",
-  }));
-
-  while (seeded.length < 5) {
-    seeded.push(makeEmpty());
-  }
-
-  return seeded;
-};
-
 export function NBA2KStyleStatsInput({
   homeTeam,
   awayTeam,
   homeRoster,
   awayRoster,
-  initialHomeStats,
-  initialAwayStats,
   onSubmit,
 }: NBA2KStyleStatsInputProps) {
   // Swappable team positions
   const [topTeamIsAway, setTopTeamIsAway] = useState(true);
 
   // Stats arrays (5 players each)
-  const [homeStats, setHomeStats] = useState<PlayerStats[]>(() =>
-    buildInitialStats(initialHomeStats)
+  const [homeStats, setHomeStats] = useState<PlayerStats[]>(
+    Array(5)
+      .fill(null)
+      .map(() => ({ player_id: "", ...emptyStats() }))
   );
-  const [awayStats, setAwayStats] = useState<PlayerStats[]>(() =>
-    buildInitialStats(initialAwayStats)
+  const [awayStats, setAwayStats] = useState<PlayerStats[]>(
+    Array(5)
+      .fill(null)
+      .map(() => ({ player_id: "", ...emptyStats() }))
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);

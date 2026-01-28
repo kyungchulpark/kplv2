@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SeasonSelector } from "@/components/stats/season-selector";
-import { ScheduleTable } from "@/components/schedule/schedule-table";
 
 interface PastLeaguesPageProps {
   searchParams: Promise<{
@@ -13,26 +12,6 @@ interface PastLeaguesPageProps {
 export default async function PastLeaguesPage({ searchParams }: PastLeaguesPageProps) {
   const { seasonId } = await searchParams;
   const supabase = await createClient();
-
-  const pagedSelect = async (table: string, select: string, applyFilters?: (query: any) => any) => {
-    const rows: any[] = [];
-    const pageSize = 1000;
-    let from = 0;
-    while (true) {
-      const to = from + pageSize - 1;
-      let query = supabase.from(table).select(select).range(from, to);
-      if (applyFilters) {
-        query = applyFilters(query);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      const batch = data || [];
-      rows.push(...batch);
-      if (batch.length < pageSize) break;
-      from += pageSize;
-    }
-    return rows;
-  };
 
   const { data: seasons } = await supabase
     .from("seasons")
@@ -55,25 +34,22 @@ export default async function PastLeaguesPage({ searchParams }: PastLeaguesPageP
   const defaultSeason = seasons.find((season) => !season.is_active) || seasons[0];
   const selectedSeason = seasons.find((season) => season.id === seasonId) || defaultSeason;
 
-  const matches = await pagedSelect(
-    "matches",
+  const { data: matches } = await supabase
+    .from("matches")
+    .select(
+      `
+      id,
+      match_date,
+      status,
+      home_score,
+      away_score,
+      home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+      away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
     `
-    id,
-    match_date,
-    status,
-    home_score,
-    away_score,
-    match_sequence,
-    game_password,
-    home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
-    away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
-  `,
-    (query) =>
-      query
-        .eq("season_id", selectedSeason.id)
-        .eq("status", "finished")
-        .order("match_date", { ascending: true })
-  );
+    )
+    .eq("season_id", selectedSeason.id)
+    .eq("status", "finished")
+    .order("match_date", { ascending: false });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -101,7 +77,7 @@ export default async function PastLeaguesPage({ searchParams }: PastLeaguesPageP
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
                 <CardTitle>{selectedSeason.name}</CardTitle>
-                <CardDescription>Finished matches in schedule view</CardDescription>
+                <CardDescription>Match results table</CardDescription>
               </div>
               <Badge variant={selectedSeason.is_active ? "default" : "secondary"}>
                 {selectedSeason.is_active ? "Active" : "Past"}
@@ -114,7 +90,41 @@ export default async function PastLeaguesPage({ searchParams }: PastLeaguesPageP
                 No finished matches for this season yet.
               </div>
             ) : (
-              <ScheduleTable matches={matches as any} />
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-3 py-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        Date
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        Matchup
+                      </th>
+                      <th className="px-3 py-2 text-center text-xs uppercase tracking-wide text-muted-foreground">
+                        Score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(matches as any[]).map((match) => (
+                      <tr key={match.id} className="border-b hover:bg-muted/40">
+                        <td className="px-3 py-3 text-muted-foreground">
+                          {new Date(match.match_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-col gap-1">
+                            <div className="font-medium">{match.home_team?.name}</div>
+                            <div className="text-xs text-muted-foreground">vs {match.away_team?.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center font-semibold">
+                          {match.home_score} - {match.away_score}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>

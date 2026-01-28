@@ -26,22 +26,7 @@
       "Bash(git --no-pager diff --color=never components/schedule/match-detail-dialog.tsx)",
       "Bash(wait)",
       "Bash(npm run type-check:*)",
-      "Bash(psql:*)",
-      "Bash(npx ts-node:*)",
-      "Bash(node:*)",
-      "Bash(echo:*)",
-      "Bash(tsx scripts/check-youtube-urls.ts:*)",
-      "Bash(npx --version)",
-      "Bash(supabase db push:*)",
-      "WebFetch(domain:console.cloud.google.com)",
-      "Bash(npx supabase --version)",
-      "Bash(npx vercel:*)",
-      "Bash(npx next build)",
-      "Bash(npx tsc:*)",
-      "Bash(npm:*)",
-      "Bash(git restore:*)",
-      "Bash(tee:*)",
-      "Bash(npx next build --debug)"
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []

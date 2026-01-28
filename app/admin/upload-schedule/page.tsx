@@ -35,26 +35,6 @@ const generateSequence = (dateStr: string, index: number): string => {
   return `${dateOnly}_${seq}`;
 };
 
-const normalizeTeamName = (name: string) => name.trim().toLowerCase();
-
-const upperCount = (value: string) => {
-  const matches = value.match(/[A-Z]/g);
-  return matches ? matches.length : 0;
-};
-
-const pickPreferredTeamName = (current: string | undefined, candidate: string) => {
-  if (!current) return candidate;
-  const candidateScore = upperCount(candidate);
-  const currentScore = upperCount(current);
-  if (candidateScore !== currentScore) {
-    return candidateScore > currentScore ? candidate : current;
-  }
-  if (candidate.length !== current.length) {
-    return candidate.length > current.length ? candidate : current;
-  }
-  return candidate < current ? candidate : current;
-};
-
 export default function UploadSchedulePage() {
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -289,25 +269,21 @@ export default function UploadSchedulePage() {
     try {
       const supabase = createClient();
 
-      // Current teams keyed case-insensitively
-      let teamMap = new Map(teams.map((t) => [normalizeTeamName(t.name), t.id]));
+      // 현재 팀 목록
+      let teamMap = new Map(teams.map((t) => [t.name, t.id]));
 
-      // Collect teams from the sheet with case-insensitive dedupe
-      const preferredNameByNormalized = new Map<string, string>();
+      // 엑셀에서 발견된 모든 팀 이름 수집
+      const allTeamNames = new Set<string>();
       parsedData.forEach((match) => {
-        const homeName = match.home_team.trim();
-        const awayName = match.away_team.trim();
-        const homeKey = normalizeTeamName(homeName);
-        const awayKey = normalizeTeamName(awayName);
-        preferredNameByNormalized.set(homeKey, pickPreferredTeamName(preferredNameByNormalized.get(homeKey), homeName));
-        preferredNameByNormalized.set(awayKey, pickPreferredTeamName(preferredNameByNormalized.get(awayKey), awayName));
+        allTeamNames.add(match.home_team);
+        allTeamNames.add(match.away_team);
       });
 
-      // Find missing teams case-insensitively
+      // 없는 팀 찾기
       const missingTeams: string[] = [];
-      preferredNameByNormalized.forEach((preferredName, normalized) => {
-        if (!teamMap.has(normalized)) {
-          missingTeams.push(preferredName);
+      allTeamNames.forEach((teamName) => {
+        if (!teamMap.has(teamName)) {
+          missingTeams.push(teamName);
         }
       });
 
@@ -336,7 +312,7 @@ export default function UploadSchedulePage() {
 
         // 새로 생성된 팀을 teamMap에 추가
         insertedTeams?.forEach((team) => {
-          teamMap.set(normalizeTeamName(team.name), team.id);
+          teamMap.set(team.name, team.id);
         });
 
         // 생성된 팀 목록 저장
@@ -358,8 +334,8 @@ export default function UploadSchedulePage() {
       // Prepare matches for insert
       const matches = parsedData.map((match) => ({
         season_id: activeSeason.id,
-        home_team_id: teamMap.get(normalizeTeamName(match.home_team)),
-        away_team_id: teamMap.get(normalizeTeamName(match.away_team)),
+        home_team_id: teamMap.get(match.home_team),
+        away_team_id: teamMap.get(match.away_team),
         match_date: convertKSTtoUTC(match.match_date, match.match_time),
         status: "scheduled",
         match_sequence: match.match_sequence,
@@ -611,32 +587,21 @@ export default function UploadSchedulePage() {
           <CardContent className="space-y-4">
             {/* 새로 생성될 팀 미리 알림 */}
             {(() => {
-              const existingTeamNames = new Set(teams.map((t) => normalizeTeamName(t.name)));
-              const preferredNameByNormalized = new Map<string, string>();
+              const existingTeamNames = new Set(teams.map((t) => t.name));
+              const newTeamNames = new Set<string>();
               parsedData.forEach((match) => {
-                const homeName = match.home_team.trim();
-                const awayName = match.away_team.trim();
-                const homeKey = normalizeTeamName(homeName);
-                const awayKey = normalizeTeamName(awayName);
-                preferredNameByNormalized.set(homeKey, pickPreferredTeamName(preferredNameByNormalized.get(homeKey), homeName));
-                preferredNameByNormalized.set(awayKey, pickPreferredTeamName(preferredNameByNormalized.get(awayKey), awayName));
+                if (!existingTeamNames.has(match.home_team)) newTeamNames.add(match.home_team);
+                if (!existingTeamNames.has(match.away_team)) newTeamNames.add(match.away_team);
               });
 
-              const newTeamNames: string[] = [];
-              preferredNameByNormalized.forEach((preferredName, normalized) => {
-                if (!existingTeamNames.has(normalized)) {
-                  newTeamNames.push(preferredName);
-                }
-              });
-
-              if (newTeamNames.length > 0) {
+              if (newTeamNames.size > 0) {
                 return (
                   <Alert className="border-blue-300 bg-blue-50 dark:bg-blue-950/20">
                     <AlertCircle className="h-4 w-4 text-blue-600" />
                     <AlertDescription className="text-blue-700 dark:text-blue-400">
-                      <p className="font-semibold">🆕 자동으로 생성될 팀 ({newTeamNames.length}개):</p>
+                      <p className="font-semibold">🆕 자동으로 생성될 팀 ({newTeamNames.size}개):</p>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {newTeamNames.map((name) => (
+                        {Array.from(newTeamNames).map((name) => (
                           <Badge key={name} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                             {name}
                           </Badge>
@@ -664,9 +629,9 @@ export default function UploadSchedulePage() {
                 </thead>
                 <tbody>
                   {parsedData.map((match, idx) => {
-                    const existingTeamNames = new Set(teams.map((t) => normalizeTeamName(t.name)));
-                    const isNewHomeTeam = !existingTeamNames.has(normalizeTeamName(match.home_team));
-                    const isNewAwayTeam = !existingTeamNames.has(normalizeTeamName(match.away_team));
+                    const existingTeamNames = new Set(teams.map((t) => t.name));
+                    const isNewHomeTeam = !existingTeamNames.has(match.home_team);
+                    const isNewAwayTeam = !existingTeamNames.has(match.away_team);
 
                     return (
                       <tr key={idx} className="border-b">

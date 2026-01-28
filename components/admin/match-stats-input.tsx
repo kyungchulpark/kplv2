@@ -62,32 +62,10 @@ interface PlayerStats {
   fta: number;
 }
 
-interface InitialPlayerStats {
-  player_id: string;
-  pts: number;
-  reb: number;
-  ast: number;
-  stl: number;
-  blk: number;
-  fgm: number;
-  fga: number;
-  tpm: number;
-  tpa: number;
-  ftm: number;
-  fta: number;
-  turnovers: number;
-  fouls: number;
-}
-
 interface MatchStatsInputProps {
   match: MatchData;
   homeRoster: Player[];
   awayRoster: Player[];
-  initialHomeStats?: InitialPlayerStats[];
-  initialAwayStats?: InitialPlayerStats[];
-  initialHomeStreamUrl?: string;
-  initialAwayStreamUrl?: string;
-  isEditing?: boolean;
   onSuccessRedirect?: string;
 }
 
@@ -95,11 +73,6 @@ export function MatchStatsInput({
   match,
   homeRoster,
   awayRoster,
-  initialHomeStats = [],
-  initialAwayStats = [],
-  initialHomeStreamUrl = "",
-  initialAwayStreamUrl = "",
-  isEditing = false,
   onSuccessRedirect = "/admin",
 }: MatchStatsInputProps) {
   const router = useRouter();
@@ -107,8 +80,8 @@ export function MatchStatsInput({
   const [errors, setErrors] = useState<string[]>([]);
 
   // Streaming URLs
-  const [homeStreamUrl, setHomeStreamUrl] = useState(initialHomeStreamUrl);
-  const [awayStreamUrl, setAwayStreamUrl] = useState(initialAwayStreamUrl);
+  const [homeStreamUrl, setHomeStreamUrl] = useState("");
+  const [awayStreamUrl, setAwayStreamUrl] = useState("");
 
   const calculatePoints = (stats: PlayerStats): number => {
     return (stats.fgm - stats.three_pm) * 2 + stats.three_pm * 3 + stats.ftm;
@@ -192,29 +165,6 @@ export function MatchStatsInput({
     return validationErrors;
   };
 
-  const convertInitialStats = (stats: InitialPlayerStats[]): PlayerStats[] =>
-    stats.map((s) => ({
-      player_id: s.player_id,
-      pts: s.pts ?? 0,
-      reb: s.reb ?? 0,
-      ast: s.ast ?? 0,
-      stl: s.stl ?? 0,
-      blk: s.blk ?? 0,
-      fls: s.fouls ?? 0,
-      turnovers: s.turnovers ?? 0,
-      fgm: s.fgm ?? 0,
-      fga: s.fga ?? 0,
-      three_pm: s.tpm ?? 0,
-      three_pa: s.tpa ?? 0,
-      ftm: s.ftm ?? 0,
-      fta: s.fta ?? 0,
-    }));
-
-  const initialHomeStatsForInput = convertInitialStats(initialHomeStats);
-  const initialAwayStatsForInput = convertInitialStats(initialAwayStats);
-  const hasInitialStats =
-    initialHomeStatsForInput.length > 0 || initialAwayStatsForInput.length > 0;
-
   const handleSubmit = async (data: {
     homeScore: number;
     awayScore: number;
@@ -271,15 +221,6 @@ export function MatchStatsInput({
         })),
       ];
 
-      // Clear existing stats when editing to avoid duplicates
-      if (isEditing || hasInitialStats) {
-        const { error: deleteError } = await supabase
-          .from("match_stats")
-          .delete()
-          .eq("match_id", match.id);
-        if (deleteError) throw deleteError;
-      }
-
       // Insert match stats
       const { error: statsError } = await supabase
         .from("match_stats")
@@ -301,18 +242,7 @@ export function MatchStatsInput({
 
       if (matchError) throw matchError;
 
-      // Recalculate standings after any result change
-      const { error: recalcError } = await supabase.rpc(
-        "recalculate_team_standings",
-        { p_season_id: match.season_id }
-      );
-      if (recalcError) {
-        console.error("Error recalculating standings:", recalcError);
-      }
-
-      toast.success(
-        isEditing ? "Match results updated." : "Match results saved successfully."
-      );
+      toast.success("Match results saved successfully.");
       router.push(onSuccessRedirect);
       router.refresh();
     } catch (error: unknown) {
@@ -345,20 +275,13 @@ export function MatchStatsInput({
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">
-          {isEditing ? "Edit Match Results" : "Submit Match Results"}
-        </h1>
+        <h1 className="text-3xl font-bold">Submit Match Results</h1>
         <p className="text-muted-foreground">
           {match.season.name} - {new Date(match.match_date).toLocaleDateString("en-US")}
         </p>
         <p className="text-sm text-muted-foreground">
           {match.home_team.name} vs {match.away_team.name}
         </p>
-        {isEditing && (
-          <p className="text-sm text-amber-600">
-            Saving will replace existing stats and recalculate standings.
-          </p>
-        )}
       </div>
 
       {/* Stream URL Inputs */}
@@ -367,8 +290,6 @@ export function MatchStatsInput({
         awayTeamName={match.away_team.name}
         onHomeUrlChange={setHomeStreamUrl}
         onAwayUrlChange={setAwayStreamUrl}
-        initialHomeUrl={initialHomeStreamUrl}
-        initialAwayUrl={initialAwayStreamUrl}
       />
 
       {/* Errors */}
@@ -402,8 +323,6 @@ export function MatchStatsInput({
           player_id: p.player_id,
           psn_id: p.profiles.psn_id,
         }))}
-        initialHomeStats={initialHomeStatsForInput}
-        initialAwayStats={initialAwayStatsForInput}
         onSubmit={handleSubmit}
       />
 
