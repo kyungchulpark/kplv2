@@ -6,48 +6,43 @@ import { Trophy, Users, Calendar, AlertCircle } from "lucide-react";
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Get active season (필요한 컬럼만 조회)
+  // Get active season
   const { data: activeSeason } = await supabase
     .from("seasons")
-    .select("id, name, game_version, start_date, end_date, playoff_cutoff")
+    .select("*")
     .eq("is_active", true)
     .single();
 
-  // Get stats (count만 필요하므로 id만 조회)
+  // Get stats
   const { count: totalTeams } = await supabase
     .from("teams")
-    .select("id", { count: "exact", head: true })
+    .select("*", { count: "exact", head: true })
     .eq("season_id", (activeSeason as any)?.id || "");
 
   const { count: pendingRequests } = await supabase
     .from("team_requests")
-    .select("id", { count: "exact", head: true })
+    .select("*", { count: "exact", head: true })
     .eq("status", "pending");
 
   const { data: upcomingMatches } = await supabase
     .from("matches")
     .select(
       `
-      id,
-      match_date,
-      home_score,
-      away_score,
+      *,
       home_team:teams!matches_home_team_id_fkey(name),
       away_team:teams!matches_away_team_id_fkey(name)
     `
     )
     .eq("season_id", (activeSeason as any)?.id || "")
     .eq("status", "scheduled")
-    .order("match_date", { ascending: true });
+    .order("match_date", { ascending: true })
+    .limit(5);
 
   const { data: recentMatches } = await supabase
     .from("matches")
     .select(
       `
-      id,
-      match_date,
-      home_score,
-      away_score,
+      *,
       home_team:teams!matches_home_team_id_fkey(name),
       away_team:teams!matches_away_team_id_fkey(name)
     `
@@ -171,7 +166,7 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {upcomingMatches && upcomingMatches.length > 0 ? (
-              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+              <div className="space-y-2">
                 {upcomingMatches.map((match) => (
                   <div
                     key={match.id}
