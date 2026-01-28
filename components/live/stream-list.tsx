@@ -28,14 +28,10 @@ interface LiveStatusMap {
   [channelUrl: string]: LiveStatus;
 }
 
-const PAGE_SIZE = 6;
-
 export function StreamList({ streamers }: StreamListProps) {
-  const [page, setPage] = useState(1);
   const [liveStatus, setLiveStatus] = useState<LiveStatusMap>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch live status for all streamers
   useEffect(() => {
     const fetchLiveStatus = async () => {
       if (streamers.length === 0) {
@@ -67,14 +63,8 @@ export function StreamList({ streamers }: StreamListProps) {
     };
 
     fetchLiveStatus();
-
-    // Refresh every 2 minutes
-    const interval = setInterval(fetchLiveStatus, 120000);
-
-    return () => clearInterval(interval);
   }, [streamers]);
 
-  // Separate live and offline streamers
   const liveStreamers = useMemo(() => {
     return streamers
       .filter((s) => liveStatus[s.youtube_channel]?.isLive)
@@ -86,23 +76,6 @@ export function StreamList({ streamers }: StreamListProps) {
       .filter((s) => !liveStatus[s.youtube_channel]?.isLive)
       .sort((a, b) => a.psn_id.localeCompare(b.psn_id));
   }, [streamers, liveStatus]);
-
-  const sortedStreamers = useMemo(() => {
-    return [...liveStreamers, ...offlineStreamers];
-  }, [liveStreamers, offlineStreamers]);
-
-  const totalPages = Math.max(1, Math.ceil(sortedStreamers.length / PAGE_SIZE));
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const visibleStreamers = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return sortedStreamers.slice(start, start + PAGE_SIZE);
-  }, [page, sortedStreamers]);
 
   if (streamers.length === 0) {
     return (
@@ -118,14 +91,14 @@ export function StreamList({ streamers }: StreamListProps) {
     );
   }
 
-  const renderStreamerCard = (streamer: Streamer) => {
+  const renderLiveCard = (streamer: Streamer) => {
     const streamStatus = liveStatus[streamer.youtube_channel];
     const isLive = streamStatus?.isLive || false;
 
     return (
       <Card
         key={streamer.id}
-        className={`hover:shadow-lg transition-shadow ${isLive ? 'ring-2 ring-red-500' : ''}`}
+        className={`hover:shadow-lg transition-shadow ${isLive ? "ring-2 ring-red-500 shadow-lg" : ""}`}
       >
         <CardHeader>
           <div className="flex items-center space-x-4">
@@ -144,7 +117,7 @@ export function StreamList({ streamers }: StreamListProps) {
               <CardTitle className="text-lg">{streamer.psn_id}</CardTitle>
               {isLive && (
                 <Badge variant="destructive" className="w-fit text-xs animate-pulse">
-                  🔴 LIVE
+                  LIVE
                 </Badge>
               )}
             </div>
@@ -171,6 +144,41 @@ export function StreamList({ streamers }: StreamListProps) {
     );
   };
 
+  const renderOfflineRow = (streamer: Streamer) => (
+    <div
+      key={streamer.id}
+      className="flex flex-col gap-3 border-b border-slate-100 py-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white overflow-hidden">
+          {streamer.avatar_url ? (
+            <img
+              src={streamer.avatar_url}
+              alt={streamer.psn_id}
+              className="h-10 w-10 object-cover"
+            />
+          ) : (
+            <User className="h-5 w-5" />
+          )}
+        </div>
+        <div>
+          <div className="font-semibold">{streamer.psn_id}</div>
+          <div className="text-xs text-muted-foreground">Offline</div>
+        </div>
+      </div>
+      <Button asChild variant="outline" size="sm">
+        <a
+          href={streamer.youtube_channel}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          Visit Channel
+        </a>
+      </Button>
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       {isLoading && (
@@ -180,49 +188,42 @@ export function StreamList({ streamers }: StreamListProps) {
         </div>
       )}
 
-      {/* Live Streamers Section */}
       {!isLoading && liveStreamers.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
-            <h2 className="text-lg font-bold text-red-600 flex items-center gap-2 px-4 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-full border border-red-200 dark:border-red-800">
-              <span className="animate-pulse">🔴</span>
+            <h2 className="text-lg font-bold text-red-600 flex items-center gap-2 px-4 py-1.5 bg-red-50 rounded-full border border-red-200">
               LIVE NOW ({liveStreamers.length})
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {liveStreamers.map(renderStreamerCard)}
+            {liveStreamers.map(renderLiveCard)}
           </div>
         </div>
       )}
 
-      {/* Offline Streamers Section */}
+      {!isLoading && liveStreamers.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            No live streams right now.
+          </CardContent>
+        </Card>
+      )}
+
       {!isLoading && offlineStreamers.length > 0 && (
-        <div className="space-y-4">
-          {liveStreamers.length > 0 && (
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-              <h2 className="text-sm font-semibold text-muted-foreground px-4 py-1.5 bg-muted rounded-full">
-                Offline Channels ({offlineStreamers.length})
-              </h2>
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">
+              Offline Channels ({offlineStreamers.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y divide-slate-100">
+              {offlineStreamers.map(renderOfflineRow)}
             </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {offlineStreamers.slice(0, page * PAGE_SIZE).map(renderStreamerCard)}
-          </div>
-          {offlineStreamers.length > page * PAGE_SIZE && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setPage((prev) => prev + 1)}
-              >
-                Load More
-              </Button>
-            </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -237,7 +238,6 @@ function LivePreview({
   liveVideoId?: string;
   isLive: boolean;
 }) {
-  // Use live video ID if available, otherwise try to extract from URL
   const videoId = liveVideoId || extractYouTubeVideoId(url);
 
   if (!videoId) {
@@ -251,7 +251,7 @@ function LivePreview({
   return (
     <div className="aspect-video rounded-lg overflow-hidden border">
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}${isLive ? '?autoplay=1&mute=1' : ''}`}
+        src={`https://www.youtube.com/embed/${videoId}${isLive ? "?autoplay=1&mute=1" : ""}`}
         title="Live stream preview"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen

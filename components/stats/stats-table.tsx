@@ -32,8 +32,10 @@ export type PlayerStatRow = {
   turnovers: number;
   fgm: number;
   fga: number;
+  fgp?: number;
   three_pm: number;
   three_pa: number;
+  three_pct?: number;
   ftm: number;
   fta: number;
 };
@@ -52,8 +54,12 @@ const columns: Array<{ key: SortKey; label: string; width?: string }> = [
   { key: "blk", label: "BLK" },
   { key: "fls", label: "FLS" },
   { key: "turnovers", label: "TO" },
-  { key: "fgm", label: "FGM/FGA" },
-  { key: "three_pm", label: "3PM/3PA" },
+  { key: "fgm", label: "FGM" },
+  { key: "fga", label: "FGA" },
+  { key: "fgp", label: "FG%" },
+  { key: "three_pm", label: "3PM" },
+  { key: "three_pa", label: "3PA" },
+  { key: "three_pct", label: "3P%" },
   { key: "ftm", label: "FTM" },
   { key: "fta", label: "FTA" },
 ];
@@ -83,6 +89,12 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
   }, []);
 
   const getSortableValue = useCallback((row: PlayerStatRow, key: SortKey) => {
+    if (key === "fgp") {
+      return row.fga > 0 ? (row.fgm / row.fga) * 100 : 0;
+    }
+    if (key === "three_pct") {
+      return row.three_pa > 0 ? (row.three_pm / row.three_pa) * 100 : 0;
+    }
     const raw = row[key] as any;
     if (perGameKeys.has(key)) {
       const games = row.games_played || 0;
@@ -258,12 +270,22 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
                     {formatStat(row, "turnovers")}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    {formatStat(row, "fgm")}/{formatStat(row, "fga")} (
-                    {formatPct(row.fgm, row.fga)}%)
+                    {formatStat(row, "fgm")}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    {formatStat(row, "three_pm")}/{formatStat(row, "three_pa")} (
-                    {formatPct(row.three_pm, row.three_pa)}%)
+                    {formatStat(row, "fga")}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {formatPct(row.fgm, row.fga)}%
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {formatStat(row, "three_pm")}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {formatStat(row, "three_pa")}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {formatPct(row.three_pm, row.three_pa)}%
                   </td>
                   <td className="px-3 py-2 text-center">
                     {formatStat(row, "ftm")}

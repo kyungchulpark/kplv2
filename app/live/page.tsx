@@ -50,8 +50,8 @@ export default async function LivePage() {
         </CardHeader>
         <CardContent className="text-sm text-slate-600 space-y-2">
           <p>
-            Each card renders the most recent YouTube link the player provided. If the channel is not
-            currently live, you still see a preview frame with a quick jump to the channel page.
+            Live channels are highlighted with embedded video players. Offline channels are listed
+            below for quick access without heavy embeds.
           </p>
           <p>
             Support your fellow competitors, scout opponents, or enjoy live content directly inside KPL.

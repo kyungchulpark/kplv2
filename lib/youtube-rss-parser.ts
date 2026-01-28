@@ -36,14 +36,20 @@ export interface RSSVideoInfo {
  * @returns Array of recent videos (up to 15)
  */
 export async function fetchYouTubeRSSFeed(
-  channelId: string
+  channelId: string,
+  options?: { revalidate?: number; cache?: RequestCache }
 ): Promise<RSSVideoInfo[]> {
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 
-    const response = await fetch(rssUrl, {
-      next: { revalidate: 120 }, // Cache for 2 minutes
-    });
+    const fetchOptions: RequestInit & { next?: { revalidate: number } } = {};
+    if (options?.cache) {
+      fetchOptions.cache = options.cache;
+    } else {
+      fetchOptions.next = { revalidate: options?.revalidate ?? 120 };
+    }
+
+    const response = await fetch(rssUrl, fetchOptions);
 
     if (!response.ok) {
       throw new Error(`RSS fetch failed: ${response.status}`);
@@ -110,10 +116,8 @@ export async function checkVideoLiveStatus(
     const snippet = video.snippet;
     const liveDetails = video.liveStreamingDetails;
 
-    // Check if video is live or upcoming
-    const isLive =
-      snippet.liveBroadcastContent === 'live' ||
-      snippet.liveBroadcastContent === 'upcoming';
+    // Only count actively live streams (exclude upcoming)
+    const isLive = snippet.liveBroadcastContent === 'live';
 
     return {
       isLive,
