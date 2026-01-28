@@ -40,6 +40,12 @@ interface Team {
   id: string;
   name: string;
   season_id: string;
+  captain_id?: string | null;
+  captain?: {
+    id: string;
+    psn_id: string;
+    email: string;
+  } | null;
 }
 
 interface Player {
@@ -183,7 +189,27 @@ export default function TeamRolesManager({
     }
   }
 
-  const captain = teamRoles.find((r) => r.role === "captain");
+  // Find captain from team_roles first, then fallback to teams.captain_id
+  const teamRoleCaptain = teamRoles.find((r) => r.role === "captain");
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId);
+
+  // Create a unified captain object - prefer team_roles, fallback to teams.captain_id
+  const captain: (TeamRole & { is_legacy?: boolean }) | null = teamRoleCaptain
+    ? teamRoleCaptain
+    : selectedTeam?.captain
+      ? {
+          id: `legacy_${selectedTeam.captain.id}`,
+          team_id: selectedTeamId,
+          player_id: selectedTeam.captain.id,
+          season_id: currentSeasonId,
+          role: "captain",
+          granted_at: "",
+          is_active: true,
+          is_legacy: true, // Mark as legacy captain (from teams.captain_id)
+          player: selectedTeam.captain,
+        }
+      : null;
+
   const viceCaptains = teamRoles.filter((r) => r.role === "vice_captain");
 
   return (
@@ -231,16 +257,22 @@ export default function TeamRolesManager({
                   {captain ? (
                     <div className="flex items-center gap-2">
                       <span className="text-sm">{captain.player.psn_id}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleRevokeRole(captain.id, "주장")
-                        }
-                        disabled={loading}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {captain.is_legacy ? (
+                        <Badge variant="secondary" className="text-xs">
+                          기존
+                        </Badge>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleRevokeRole(captain.id, "주장")
+                          }
+                          disabled={loading}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground">

@@ -8,6 +8,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SeasonSelector } from "@/components/stats/season-selector";
+import { createServiceClient } from "@/utils/supabase/service";
+
+interface StandingsPageProps {
+  searchParams: Promise<{
+    seasonId?: string;
+  }>;
+}
 
 type TeamRow = {
   id: string;
@@ -78,56 +86,182 @@ function addHeadToHeadWin(
   inner.set(loserId, (inner.get(loserId) || 0) + 1);
 }
 
-export default async function StandingsPage() {
-  const supabase = await createClient();
+function normalizeMatchDateKey(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
 
-  // Get active season
-  const { data: activeSeason } = await supabase
+export default async function StandingsPage({ searchParams }: StandingsPageProps) {
+  const { seasonId } = await searchParams;
+  const cookieClient = await createClient();
+  const serviceClient = createServiceClient();
+  const supabase = serviceClient ?? cookieClient;
+
+  const pagedSelect = async (
+    table: string,
+    select: string,
+    applyFilters?: (query: any) => any
+  ) => {
+    const rows: any[] = [];
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const to = from + pageSize - 1;
+      let query = supabase.from(table).select(select).range(from, to);
+      if (applyFilters) {
+        query = applyFilters(query);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const batch = data || [];
+      rows.push(...batch);
+      if (batch.length < pageSize) break;
+      from += pageSize;
+    }
+    return rows;
+  };
+
+  // Get seasons for selector and resolve the selected season
+  const { data: seasons } = await supabase
     .from("seasons")
-    .select("*")
-    .eq("is_active", true)
-    .single();
+    .select("id, name, is_active, start_date")
+    .order("start_date", { ascending: false });
 
-  if (!activeSeason) {
+  if (!seasons || seasons.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
             <CardTitle>Standings</CardTitle>
-            <CardDescription>No active season.</CardDescription>
+            <CardDescription>No seasons available.</CardDescription>
           </CardHeader>
         </Card>
       </div>
     );
   }
 
-  // Get team info + penalty points
-  const { data: teams } = await supabase
-    .from("teams")
-    .select(
-      "id, name, logo_url, conference, penalty_points, points, is_withdrawn"
-    )
-    .eq("season_id", activeSeason.id)
-    .order("name", { ascending: true });
+  const activeSeason = seasons.find((season) => season.is_active) || seasons[0];
+  const selectedSeason =
+    seasons.find((season) => season.id === seasonId) || activeSeason;
 
-  // Get finished matches (including forfeits)
-  const { data: matches } = await supabase
-    .from("matches")
-    .select(
-      "id, match_date, status, home_team_id, away_team_id, home_score, away_score, is_forfeit, forfeit_winner_id"
-    )
-    .eq("season_id", activeSeason.id)
-    .eq("status", "finished")
-    .order("match_date", { ascending: false });
+  // Get team info + penalty points for the selected season
+  let teams = await pagedSelect(
+    "teams",
+    "id, name, logo_url, conference, penalty_points, points, is_withdrawn",
+    (query) =>
+      query.eq("season_id", selectedSeason.id).order("name", {
+        ascending: true,
+      })
+  );
+
+  // Get finished matches (including forfeits) for the selected season
+  const matches = await pagedSelect(
+    "matches",
+    "id, match_date, status, home_team_id, away_team_id, home_score, away_score, is_forfeit, forfeit_winner_id",
+    (query) =>
+      query
+        .eq("season_id", selectedSeason.id)
+        .eq("status", "finished")
+        .order("match_date", { ascending: false })
+  );
+
+  // Fallback: if teams are blocked by RLS but matches are visible, load teams by IDs
+  if (teams.length === 0 && matches.length > 0) {
+    const teamIds = Array.from(
+      new Set(matches.flatMap((m: MatchRow) => [m.home_team_id, m.away_team_id]))
+    );
+    teams = await pagedSelect(
+      "teams",
+      "id, name, logo_url, conference, penalty_points, points, is_withdrawn",
+      (query) => query.in("id", teamIds).order("name", { ascending: true })
+    );
+  }
+
+  const teamMatchCount = new Map<string, number>();
+  (matches as MatchRow[]).forEach((match) => {
+    teamMatchCount.set(
+      match.home_team_id,
+      (teamMatchCount.get(match.home_team_id) || 0) + 1
+    );
+    teamMatchCount.set(
+      match.away_team_id,
+      (teamMatchCount.get(match.away_team_id) || 0) + 1
+    );
+  });
+
+  // Merge case-only duplicate team names for standings stability
+  const canonicalByKey = new Map<string, TeamRow>();
+  const canonicalCountByKey = new Map<string, number>();
+  teams.forEach((team: TeamRow) => {
+    const key = team.name.trim().toLowerCase();
+    const count = teamMatchCount.get(team.id) || 0;
+    const current = canonicalByKey.get(key);
+    const currentCount = canonicalCountByKey.get(key) || -1;
+    if (!current || count > currentCount) {
+      canonicalByKey.set(key, team);
+      canonicalCountByKey.set(key, count);
+    }
+  });
+
+  const canonicalIdByTeamId = new Map<string, string>();
+  const penaltyByCanonicalId = new Map<string, number>();
+  teams.forEach((team: TeamRow) => {
+    const key = team.name.trim().toLowerCase();
+    const canonicalTeam = canonicalByKey.get(key) || team;
+    canonicalIdByTeamId.set(team.id, canonicalTeam.id);
+    const canonicalId = canonicalTeam.id;
+    const penalty = Number(team.penalty_points || 0);
+    penaltyByCanonicalId.set(
+      canonicalId,
+      (penaltyByCanonicalId.get(canonicalId) || 0) + penalty
+    );
+  });
+
+  const dedupedTeams: TeamRow[] = Array.from(canonicalByKey.values());
 
   const statsMap = new Map<string, TeamComputed>();
   const recentMap = new Map<string, string[]>();
   const headToHead: HeadToHeadMap = new Map();
 
-  const sortedMatches: MatchRow[] = [...(matches || [])].sort(
+  const normalizedMatches: MatchRow[] = (matches as MatchRow[])
+    .map((match) => ({
+      ...match,
+      home_team_id: canonicalIdByTeamId.get(match.home_team_id) || match.home_team_id,
+      away_team_id: canonicalIdByTeamId.get(match.away_team_id) || match.away_team_id,
+      forfeit_winner_id: match.forfeit_winner_id
+        ? canonicalIdByTeamId.get(match.forfeit_winner_id) || match.forfeit_winner_id
+        : null,
+    }))
+    .filter((match) => match.home_team_id !== match.away_team_id);
+
+  const dedupedMatchMap = new Map<string, MatchRow>();
+  normalizedMatches.forEach((match) => {
+    const matchDateKey = normalizeMatchDateKey(match.match_date);
+    const key = `${match.home_team_id}::${match.away_team_id}::${matchDateKey}`;
+    if (dedupedMatchMap.has(key)) return;
+    dedupedMatchMap.set(key, { ...match, match_date: matchDateKey });
+  });
+
+  const dedupedMatches: MatchRow[] = Array.from(dedupedMatchMap.values());
+
+  const sortedMatches: MatchRow[] = [...dedupedMatches].sort(
     (a, b) =>
       new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
   );
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[Standings] season", {
+      id: selectedSeason.id,
+      name: selectedSeason.name,
+      usingServiceRole: !!serviceClient,
+      teams: teams.length,
+      matches: (matches as MatchRow[]).length,
+      dedupedTeams: dedupedTeams.length,
+      normalizedMatches: normalizedMatches.length,
+      dedupedMatches: dedupedMatches.length,
+      duplicateMatchesRemoved: normalizedMatches.length - dedupedMatches.length,
+    });
+  }
 
   // Aggregate match data
   sortedMatches.forEach((match) => {
@@ -236,7 +370,7 @@ export default async function StandingsPage() {
 
   // Combine final team data
   const withStats: TeamComputed[] =
-    teams?.map((team) => {
+    dedupedTeams.map((team) => {
       const raw = statsMap.get(team.id) || { ...DEFAULT_ZERO, id: team.id };
       const gamesPlayed = raw.wins + raw.losses;
 
@@ -266,7 +400,7 @@ export default async function StandingsPage() {
           ? (raw.points_for - raw.points_against) / gamesPlayed
           : 0;
 
-      const safePenalty = team.penalty_points ? Number(team.penalty_points) : 0;
+      const safePenalty = penaltyByCanonicalId.get(team.id) || 0;
 
       return {
         ...team,
@@ -283,7 +417,7 @@ export default async function StandingsPage() {
         pointsNet: raw.points - safePenalty,
         recentForm: recentMap.get(team.id) || [],
       };
-    }) || [];
+    });
 
   const headToHeadCompare = (a: TeamComputed, b: TeamComputed) => {
     const aWins = headToHead.get(a.id)?.get(b.id) || 0;
@@ -307,15 +441,20 @@ export default async function StandingsPage() {
   const eastTeams = sortTeams(
     withStats.filter((t) => t.conference === "East")
   );
-  const allTeams = sortTeams([...westTeams, ...eastTeams]);
+  const allTeams = sortTeams(withStats);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Standings</h1>
-          <p className="text-xl text-muted-foreground">{activeSeason.name}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold">Standings</h1>
+            <p className="text-xl text-muted-foreground">
+              {selectedSeason.name}
+            </p>
+          </div>
+          <SeasonSelector seasons={seasons} selectedSeasonId={selectedSeason.id} />
         </div>
 
         {/* Tabs for Conference Selection */}

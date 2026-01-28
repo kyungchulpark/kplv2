@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, LogIn, User, ExternalLink, Plus, FileText } from "lucide-react";
+import { Menu, X, LogIn, User, ExternalLink, Plus, FileText, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +116,11 @@ export function Navbar({ user }: NavbarProps) {
                     </Button>
                   </Link>
                 )}
+                <Link href="/messages">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <MessageCircle className="h-5 w-5" />
+                  </Button>
+                </Link>
                 <Link href="/profile">
                   <Button variant="default" size="sm">
                     <User className="mr-2 h-4 w-4" />
@@ -221,6 +226,12 @@ export function Navbar({ user }: NavbarProps) {
                     </Button>
                   </Link>
                 )}
+                <Link href="/messages" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    메시지
+                  </Button>
+                </Link>
                 <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="default" size="sm" className="w-full">
                     <User className="mr-2 h-4 w-4" />

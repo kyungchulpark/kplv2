@@ -24,7 +24,7 @@ interface TeamRole {
  * Permission Logic:
  * 1. Admin/Staff can always upload
  * 2. Team members (players in team_rosters) can upload for their team's matches
- * 3. Match must not be already finished
+ * 3. Finished matches can be edited by authorized users
  *
  * @param userId - Current user ID
  * @param matchId - Match ID to check
@@ -68,16 +68,7 @@ export async function canUserUploadMatchResult(
     };
   }
 
-  // 3. Check if match is already finished
-  if (match.status === "finished") {
-    return {
-      canUpload: false,
-      teamId: null,
-      reason: "이미 완료된 경기입니다",
-    };
-  }
-
-  // 4. Check if user is on either team's roster (active player)
+  // 3. Check if user is on either team's roster (active player)
   const { data: rosters } = await supabase
     .from("team_rosters")
     .select("team_id")
@@ -124,12 +115,12 @@ export async function getUserUploadableMatches(
     .single();
 
   if (profile && ["admin", "staff"].includes(profile.role)) {
-    // Admin/Staff can see all scheduled/live matches
+    // Admin/Staff can see all scheduled/live/finished matches
     const { data: matches } = await supabase
       .from("matches")
       .select("id")
       .eq("season_id", seasonId)
-      .in("status", ["scheduled", "live"]);
+      .in("status", ["scheduled", "live", "finished"]);
 
     return matches ? matches.map((m) => m.id) : [];
   }
@@ -153,7 +144,7 @@ export async function getUserUploadableMatches(
     .from("matches")
     .select("id")
     .eq("season_id", seasonId)
-    .in("status", ["scheduled", "live"])
+    .in("status", ["scheduled", "live", "finished"])
     .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`);
 
   return matches ? matches.map((m) => m.id) : [];

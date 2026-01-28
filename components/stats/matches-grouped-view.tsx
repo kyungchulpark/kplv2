@@ -14,6 +14,9 @@ type Match = {
   match_date: string;
   status: "scheduled" | "live" | "finished" | "cancelled";
   match_sequence: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  is_forfeit: boolean | null;
   home_team: {
     id: string;
     name: string;
@@ -94,6 +97,13 @@ export function MatchesGroupedView({
             {currentMatches.map((match) => {
               const matchDate = new Date(match.match_date);
               const status = statusCopy[match.status];
+              const isFinished = match.status === "finished";
+              const homeScore = match.home_score ?? 0;
+              const awayScore = match.away_score ?? 0;
+              const actionLabel = isFinished ? "Edit Result" : "Submit Result";
+              const actionClassName = isFinished
+                ? "bg-amber-600 hover:bg-amber-700"
+                : "bg-emerald-600 hover:bg-emerald-700";
               return (
                 <Card
                   key={match.id}
@@ -131,11 +141,25 @@ export function MatchesGroupedView({
                       <TeamBadge team={match.away_team} />
                     </div>
 
+                    {/* Scoreline for finished matches */}
+                    {isFinished && (
+                      <div className="flex items-center justify-center gap-3 text-2xl font-extrabold">
+                        <span>{homeScore}</span>
+                        <span className="text-base text-muted-foreground">-</span>
+                        <span>{awayScore}</span>
+                        {match.is_forfeit && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Forfeit
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
                     {/* Action Button */}
                     <div className="flex justify-end pt-2">
-                      <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+                      <Button asChild className={actionClassName}>
                         <Link href={`/stats/upload/${match.id}`}>
-                          Submit Result
+                          {actionLabel}
                         </Link>
                       </Button>
                     </div>
