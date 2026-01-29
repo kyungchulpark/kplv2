@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/youtube/live-status/cron",
-      "schedule": "* * * * *"
-    }
-  ]
-}
