@@ -24,6 +24,7 @@ type TeamRow = {
   conference: "West" | "East" | null;
   penalty_points: number | null;
   points: number;
+  is_active?: boolean | null;
   is_withdrawn?: boolean | null;
 };
 
@@ -147,7 +148,7 @@ export default async function StandingsPage({ searchParams }: StandingsPageProps
   // Get team info + penalty points for the selected season
   let teams = await pagedSelect(
     "teams",
-    "id, name, logo_url, conference, penalty_points, points, is_withdrawn",
+    "id, name, logo_url, conference, penalty_points, points, is_active, is_withdrawn",
     (query) =>
       query.eq("season_id", selectedSeason.id).order("name", {
         ascending: true,
@@ -172,7 +173,7 @@ export default async function StandingsPage({ searchParams }: StandingsPageProps
     );
     teams = await pagedSelect(
       "teams",
-      "id, name, logo_url, conference, penalty_points, points, is_withdrawn",
+      "id, name, logo_url, conference, penalty_points, points, is_active, is_withdrawn",
       (query) => query.in("id", teamIds).order("name", { ascending: true })
     );
   }
@@ -218,6 +219,20 @@ export default async function StandingsPage({ searchParams }: StandingsPageProps
   });
 
   const dedupedTeams: TeamRow[] = Array.from(canonicalByKey.values());
+  const canonicalMatchCount = new Map<string, number>();
+  teamMatchCount.forEach((count, teamId) => {
+    const canonicalId = canonicalIdByTeamId.get(teamId) || teamId;
+    canonicalMatchCount.set(
+      canonicalId,
+      (canonicalMatchCount.get(canonicalId) || 0) + count
+    );
+  });
+
+  const participatingTeams = dedupedTeams.filter((team) => {
+    const hasGames = (canonicalMatchCount.get(team.id) || 0) > 0;
+    const isActive = team.is_active ?? true;
+    return hasGames || isActive;
+  });
 
   const statsMap = new Map<string, TeamComputed>();
   const recentMap = new Map<string, string[]>();
@@ -370,7 +385,7 @@ export default async function StandingsPage({ searchParams }: StandingsPageProps
 
   // Combine final team data
   const withStats: TeamComputed[] =
-    dedupedTeams.map((team) => {
+    participatingTeams.map((team) => {
       const raw = statsMap.get(team.id) || { ...DEFAULT_ZERO, id: team.id };
       const gamesPlayed = raw.wins + raw.losses;
 
