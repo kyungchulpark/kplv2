@@ -1,0 +1,14 @@
+name: YouTube Live Cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase function
+        run: |
+          curl -sS "${{ secrets.SUPABASE_YOUTUBE_CRON_URL }}" -o /dev/null -w "%{http_code}\n"
