@@ -105,10 +105,12 @@ export function StreamList({ streamers }: StreamListProps) {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white overflow-hidden">
               {streamer.avatar_url ? (
                 <img
-                  src={streamer.avatar_url}
-                  alt={streamer.psn_id}
-                  className="h-12 w-12 object-cover"
-                />
+                    src={streamer.avatar_url}
+                    alt={streamer.psn_id}
+                    className="h-12 w-12 object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
               ) : (
                 <User className="h-6 w-6" />
               )}
@@ -153,10 +155,12 @@ export function StreamList({ streamers }: StreamListProps) {
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white overflow-hidden">
           {streamer.avatar_url ? (
             <img
-              src={streamer.avatar_url}
-              alt={streamer.psn_id}
-              className="h-10 w-10 object-cover"
-            />
+                src={streamer.avatar_url}
+                alt={streamer.psn_id}
+                className="h-10 w-10 object-cover"
+                loading="lazy"
+                decoding="async"
+              />
           ) : (
             <User className="h-5 w-5" />
           )}

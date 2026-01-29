@@ -150,7 +150,13 @@ export function TeamsManagerWithFilter({ teams, seasons }: TeamsManagerWithFilte
                                     <td className="py-4 px-2">
                                         <div className="flex items-center space-x-3">
                                             {team.logo_url ? (
-                                                <img src={team.logo_url} alt={team.name} className="h-8 w-8 object-contain" />
+                                                <img
+                                                  src={team.logo_url}
+                                                  alt={team.name}
+                                                  className="h-8 w-8 object-contain"
+                                                  loading="lazy"
+                                                  decoding="async"
+                                                />
                                             ) : (
                                                 <div className="h-8 w-8 rounded bg-nba-red flex items-center justify-center text-xs font-bold text-white">
                                                     {team.name.substring(0, 2)}

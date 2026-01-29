@@ -18,6 +18,8 @@ type Match = {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  is_forfeit?: boolean | null;
+  forfeit_reason?: string | null;
   match_sequence: string | null;
   game_password: string | null;
   home_team: {
@@ -113,10 +115,12 @@ export function ScheduleTable({ matches, selectedDate, onDateChange, leagueEnded
     if (team.logo_url) {
       return (
         <img
-          src={team.logo_url}
-          alt={team.name}
-          className="h-10 w-10 md:h-12 md:w-12 object-contain"
-        />
+            src={team.logo_url}
+            alt={team.name}
+            className="h-10 w-10 md:h-12 md:w-12 object-contain"
+            loading="lazy"
+            decoding="async"
+          />
       );
     }
     return (

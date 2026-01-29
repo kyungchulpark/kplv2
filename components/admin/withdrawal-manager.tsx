@@ -178,10 +178,12 @@ export function WithdrawalManager({
                 <div className="flex items-center space-x-2">
                   {team.logo_url && (
                     <img
-                      src={team.logo_url}
-                      alt={team.name}
-                      className="h-6 w-6 object-contain opacity-50"
-                    />
+                        src={team.logo_url}
+                        alt={team.name}
+                        className="h-6 w-6 object-contain opacity-50"
+                        loading="lazy"
+                        decoding="async"
+                      />
                   )}
                   <AlertDescription className="font-medium line-through">
                     {team.name}
@@ -240,10 +242,12 @@ export function WithdrawalManager({
                       <div className="flex items-center space-x-2">
                         {team.logo_url && (
                           <img
-                            src={team.logo_url}
-                            alt={team.name}
-                            className="h-5 w-5 object-contain"
-                          />
+                              src={team.logo_url}
+                              alt={team.name}
+                              className="h-5 w-5 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         )}
                         <span>{team.name}</span>
                       </div>

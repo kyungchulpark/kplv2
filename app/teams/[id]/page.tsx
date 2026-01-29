@@ -125,10 +125,12 @@ export default async function TeamDetailPage({ params }: PageProps) {
               {/* Logo */}
               {team.logo_url ? (
                 <img
-                  src={team.logo_url}
-                  alt={team.name}
-                  className="h-32 w-32 object-contain"
-                />
+                    src={team.logo_url}
+                    alt={team.name}
+                    className="h-32 w-32 object-contain"
+                    loading="lazy"
+                    decoding="async"
+                  />
               ) : (
                 <div className="h-32 w-32 rounded-2xl bg-nba-red flex items-center justify-center text-4xl font-bold text-white">
                   {team.name.substring(0, 2).toUpperCase()}
@@ -223,7 +225,10 @@ export default async function TeamDetailPage({ params }: PageProps) {
                       key={member.id}
                       className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors"
                     >
-                      <div className="flex items-center space-x-3">
+                      <Link
+                        href={`/players/${member.player.id}`}
+                        className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+                      >
                         <Avatar>
                           <AvatarImage src={member.player.avatar_url || undefined} />
                           <AvatarFallback>
@@ -238,7 +243,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
                             </p>
                           )}
                         </div>
-                      </div>
+                      </Link>
                       {member.jersey_number && (
                         <Badge variant="outline">#{member.jersey_number}</Badge>
                       )}

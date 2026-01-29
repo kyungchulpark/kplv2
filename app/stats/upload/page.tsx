@@ -148,8 +148,12 @@ export default async function ResultsUploadPage() {
     return query;
   });
 
+  const filteredMatches = isAdminOrStaff
+    ? matches
+    : matches.filter((match) => !match.is_forfeit);
+
   // Group matches by date
-  const groupedMatches = matches.reduce((acc, match) => {
+  const groupedMatches = filteredMatches.reduce((acc, match) => {
     const date = match.match_date.split("T")[0];
     if (!acc[date]) {
       acc[date] = [];
@@ -224,6 +228,7 @@ export default async function ResultsUploadPage() {
         sortedDates={sortedDates}
         initialSelectedDate={initialSelectedDate}
         statusCopy={statusCopy}
+        canEditForfeit={isAdminOrStaff}
       />
     </div>
   );

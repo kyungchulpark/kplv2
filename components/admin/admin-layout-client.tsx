@@ -20,6 +20,7 @@ import {
   Ban,
   Crown,
   Megaphone,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -37,7 +38,8 @@ type IconKey =
   | "users"
   | "playoffs"
   | "history"
-  | "broadcast";
+  | "broadcast"
+  | "monitoring";
 
 type NavItem = {
   href: string;
@@ -74,6 +76,7 @@ export function AdminLayoutClient({
     playoffs: Trophy,
     history: Award,
     broadcast: Megaphone,
+    monitoring: Activity,
   };
 
   return (

@@ -134,6 +134,8 @@ export function PlayersClient({
                               src={player.team.logo_url}
                               alt={player.team.name}
                               className="h-6 w-6 object-contain"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <div className="h-6 w-6 rounded bg-primary/10 flex items-center justify-center text-xs font-bold">

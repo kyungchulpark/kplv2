@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
+import { resizeImageFile } from "@/lib/image-resize";
 
 type Team = {
   id: string;
@@ -109,20 +110,44 @@ export function TeamFormDialog({
       const supabase = createClient();
 
       if (mode === "create") {
-        const { error } = await supabase.from("teams").insert({
-          season_id: seasonId,
-          name: formData.name,
-          conference: formData.conference,
-          logo_url: formData.logo_url || null,
-          captain_id: formData.captain_id || null,
-          wins: 0,
-          losses: 0,
-          points_for: 0,
-          points_against: 0,
-        });
+        const { data: insertedTeam, error } = await supabase
+          .from("teams")
+          .insert({
+            season_id: seasonId,
+            name: formData.name,
+            conference: formData.conference,
+            logo_url: formData.logo_url || null,
+            captain_id: formData.captain_id || null,
+            wins: 0,
+            losses: 0,
+            points_for: 0,
+            points_against: 0,
+          })
+          .select("id, name")
+          .single();
 
         if (error) throw error;
-        toast.success("팀이 생성되었습니다");
+        const { data: authData } = await supabase.auth.getUser();
+        const actorId = authData.user?.id;
+        if (actorId && insertedTeam) {
+          const { error: activityError } = await supabase
+            .from("activity_logs")
+            .insert({
+              actor_id: actorId,
+              action: "team_created",
+              entity_type: "team",
+              entity_id: insertedTeam.id,
+              details: {
+                team_id: insertedTeam.id,
+                team_name: insertedTeam.name,
+                season_id: seasonId,
+              },
+            });
+          if (activityError) {
+            console.error("Error writing activity log:", activityError);
+          }
+        }
+        toast.success("Team created.");
       } else {
         const { error } = await supabase
           .from("teams")
@@ -165,12 +190,13 @@ export function TeamFormDialog({
 
     try {
       const supabase = createClient();
-      const fileExt = file.name.split(".").pop();
+      const resizedFile = await resizeImageFile(file, 256);
+      const fileExt = resizedFile.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("team-logos")
-        .upload(fileName, file);
+        .upload(fileName, resizedFile);
 
       if (uploadError) throw uploadError;
 
@@ -265,10 +291,12 @@ export function TeamFormDialog({
               {formData.logo_url && (
                 <div className="flex items-center space-x-2">
                   <img
-                    src={formData.logo_url}
-                    alt="Team logo preview"
-                    className="h-12 w-12 object-contain border rounded"
-                  />
+                      src={formData.logo_url}
+                      alt="Team logo preview"
+                      className="h-12 w-12 object-contain border rounded"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   <Button
                     type="button"
                     variant="outline"

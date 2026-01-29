@@ -76,10 +76,12 @@ export function BracketView({ series, conference }: BracketViewProps) {
             )}
             {s.team1?.logo_url && (
               <img
-                src={s.team1.logo_url}
-                alt={s.team1.name}
-                className="h-5 w-5 object-contain"
-              />
+                  src={s.team1.logo_url}
+                  alt={s.team1.name}
+                  className="h-5 w-5 object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
             )}
             <span
               className={cn(
@@ -108,10 +110,12 @@ export function BracketView({ series, conference }: BracketViewProps) {
             )}
             {s.team2?.logo_url && (
               <img
-                src={s.team2.logo_url}
-                alt={s.team2.name}
-                className="h-5 w-5 object-contain"
-              />
+                  src={s.team2.logo_url}
+                  alt={s.team2.name}
+                  className="h-5 w-5 object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
             )}
             <span
               className={cn(

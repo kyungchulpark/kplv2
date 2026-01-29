@@ -1,9 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Shield, Users } from "lucide-react";
 import { PlayersClient } from "@/components/players/players-client";
 
@@ -12,6 +9,8 @@ export const metadata = {
   description: "All registered players in KPL",
 };
 
+export const revalidate = 60;
+
 export default async function PlayersPage() {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -19,43 +18,59 @@ export default async function PlayersPage() {
   // Get active season
   const { data: activeSeason } = await supabase
     .from("seasons")
-    .select("*")
+    .select("id, name")
     .eq("is_active", true)
     .single();
 
   // Get all users with their team info
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, psn_id, email, avatar_url, role, created_at")
     .order("psn_id", { ascending: true });
 
-  // Enrich with team data
-  const playersWithTeams = await Promise.all(
-    (profiles || []).map(async (profile) => {
-      // Check if captain
-      const { data: captainTeam } = await supabase
+  const seasonId = activeSeason?.id;
+  const captainTeams = seasonId
+    ? await supabase
         .from("teams")
-        .select("id, name, logo_url")
-        .eq("captain_id", profile.id)
-        .eq("season_id", activeSeason?.id || "")
-        .single();
+        .select("id, name, logo_url, captain_id")
+        .eq("season_id", seasonId)
+    : { data: [] as any[] };
 
-      // Check if roster member
-      const { data: rosterTeam } = await supabase
+  const rosterTeams = seasonId
+    ? await supabase
         .from("team_rosters")
-        .select("team:teams(id, name, logo_url)")
-        .eq("player_id", profile.id)
-        .eq("season_id", activeSeason?.id || "")
+        .select("player_id, team:teams(id, name, logo_url)")
+        .eq("season_id", seasonId)
         .eq("is_active", true)
-        .single();
+    : { data: [] as any[] };
 
-      return {
-        ...profile,
-        team: captainTeam || (rosterTeam as any)?.team || null,
-        isCaptain: !!captainTeam,
-      };
-    })
-  );
+  const captainByPlayer = new Map<string, { id: string; name: string; logo_url: string | null }>();
+  (captainTeams.data || []).forEach((team: any) => {
+    if (team.captain_id) {
+      captainByPlayer.set(team.captain_id, {
+        id: team.id,
+        name: team.name,
+        logo_url: team.logo_url,
+      });
+    }
+  });
+
+  const rosterByPlayer = new Map<string, { id: string; name: string; logo_url: string | null }>();
+  (rosterTeams.data || []).forEach((row: any) => {
+    if (row.player_id && row.team) {
+      rosterByPlayer.set(row.player_id, row.team);
+    }
+  });
+
+  const playersWithTeams = (profiles || []).map((profile) => {
+    const captainTeam = captainByPlayer.get(profile.id) || null;
+    const rosterTeam = rosterByPlayer.get(profile.id) || null;
+    return {
+      ...profile,
+      team: captainTeam || rosterTeam,
+      isCaptain: !!captainTeam,
+    };
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">

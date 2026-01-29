@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { TeamCard } from "@/components/teams/team-card";
 import { Card, CardContent } from "@/components/ui/card";
 
+export const revalidate = 60;
+
 export default async function TeamsPage() {
   const supabase = await createClient();
 
@@ -17,14 +19,21 @@ export default async function TeamsPage() {
     .from("teams")
     .select(
       `
-      *,
+      id,
+      name,
+      logo_url,
+      conference,
+      region,
+      wins,
+      losses,
+      is_active,
+      season_id,
       captain:profiles!teams_captain_id_fkey(
         id,
         psn_id,
         avatar_url
       ),
-      _rosters:team_rosters(count),
-      season:seasons(name)
+      _rosters:team_rosters(count)
     `
     )
     .or("is_disbanded.is.null,is_disbanded.eq.false")
@@ -43,11 +52,21 @@ export default async function TeamsPage() {
   });
 
   // Add championship count and active status to each team
-  const teamsWithData = teams?.map((team) => ({
-    ...team,
-    championships: championshipCounts.get(team.id) || 0,
-    isActiveLeague: !!(activeSeason && team.season_id === activeSeason.id && team.is_active),
-  })) || [];
+  const teamsWithData =
+    teams?.map((team) => ({
+      ...team,
+      championships: championshipCounts.get(team.id) || 0,
+      isActiveLeague: !!(
+        activeSeason && team.season_id === activeSeason.id && team.is_active
+      ),
+    })) || [];
+
+  teamsWithData.sort((a, b) => {
+    const aActive = a.isActiveLeague ? 1 : 0;
+    const bActive = b.isActiveLeague ? 1 : 0;
+    if (aActive !== bActive) return bActive - aActive;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">

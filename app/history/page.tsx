@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+export const revalidate = 300;
+
 export default async function HistoryPage() {
   const supabase = await createClient();
 
@@ -103,10 +105,12 @@ export default async function HistoryPage() {
                     <div className="flex items-center space-x-3">
                       {champ.champion_logo && (
                         <img
-                          src={champ.champion_logo}
-                          alt={champ.champion_team_name}
-                          className="h-12 w-12 object-contain"
-                        />
+                            src={champ.champion_logo}
+                            alt={champ.champion_team_name}
+                            className="h-12 w-12 object-contain"
+                            loading="lazy"
+                            decoding="async"
+                          />
                       )}
                       <div>
                         <div className="text-sm text-muted-foreground">
@@ -132,10 +136,12 @@ export default async function HistoryPage() {
                       <div className="flex items-center space-x-3">
                         {champ.runner_up_logo && (
                           <img
-                            src={champ.runner_up_logo}
-                            alt={champ.runner_up_team_name}
-                            className="h-8 w-8 object-contain"
-                          />
+                              src={champ.runner_up_logo}
+                              alt={champ.runner_up_team_name}
+                              className="h-8 w-8 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         )}
                         <div>
                           <div className="text-xs text-muted-foreground">

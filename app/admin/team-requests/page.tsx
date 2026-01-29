@@ -91,10 +91,12 @@ export default async function TeamRequestsPage() {
           <div>
             <p className="text-sm text-muted-foreground mb-2">Logo:</p>
             <img
-              src={request.logo_url}
-              alt={request.team_name}
-              className="h-16 w-16 object-contain rounded border"
-            />
+                src={request.logo_url}
+                alt={request.team_name}
+                className="h-16 w-16 object-contain rounded border"
+                loading="lazy"
+                decoding="async"
+              />
           </div>
         )}
 

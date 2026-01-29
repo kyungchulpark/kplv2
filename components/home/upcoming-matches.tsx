@@ -127,10 +127,12 @@ export function UpcomingMatches({ matches }: UpcomingMatchesProps) {
                       <div className="flex items-center gap-2">
                         {match.home_team.logo_url ? (
                           <img
-                            src={match.home_team.logo_url}
-                            alt={match.home_team.name}
-                            className="h-8 w-8 object-contain"
-                          />
+                              src={match.home_team.logo_url}
+                              alt={match.home_team.name}
+                              className="h-8 w-8 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-500 text-xs font-bold text-white">
                             {match.home_team.name.substring(0, 2)}
@@ -153,10 +155,12 @@ export function UpcomingMatches({ matches }: UpcomingMatchesProps) {
                       <div className="flex items-center gap-2">
                         {match.away_team.logo_url ? (
                           <img
-                            src={match.away_team.logo_url}
-                            alt={match.away_team.name}
-                            className="h-8 w-8 object-contain"
-                          />
+                              src={match.away_team.logo_url}
+                              alt={match.away_team.name}
+                              className="h-8 w-8 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-500 text-xs font-bold text-white">
                             {match.away_team.name.substring(0, 2)}

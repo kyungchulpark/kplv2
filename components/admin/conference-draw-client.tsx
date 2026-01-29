@@ -210,10 +210,12 @@ export function ConferenceDrawClient({
                 <div className="flex items-center gap-3">
                   {team.logo_url ? (
                     <img
-                      src={team.logo_url}
-                      alt={team.name}
-                      className="h-8 w-8 object-contain"
-                    />
+                        src={team.logo_url}
+                        alt={team.name}
+                        className="h-8 w-8 object-contain"
+                        loading="lazy"
+                        decoding="async"
+                      />
                   ) : (
                     <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-xs font-bold">
                       {team.name.substring(0, 2)}

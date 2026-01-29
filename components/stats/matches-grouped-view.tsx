@@ -41,6 +41,7 @@ interface MatchesGroupedViewProps {
   sortedDates: string[];
   initialSelectedDate: string;
   statusCopy: Record<Match["status"], StatusConfig>;
+  canEditForfeit?: boolean;
 }
 
 export function MatchesGroupedView({
@@ -48,6 +49,7 @@ export function MatchesGroupedView({
   sortedDates,
   initialSelectedDate,
   statusCopy,
+  canEditForfeit = false,
 }: MatchesGroupedViewProps) {
   const [selectedDate, setSelectedDate] = useState<string>(initialSelectedDate);
 
@@ -104,6 +106,7 @@ export function MatchesGroupedView({
               const actionClassName = isFinished
                 ? "bg-amber-600 hover:bg-amber-700"
                 : "bg-emerald-600 hover:bg-emerald-700";
+              const isForfeitLocked = !!match.is_forfeit && !canEditForfeit;
               return (
                 <Card
                   key={match.id}
@@ -157,11 +160,17 @@ export function MatchesGroupedView({
 
                     {/* Action Button */}
                     <div className="flex justify-end pt-2">
-                      <Button asChild className={actionClassName}>
-                        <Link href={`/stats/upload/${match.id}`}>
-                          {actionLabel}
-                        </Link>
-                      </Button>
+                      {isForfeitLocked ? (
+                        <Button disabled variant="outline">
+                          Forfeit Locked
+                        </Button>
+                      ) : (
+                        <Button asChild className={actionClassName}>
+                          <Link href={`/stats/upload/${match.id}`}>
+                            {actionLabel}
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -207,6 +216,8 @@ function TeamBadge({
             "h-10 w-10 rounded-lg border-2 object-contain bg-white",
             getBorderColor(team.conference)
           )}
+          loading="lazy"
+          decoding="async"
         />
       ) : (
         <div

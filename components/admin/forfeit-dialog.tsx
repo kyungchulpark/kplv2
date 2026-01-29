@@ -32,6 +32,11 @@ interface Match {
   away_team_name: string;
   match_date: string;
   status: string;
+  home_score?: number | null;
+  away_score?: number | null;
+  is_forfeit?: boolean | null;
+  forfeit_winner_id?: string | null;
+  forfeit_reason?: string | null;
 }
 
 interface ForfeitDialogProps {
@@ -73,6 +78,15 @@ export function ForfeitDialog({ match, onSuccess }: ForfeitDialogProps) {
     setLoading(true);
 
     try {
+      const beforeMatch = {
+        status: match.status,
+        home_score: match.home_score ?? null,
+        away_score: match.away_score ?? null,
+        is_forfeit: match.is_forfeit ?? false,
+        forfeit_winner_id: match.forfeit_winner_id ?? null,
+        forfeit_reason: match.forfeit_reason ?? null,
+      };
+
       // Update match as forfeit
       const { error } = await supabase
         .from("matches")
@@ -89,6 +103,48 @@ export function ForfeitDialog({ match, onSuccess }: ForfeitDialogProps) {
         .eq("id", match.id);
 
       if (error) throw error;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const editorId = authData.user?.id;
+      if (editorId) {
+        const { error: auditError } = await supabase
+          .from("match_result_audits")
+          .insert({
+            match_id: match.id,
+            editor_id: editorId,
+            action: "forfeit",
+            before_match: beforeMatch,
+            after_match: {
+              status: "finished",
+              home_score: 0,
+              away_score: 0,
+              is_forfeit: true,
+              forfeit_winner_id: winnerId,
+              forfeit_reason: reason.trim(),
+            },
+          });
+        if (auditError) {
+          console.error("Error writing forfeit audit:", auditError);
+        }
+
+        const { error: activityError } = await supabase
+          .from("activity_logs")
+          .insert({
+            actor_id: editorId,
+            action: "match_forfeit",
+            entity_type: "match",
+            entity_id: match.id,
+            details: {
+              match_id: match.id,
+              home_team_name: match.home_team_name,
+              away_team_name: match.away_team_name,
+              forfeit_reason: reason.trim(),
+            },
+          });
+        if (activityError) {
+          console.error("Error writing activity log:", activityError);
+        }
+      }
 
       toast.success("경기가 몰수로 처리되었습니다");
 

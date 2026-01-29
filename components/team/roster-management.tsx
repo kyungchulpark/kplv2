@@ -148,6 +148,30 @@ export function RosterManagement({
 
       if (error) throw error;
 
+      const { data: authData } = await supabase.auth.getUser();
+      const actorId = authData.user?.id;
+      const addedPlayer = availablePlayers.find((p) => p.id === selectedPlayer);
+      if (actorId) {
+        const { error: activityError } = await supabase
+          .from("activity_logs")
+          .insert({
+            actor_id: actorId,
+            action: "roster_added",
+            entity_type: "roster",
+            entity_id: null,
+            details: {
+              team_id: team.id,
+              team_name: team.name,
+              player_id: selectedPlayer,
+              player_psn_id: addedPlayer?.psn_id || null,
+              position: position || null,
+            },
+          });
+        if (activityError) {
+          console.error("Error writing activity log:", activityError);
+        }
+      }
+
       setAddDialogOpen(false);
       setSelectedPlayer("");
       setJerseyNumber("");
@@ -199,6 +223,29 @@ export function RosterManagement({
         .eq("id", memberId);
 
       if (error) throw error;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const actorId = authData.user?.id;
+      const removedMember = roster.find((m) => m.id === memberId);
+      if (actorId && removedMember) {
+        const { error: activityError } = await supabase
+          .from("activity_logs")
+          .insert({
+            actor_id: actorId,
+            action: "roster_removed",
+            entity_type: "roster",
+            entity_id: removedMember.id,
+            details: {
+              team_id: team.id,
+              team_name: team.name,
+              player_id: removedMember.player_id,
+              player_psn_id: removedMember.player?.psn_id || null,
+            },
+          });
+        if (activityError) {
+          console.error("Error writing activity log:", activityError);
+        }
+      }
 
       router.refresh();
     } catch (error) {

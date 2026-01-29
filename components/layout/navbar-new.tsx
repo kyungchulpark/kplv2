@@ -242,10 +242,12 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                       <Button variant="outline" size="sm" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
                         {userTeam.logo_url ? (
                           <img
-                            src={userTeam.logo_url}
-                            alt={userTeam.name}
-                            className="h-4 w-4 object-contain"
-                          />
+                              src={userTeam.logo_url}
+                              alt={userTeam.name}
+                              className="h-4 w-4 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         ) : (
                           <Shield className="h-4 w-4" />
                         )}
@@ -296,10 +298,12 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         {userTeam.logo_url ? (
                           <img
-                            src={userTeam.logo_url}
-                            alt={userTeam.name}
-                            className="h-5 w-5 object-contain"
-                          />
+                              src={userTeam.logo_url}
+                              alt={userTeam.name}
+                              className="h-5 w-5 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         ) : (
                           <Shield className="h-5 w-5" />
                         )}
@@ -506,10 +510,12 @@ export function Navbar({ user, userTeam }: NavbarProps) {
                     <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200 text-slate-700 hover:bg-slate-50">
                       {userTeam.logo_url ? (
                         <img
-                          src={userTeam.logo_url}
-                          alt={userTeam.name}
-                          className="h-4 w-4 object-contain"
-                        />
+                            src={userTeam.logo_url}
+                            alt={userTeam.name}
+                            className="h-4 w-4 object-contain"
+                            loading="lazy"
+                            decoding="async"
+                          />
                       ) : (
                         <Shield className="h-4 w-4" />
                       )}

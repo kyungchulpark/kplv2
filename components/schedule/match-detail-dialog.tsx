@@ -23,6 +23,8 @@ interface Match {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  is_forfeit?: boolean | null;
+  forfeit_reason?: string | null;
   home_stream_url?: string | null;
   away_stream_url?: string | null;
   result_screenshot_url?: string | null;
@@ -93,10 +95,10 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
   }, [match.id]);
 
   useEffect(() => {
-    if (open && match.status === "finished") {
+    if (open && match.status === "finished" && !match.is_forfeit) {
       loadMatchStats();
     }
-  }, [open, match.status, loadMatchStats]);
+  }, [open, match.status, match.is_forfeit, loadMatchStats]);
 
   const matchDate = new Date(match.match_date);
   const homeStats = stats?.filter((s) => s.team_id === match.home_team.id) || [];
@@ -120,10 +122,12 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
       <Link href={`/teams/${team.id}`} className="block hover:opacity-80 transition-opacity">
         {team.logo_url ? (
           <img
-            src={team.logo_url}
-            alt={team.name}
-            className="h-16 w-16 object-contain mx-auto"
-          />
+              src={team.logo_url}
+              alt={team.name}
+              className="h-16 w-16 object-contain mx-auto"
+              loading="lazy"
+              decoding="async"
+            />
         ) : (
           <div className="h-16 w-16 mx-auto rounded-lg bg-nba-red flex items-center justify-center text-xl font-bold text-white">
             {team.name.substring(0, 2)}
@@ -247,8 +251,21 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
           </CardContent>
         </Card>
 
-        {/* Match Stats (if finished) */}
-        {match.status === "finished" && stats && (
+        {match.is_forfeit && match.forfeit_reason && (
+          <Card className="border-amber-200 bg-amber-50/40">
+            <CardContent className="pt-4">
+              <div className="text-sm font-semibold text-amber-800">
+                Forfeit Reason
+              </div>
+              <p className="mt-1 text-sm text-amber-800/80 whitespace-pre-wrap">
+                {match.forfeit_reason}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Match Stats (if finished and not forfeit) */}
+        {match.status === "finished" && !match.is_forfeit && stats && (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold">Match Statistics</h3>
 
@@ -282,10 +299,12 @@ export function MatchDetailDialog({ match, open, onOpenChange }: MatchDetailDial
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Match Result Screenshot</h3>
                 <img
-                  src={match.result_screenshot_url}
-                  alt="Match result screenshot"
-                  className="w-full rounded-lg border"
-                />
+                    src={match.result_screenshot_url}
+                    alt="Match result screenshot"
+                    className="w-full rounded-lg border"
+                    loading="lazy"
+                    decoding="async"
+                  />
               </div>
             )}
 

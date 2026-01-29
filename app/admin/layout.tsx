@@ -92,6 +92,11 @@ export default async function AdminLayout({
       icon: "broadcast",
     },
     {
+      href: "/admin/league-monitoring",
+      label: "League Monitoring",
+      icon: "monitoring",
+    },
+    {
       href: "/admin/users",
       label: "Users",
       icon: "users",

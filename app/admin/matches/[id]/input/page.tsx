@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, createClient } from "@/utils/supabase/server";
 import { MatchStatsInput } from "@/components/admin/match-stats-input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type ExistingStatRow = {
   player_id: string;
@@ -204,6 +205,22 @@ export default async function MatchInputPage({ params }: PageProps) {
   const finalHomeRoster = mergeRosters(homeRoster || [], fallbackHomeRoster);
   const finalAwayRoster = mergeRosters(awayRoster || [], fallbackAwayRoster);
 
+  const { data: auditLogs } = await supabase
+    .from("match_result_audits")
+    .select(
+      `
+      id,
+      action,
+      created_at,
+      editor:profiles!match_result_audits_editor_id_fkey(
+        psn_id
+      )
+    `
+    )
+    .eq("match_id", id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <MatchStatsInput
@@ -216,6 +233,40 @@ export default async function MatchInputPage({ params }: PageProps) {
         initialAwayStreamUrl={matchRecord.away_stream_url || ""}
         isEditing={isEditing}
       />
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Match Edit History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {auditLogs && auditLogs.length > 0 ? (
+            <div className="space-y-3">
+              {auditLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+                >
+                  <div className="font-medium">
+                    {(log.editor as any)?.psn_id || "Unknown"}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {log.action}
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {log.created_at
+                      ? new Date(log.created_at as string).toLocaleString("en-US")
+                      : "-"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No edits recorded yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { resizeImageFile } from "@/lib/image-resize";
 
 export default function CreateTeamPage() {
   const router = useRouter();
@@ -139,12 +140,13 @@ export default function CreateTeamPage() {
       // Upload logo if exists
       let logoUrl = null;
       if (logoFile) {
-        const fileExt = logoFile.name.split(".").pop();
+        const resizedFile = await resizeImageFile(logoFile, 256);
+        const fileExt = resizedFile.name.split(".").pop();
         const fileName = `${Math.random()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("team-logos")
-          .upload(fileName, logoFile);
+          .upload(fileName, resizedFile);
 
         if (uploadError) {
           console.error("Logo upload error:", uploadError);
@@ -293,10 +295,12 @@ export default function CreateTeamPage() {
                   >
                     {logoPreview ? (
                       <img
-                        src={logoPreview}
-                        alt="Logo preview"
-                        className="h-24 w-24 object-contain mb-2"
-                      />
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="h-24 w-24 object-contain mb-2"
+                          loading="lazy"
+                          decoding="async"
+                        />
                     ) : (
                       <Upload className="h-12 w-12 text-muted-foreground mb-2" />
                     )}

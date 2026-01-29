@@ -82,10 +82,12 @@ export function FinalsBracket({
           <div className="flex flex-col items-center space-y-3">
             {team.logo_url && (
               <img
-                src={team.logo_url}
-                alt={team.name}
-                className="h-16 w-16 object-contain"
-              />
+                  src={team.logo_url}
+                  alt={team.name}
+                  className="h-16 w-16 object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
             )}
             <div className="text-center">
               <div className="text-sm text-muted-foreground mb-1">
@@ -153,10 +155,12 @@ export function FinalsBracket({
               <div className="flex items-center space-x-3">
                 {series.team1?.logo_url && (
                   <img
-                    src={series.team1.logo_url}
-                    alt={series.team1.name}
-                    className="h-8 w-8 object-contain"
-                  />
+                      src={series.team1.logo_url}
+                      alt={series.team1.name}
+                      className="h-8 w-8 object-contain"
+                      loading="lazy"
+                      decoding="async"
+                    />
                 )}
                 <span
                   className={cn(
@@ -181,10 +185,12 @@ export function FinalsBracket({
               <div className="flex items-center space-x-3">
                 {series.team2?.logo_url && (
                   <img
-                    src={series.team2.logo_url}
-                    alt={series.team2.name}
-                    className="h-8 w-8 object-contain"
-                  />
+                      src={series.team2.logo_url}
+                      alt={series.team2.name}
+                      className="h-8 w-8 object-contain"
+                      loading="lazy"
+                      decoding="async"
+                    />
                 )}
                 <span
                   className={cn(

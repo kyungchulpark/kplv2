@@ -236,6 +236,8 @@ export function StatsTable({ rows }: { rows: PlayerStatRow[] }) {
                           src={row.team_logo_url}
                           alt={row.team_name}
                           className="h-6 w-6 object-contain"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="flex h-6 w-6 items-center justify-center rounded bg-emerald-500 text-[10px] font-bold text-white">

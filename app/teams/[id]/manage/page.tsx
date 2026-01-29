@@ -36,6 +36,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { resizeImageFile } from "@/lib/image-resize";
 
 interface Player {
   id: string;
@@ -207,12 +208,13 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
     const supabase = createClient();
 
     try {
-      const fileExt = logoFile.name.split(".").pop();
+      const resizedFile = await resizeImageFile(logoFile, 256);
+      const fileExt = resizedFile.name.split(".").pop();
       const fileName = `${team.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("team-logos")
-        .upload(fileName, logoFile, { upsert: true });
+        .upload(fileName, resizedFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -296,6 +298,29 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
         if (insertError) throw insertError;
       }
 
+      const addedPlayer = availablePlayers.find((p) => p.id === selectedPlayerId);
+      const actorId = user?.id || (await supabase.auth.getUser()).data.user?.id;
+      if (actorId) {
+        const { error: activityError } = await supabase
+          .from("activity_logs")
+          .insert({
+            actor_id: actorId,
+            action: "roster_added",
+            entity_type: "roster",
+            entity_id: null,
+            details: {
+              team_id: team.id,
+              team_name: team.name,
+              player_id: selectedPlayerId,
+              player_psn_id: addedPlayer?.psn_id || null,
+              position: position || null,
+            },
+          });
+        if (activityError) {
+          console.error("Error writing activity log:", activityError);
+        }
+      }
+
       toast.success("Player added successfully");
       setAddPlayerOpen(false);
       setSelectedPlayerId("");
@@ -321,6 +346,29 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
         .eq("id", rosterId);
 
       if (error) throw error;
+
+      const removedMember = roster.find((m) => m.id === rosterId);
+      const actorId = user?.id || (await supabase.auth.getUser()).data.user?.id;
+      if (actorId && removedMember) {
+        const { error: activityError } = await supabase
+          .from("activity_logs")
+          .insert({
+            actor_id: actorId,
+            action: "roster_removed",
+            entity_type: "roster",
+            entity_id: removedMember.id,
+            details: {
+              team_id: team.id,
+              team_name: team.name,
+              player_id: removedMember.player_id,
+              player_psn_id: removedMember.player?.psn_id || null,
+            },
+          });
+        if (activityError) {
+          console.error("Error writing activity log:", activityError);
+        }
+      }
+
 
       toast.success("선수가 제거되었습니다.");
       loadData(teamId);
@@ -376,10 +424,12 @@ export default function TeamManagePage({ params }: { params: Promise<{ id: strin
               <div className="flex-shrink-0">
                 {logoPreview ? (
                   <img
-                    src={logoPreview}
-                    alt="Team logo"
-                    className="h-32 w-32 object-contain rounded-lg border-2"
-                  />
+                      src={logoPreview}
+                      alt="Team logo"
+                      className="h-32 w-32 object-contain rounded-lg border-2"
+                      loading="lazy"
+                      decoding="async"
+                    />
                 ) : (
                   <div className="h-32 w-32 rounded-lg border-2 border-dashed flex items-center justify-center text-4xl font-bold bg-muted">
                     {team.name.substring(0, 2).toUpperCase()}

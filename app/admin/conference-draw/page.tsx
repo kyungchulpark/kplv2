@@ -79,10 +79,12 @@ export default async function ConferenceDrawPage() {
                     >
                       {team.logo_url && (
                         <img
-                          src={team.logo_url}
-                          alt={team.name}
-                          className="h-5 w-5 object-contain"
-                        />
+                            src={team.logo_url}
+                            alt={team.name}
+                            className="h-5 w-5 object-contain"
+                            loading="lazy"
+                            decoding="async"
+                          />
                       )}
                       {team.name}
                     </div>
@@ -102,10 +104,12 @@ export default async function ConferenceDrawPage() {
                     >
                       {team.logo_url && (
                         <img
-                          src={team.logo_url}
-                          alt={team.name}
-                          className="h-5 w-5 object-contain"
-                        />
+                            src={team.logo_url}
+                            alt={team.name}
+                            className="h-5 w-5 object-contain"
+                            loading="lazy"
+                            decoding="async"
+                          />
                       )}
                       {team.name}
                     </div>

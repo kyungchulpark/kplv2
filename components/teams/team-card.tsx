@@ -43,6 +43,8 @@ export function TeamCard({ team, showActiveLeagueBadge = false }: TeamCardProps)
                     src={team.logo_url}
                     alt={team.name}
                     className="h-full w-full rounded object-contain"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               ) : (

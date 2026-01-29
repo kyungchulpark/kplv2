@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { resizeImageFile } from "@/lib/image-resize";
 
 interface ProfileEditFormProps {
   userId: string;
@@ -60,14 +61,15 @@ export function ProfileEditForm({
     setIsUploadingAvatar(true);
     try {
       const supabase = createClient();
-      const fileExt = avatarFile.name.split(".").pop();
+      const resizedFile = await resizeImageFile(avatarFile, 256);
+      const fileExt = resizedFile.name.split(".").pop();
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, avatarFile, {
+        .upload(filePath, resizedFile, {
           cacheControl: "3600",
           upsert: true,
         });

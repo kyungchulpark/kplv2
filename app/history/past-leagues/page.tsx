@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { SeasonSelector } from "@/components/stats/season-selector";
 import { ScheduleTable } from "@/components/schedule/schedule-table";
 
+export const revalidate = 300;
+
 interface PastLeaguesPageProps {
   searchParams: Promise<{
     seasonId?: string;

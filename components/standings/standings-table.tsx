@@ -271,10 +271,12 @@ export function StandingsTable({ teams, conference, showConferenceHighlight = fa
                         showConferenceHighlight && team.conference === "East" && isPlayoffTeam && "ring-2 ring-blue-500"
                       )}>
                         <img
-                          src={team.logo_url}
-                          alt={team.name}
-                          className="h-8 w-8 object-contain"
-                        />
+                            src={team.logo_url}
+                            alt={team.name}
+                            className="h-8 w-8 object-contain"
+                            loading="lazy"
+                            decoding="async"
+                          />
                       </div>
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold">

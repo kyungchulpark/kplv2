@@ -27,6 +27,13 @@ interface MatchData {
   away_team_id: string;
   match_date: string;
   status: string;
+  home_score?: number | null;
+  away_score?: number | null;
+  is_forfeit?: boolean | null;
+  forfeit_winner_id?: string | null;
+  forfeit_reason?: string | null;
+  home_stream_url?: string | null;
+  away_stream_url?: string | null;
   home_team: {
     id: string;
     name: string;
@@ -300,6 +307,141 @@ export function MatchStatsInput({
         .eq("id", match.id);
 
       if (matchError) throw matchError;
+
+      const beforeMatch = {
+        status: match.status,
+        home_score: match.home_score ?? null,
+        away_score: match.away_score ?? null,
+        is_forfeit: match.is_forfeit ?? false,
+        forfeit_winner_id: match.forfeit_winner_id ?? null,
+        forfeit_reason: match.forfeit_reason ?? null,
+        home_stream_url: match.home_stream_url ?? null,
+        away_stream_url: match.away_stream_url ?? null,
+      };
+
+      const afterMatch = {
+        status: "finished",
+        home_score: homeScore,
+        away_score: awayScore,
+        is_forfeit: match.is_forfeit ?? false,
+        forfeit_winner_id: match.forfeit_winner_id ?? null,
+        forfeit_reason: match.forfeit_reason ?? null,
+        home_stream_url: homeStreamUrl,
+        away_stream_url: awayStreamUrl,
+      };
+
+      const beforeStats = [
+        ...initialHomeStatsForInput.map((s) => ({
+          team_id: match.home_team_id,
+          player_id: s.player_id,
+          pts: s.pts,
+          reb: s.reb,
+          ast: s.ast,
+          stl: s.stl,
+          blk: s.blk,
+          fls: s.fouls,
+          turnovers: s.turnovers,
+          fgm: s.fgm,
+          fga: s.fga,
+          three_pm: s.tpm,
+          three_pa: s.tpa,
+          ftm: s.ftm,
+          fta: s.fta,
+        })),
+        ...initialAwayStatsForInput.map((s) => ({
+          team_id: match.away_team_id,
+          player_id: s.player_id,
+          pts: s.pts,
+          reb: s.reb,
+          ast: s.ast,
+          stl: s.stl,
+          blk: s.blk,
+          fls: s.fouls,
+          turnovers: s.turnovers,
+          fgm: s.fgm,
+          fga: s.fga,
+          three_pm: s.tpm,
+          three_pa: s.tpa,
+          ftm: s.ftm,
+          fta: s.fta,
+        })),
+      ];
+
+      const afterStats = [
+        ...correctedHomeStats.map((s) => ({
+          team_id: match.home_team_id,
+          player_id: s.player_id,
+          pts: s.pts,
+          reb: s.reb,
+          ast: s.ast,
+          stl: s.stl,
+          blk: s.blk,
+          fls: s.fls,
+          turnovers: s.turnovers,
+          fgm: s.fgm,
+          fga: s.fga,
+          three_pm: s.three_pm,
+          three_pa: s.three_pa,
+          ftm: s.ftm,
+          fta: s.fta,
+        })),
+        ...correctedAwayStats.map((s) => ({
+          team_id: match.away_team_id,
+          player_id: s.player_id,
+          pts: s.pts,
+          reb: s.reb,
+          ast: s.ast,
+          stl: s.stl,
+          blk: s.blk,
+          fls: s.fls,
+          turnovers: s.turnovers,
+          fgm: s.fgm,
+          fga: s.fga,
+          three_pm: s.three_pm,
+          three_pa: s.three_pa,
+          ftm: s.ftm,
+          fta: s.fta,
+        })),
+      ];
+
+      const action = isEditing || hasInitialStats ? "update" : "create";
+      const { data: authData } = await supabase.auth.getUser();
+      const editorId = authData.user?.id;
+      if (editorId) {
+        const { error: auditError } = await supabase
+          .from("match_result_audits")
+          .insert({
+            match_id: match.id,
+            editor_id: editorId,
+            action,
+            before_match: beforeMatch,
+            after_match: afterMatch,
+            before_stats: beforeStats,
+            after_stats: afterStats,
+          });
+        if (auditError) {
+          console.error("Error writing match audit:", auditError);
+        }
+
+        const { error: activityError } = await supabase
+          .from("activity_logs")
+          .insert({
+            actor_id: editorId,
+            action,
+            entity_type: "match",
+            entity_id: match.id,
+            details: {
+              match_id: match.id,
+              season_id: match.season_id,
+              season_name: match.season?.name ?? null,
+              home_team_name: match.home_team.name,
+              away_team_name: match.away_team.name,
+            },
+          });
+        if (activityError) {
+          console.error("Error writing activity log:", activityError);
+        }
+      }
 
       // Recalculate standings after any result change
       const { error: recalcError } = await supabase.rpc(

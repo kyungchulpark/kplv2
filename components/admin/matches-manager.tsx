@@ -243,10 +243,12 @@ export function MatchesManager({
                       <div className="flex items-center space-x-2">
                         {match.home_team.logo_url ? (
                           <img
-                            src={match.home_team.logo_url}
-                            alt={match.home_team.name}
-                            className="h-6 w-6 object-contain"
-                          />
+                              src={match.home_team.logo_url}
+                              alt={match.home_team.name}
+                              className="h-6 w-6 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         ) : (
                           <div className="h-6 w-6 rounded bg-nba-red flex items-center justify-center text-[10px] font-bold text-white">
                             {match.home_team.name.substring(0, 2)}
@@ -263,10 +265,12 @@ export function MatchesManager({
                       <div className="flex items-center space-x-2">
                         {match.away_team.logo_url ? (
                           <img
-                            src={match.away_team.logo_url}
-                            alt={match.away_team.name}
-                            className="h-6 w-6 object-contain"
-                          />
+                              src={match.away_team.logo_url}
+                              alt={match.away_team.name}
+                              className="h-6 w-6 object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
                         ) : (
                           <div className="h-6 w-6 rounded bg-nba-red flex items-center justify-center text-[10px] font-bold text-white">
                             {match.away_team.name.substring(0, 2)}
@@ -342,6 +346,8 @@ export function MatchesManager({
                             away_team_name: match.away_team.name,
                             match_date: match.match_date,
                             status: match.status,
+                            home_score: match.home_score,
+                            away_score: match.away_score,
                           }}
                           onSuccess={() => router.refresh()}
                         />

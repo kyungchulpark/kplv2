@@ -340,6 +340,28 @@ export default function UploadSchedulePage() {
         });
 
         // 생성된 팀 목록 저장
+        const { data: authData } = await supabase.auth.getUser();
+        const actorId = authData.user?.id;
+        if (actorId && insertedTeams && insertedTeams.length > 0) {
+          const payload = insertedTeams.map((team) => ({
+            actor_id: actorId,
+            action: "team_created",
+            entity_type: "team",
+            entity_id: team.id,
+            details: {
+              team_id: team.id,
+              team_name: team.name,
+              season_id: activeSeason.id,
+            },
+          }));
+          const { error: activityError } = await supabase
+            .from("activity_logs")
+            .insert(payload);
+          if (activityError) {
+            console.error("Error writing activity logs:", activityError);
+          }
+        }
+
         setCreatedTeams(missingTeams);
 
         // 팀 목록 갱신

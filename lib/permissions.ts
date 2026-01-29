@@ -56,7 +56,7 @@ export async function canUserUploadMatchResult(
   // 2. Get match details
   const { data: match } = await supabase
     .from("matches")
-    .select("home_team_id, away_team_id, home_score, away_score, status")
+    .select("home_team_id, away_team_id, home_score, away_score, status, is_forfeit")
     .eq("id", matchId)
     .single();
 
@@ -65,6 +65,14 @@ export async function canUserUploadMatchResult(
       canUpload: false,
       teamId: null,
       reason: "경기를 찾을 수 없습니다",
+    };
+  }
+
+  if (match.is_forfeit) {
+    return {
+      canUpload: false,
+      teamId: null,
+      reason: "Forfeit matches are locked from team edits.",
     };
   }
 
